@@ -2,14 +2,12 @@
 import io
 import zipfile
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app import service
 from app.main import create_app
 from app.store import Store
 from qgen.ai import TemplateAI
-from qgen.sandbox import LocalDevSandbox
 
 TEACHER = {"X-Dev-Teacher": "teacher-a"}
 CODE = """nums = [3, 8, 2, 5]
@@ -19,14 +17,6 @@ for n in nums:
         total = total + n
 print(total)
 """
-
-
-@pytest.fixture
-def client(monkeypatch):
-    monkeypatch.setenv("APP_ENV", "local")
-    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
-    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
-    return TestClient(create_app(Store(), LocalDevSandbox, TemplateAI))
 
 
 def make_zip(files: dict[str, str]) -> bytes:

@@ -32,6 +32,25 @@ sh scripts/dev.sh
 | `app/service.py` | 提出の読み込み、採点、処理の流れ |
 | `app/store.py` | データの置き場所（今はメモリ上） |
 | `web/` | 教員と生徒の画面（デモ） |
+| `tests/unit/` | 単体テスト |
+| `tests/integration/` | 結合テスト |
+
+## テスト
+
+```sh
+.venv/bin/python -m pytest                    # すべて
+.venv/bin/python -m pytest tests/unit         # 単体テストだけ
+.venv/bin/python -m pytest tests/integration  # 結合テストだけ
+```
+
+| 場所 | 試すもの | 新しいテストを置く基準 |
+| --- | --- | --- |
+| `tests/unit/` | 関数やクラス1つ | コードを実行せず、APIも通さない。外部とのやりとりは偽物に置き換える |
+| `tests/integration/` | 部品をつないだ動き | APIを通す、または合成コードを実際に実行する |
+
+- どちらも本物の Code Execution と Gemini は呼びません。手元の実行環境（`LocalDevSandbox`）とテンプレート（`TemplateAI`）を使います。
+- 結合テスト専用の準備は `tests/integration/conftest.py` に置きます。単体テストからは使えません。
+- pytest の設定は `pyproject.toml` にあります。
 
 ## 環境変数
 

@@ -1,15 +1,6 @@
 """実行ラッパーの試験。合成コードだけを手元で動かす。"""
 import pytest
 
-from qgen.sandbox import LocalDevSandbox, SandboxError, parse_result
-
-
-@pytest.fixture
-def sandbox(monkeypatch):
-    monkeypatch.setenv("APP_ENV", "local")
-    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
-    return LocalDevSandbox()
-
 
 SUM_CODE = """nums = [3, 8, 2, 5]
 total = 0
@@ -73,16 +64,3 @@ def test_student_output_cannot_forge_the_result(sandbox):
     result = sandbox.analyze(code, "")
     assert result["stdout"].startswith("HARNESS_RESULT")
     assert "history" in result
-
-
-def test_local_sandbox_refuses_outside_local(monkeypatch):
-    monkeypatch.delenv("ALLOW_LOCAL_SANDBOX", raising=False)
-    monkeypatch.setenv("APP_ENV", "production")
-    with pytest.raises(SandboxError):
-        LocalDevSandbox()
-
-
-@pytest.mark.parametrize("stdout", ["", "no result", "HARNESS_RESULT:not json", "HARNESS_RESULT:[1]", 'HARNESS_RESULT:{"a":1}'])
-def test_parse_result_rejects_malformed_output(stdout):
-    with pytest.raises(SandboxError):
-        parse_result(stdout)
