@@ -5,7 +5,7 @@ import zipfile
 from fastapi.testclient import TestClient
 
 from app import service
-from app.main import create_app
+from app.main import LOGIN_FAILURES_PER_MIN, create_app
 from qgen.ai import TemplateAI
 from qgen.sandbox import LocalDevSandbox
 
@@ -204,8 +204,31 @@ def test_tampered_token_is_rejected(client):
 def test_wrong_codes_are_rejected_and_rate_limited(client):
     created, _ = setup_open(client)
     payload = {"class_code": created["class_code"], "personal_code": "WRONGCODE"}
-    statuses = [client.post("/v1/sessions", json=payload).status_code for _ in range(11)]
-    assert statuses[:10] == [401] * 10 and statuses[10] == 429
+    statuses = [client.post("/v1/sessions", json=payload).status_code for _ in range(LOGIN_FAILURES_PER_MIN + 1)]
+    assert statuses[:-1] == [401] * LOGIN_FAILURES_PER_MIN and statuses[-1] == 429
+    # 上限に達したあとは、正しいコードでも1分待つまで入れない
+    correct = {"class_code": created["class_code"], "personal_code": created["personal_codes"]["1"]}
+    assert client.post("/v1/sessions", json=correct).status_code == 429
+
+
+def test_whole_class_from_one_address_can_enter(client):
+    """教室の40人が同じ接続元から続けて入っても止めない。"""
+    numbers = [str(number) for number in range(1, 41)]
+    created = client.post("/v1/classes", json={"name": "1-A", "student_numbers": numbers}, headers=TEACHER).json()
+    for number in numbers:
+        body = {"class_code": created["class_code"], "personal_code": created["personal_codes"][number]}
+        assert client.post("/v1/sessions", json=body).status_code == 200
+
+
+def test_a_few_typos_do_not_block_the_class(client):
+    numbers = [str(number) for number in range(1, 41)]
+    created = client.post("/v1/classes", json={"name": "1-A", "student_numbers": numbers}, headers=TEACHER).json()
+    wrong = {"class_code": created["class_code"], "personal_code": "WRONGCODE"}
+    for number in numbers:
+        if int(number) % 4 == 0:  # 4人に1人が一度打ち間違える
+            assert client.post("/v1/sessions", json=wrong).status_code == 401
+        body = {"class_code": created["class_code"], "personal_code": created["personal_codes"][number]}
+        assert client.post("/v1/sessions", json=body).status_code == 200
 
 
 def test_names_are_not_accepted_as_student_numbers(client):

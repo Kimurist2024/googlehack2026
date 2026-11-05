@@ -20,7 +20,8 @@ from . import auth, demo, service
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, default_store
 
 GRACE_SEC = 10
-LOGIN_LIMIT_PER_MIN = 10
+# 失敗した入室だけを数える。コードは31種類の文字の8桁なので、この回数でも総当たりはできない
+LOGIN_FAILURES_PER_MIN = 30
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
 ACTIONS = {"ask_in_class", "no_problem", "question_bad"}
@@ -93,7 +94,7 @@ def create_app(
     app = FastAPI(title="ムシトリ API")
     store = store or default_store()
     app.state.store = store
-    attempts_by_client: dict[str, deque] = defaultdict(deque)
+    failures_by_client: dict[str, deque] = defaultdict(deque)
 
     def owned_class(class_id: str, teacher: str) -> ClassRecord:
         classroom = store.get_class(class_id)
@@ -232,17 +233,18 @@ def create_app(
     @app.post("/v1/sessions")
     def create_session(body: SessionIn, request: Request) -> dict:
         client = request.client.host if request.client else "unknown"
-        window = attempts_by_client[client]
+        failures = failures_by_client[client]
         current = time.monotonic()
-        while window and current - window[0] > 60:
-            window.popleft()
-        if len(window) >= LOGIN_LIMIT_PER_MIN:
+        while failures and current - failures[0] > 60:
+            failures.popleft()
+        # 教室の全員が同じ接続元から入っても、正しいコードの入室では上限に近づかない
+        if len(failures) >= LOGIN_FAILURES_PER_MIN:
             raise HTTPException(status_code=429, detail="しばらく待ってからやり直してください")
-        window.append(current)
         class_id = store.class_id_for_code(auth.code_hash(body.class_code))
         classroom = store.get_class(class_id) if class_id else None
         student_id = store.student_for_credential(class_id, auth.code_hash(body.personal_code)) if classroom else None
         if classroom is None or student_id is None:
+            failures.append(current)
             raise HTTPException(status_code=401, detail="コードが正しくありません")
         return {
             "token": auth.issue_student_token(classroom.id, student_id),
