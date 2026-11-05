@@ -24,6 +24,7 @@ os.environ.update(
     SANDBOX_BACKEND="local",
     ALLOW_LOCAL_SANDBOX="1",
     AI_BACKEND="template",
+    STORE_BACKEND="memory",
     SESSION_SECRET=secrets.token_hex(32),
 )
 
@@ -160,10 +161,11 @@ class Demo:
         await asyncio.sleep(hold)
 
     def answers_for(self, number: str) -> dict[str, str]:
-        assignment = next(iter(self.store.assignments.values()))
-        classroom = self.store.classes[assignment.class_id]
+        # 収録はメモリ上の保存先で動かし、作った課題は1つだけなので中を直接見る
+        assignment = next(iter(self.store._assignments.values()))
+        classroom = self.store.get_class(assignment.class_id)
         student_id = next(sid for sid, value in classroom.student_numbers.items() if value == number)
-        return {qid: item["answer"] for qid, item in assignment.answer_keys[student_id]["questions"].items()}
+        return {qid: item["answer"] for qid, item in self.store.get_answer_key(assignment.id, student_id)["questions"].items()}
 
     async def enter_as(self, number: str) -> None:
         page = self.page

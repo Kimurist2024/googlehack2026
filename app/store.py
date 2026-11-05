@@ -1,7 +1,17 @@
-"""データの置き場所。今はメモリ上で持ち、Firestore 版は同じ形で差し替える。"""
+"""データの置き場所。手元ではメモリ、本番では Firestore を使う。
+
+どちらも同じ操作を持つ。受け取る値と返す値はコピーなので、書き込みの呼び忘れは手元のテストでも見つかる。
+"""
+import copy
+import os
 import threading
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass, replace
+from typing import Any, Protocol
+
+Doc = dict[str, Any]
+
+# 進み具合は状態ごとの件数で返すので、提出の状態はここに挙げたものだけにする
+SUBMISSION_STATUSES = ("queued", "ready", "excluded", "failed")
 
 
 @dataclass
@@ -10,7 +20,7 @@ class ClassRecord:
     name: str
     teacher: str
     student_numbers: dict[str, str]  # student_id -> 出席番号
-    credentials: dict[str, str]  # 個人コードのハッシュ -> student_id
+    open_assignment_id: str | None = None  # 受付中の課題は1クラスに1つだけ
 
 
 @dataclass
@@ -24,23 +34,243 @@ class AssignmentRecord:
     question_count: int
     weights: dict[str, float]
     state: str = "draft"  # draft, generating, ready, open, closed
-    submissions: dict[str, dict[str, Any]] = field(default_factory=dict)
-    quizzes: dict[str, dict[str, Any]] = field(default_factory=dict)
-    answer_keys: dict[str, dict[str, Any]] = field(default_factory=dict)
-    attempts: dict[str, dict[str, Any]] = field(default_factory=dict)
-    followups: dict[str, dict[str, Any]] = field(default_factory=dict)
+    generating_since: float | None = None
 
 
-class Store:
+def can_add_submissions(assignment: AssignmentRecord) -> bool:
+    return assignment.state in ("draft", "ready")
+
+
+def can_begin_generation(assignment: AssignmentRecord, now: float, stale_after: float) -> bool:
+    if assignment.state in ("draft", "ready"):
+        return True
+    # 処理中のインスタンスが落ちると「生成中」のまま残るので、時間が経ったらやり直せるようにする
+    return assignment.state == "generating" and now - (assignment.generating_since or 0) > stale_after
+
+
+class Store(Protocol):
+    def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
+        """credentials は個人コードのハッシュ -> student_id。"""
+
+    def get_class(self, class_id: str) -> ClassRecord | None: ...
+
+    def class_id_for_code(self, code_hash: str) -> str | None: ...
+
+    def student_for_credential(self, class_id: str, code_hash: str) -> str | None: ...
+
+    def create_assignment(self, assignment: AssignmentRecord) -> None: ...
+
+    def get_assignment(self, assignment_id: str) -> AssignmentRecord | None: ...
+
+    def add_submissions(self, assignment_id: str, codes: dict[str, str]) -> bool:
+        """提出を登録し、課題を draft に戻す。受付を始めた課題なら何もせず False を返す。"""
+
+    def begin_generation(self, assignment_id: str, now: float, stale_after: float) -> bool:
+        """generating に進める。同時に呼ばれても True を返すのは1回だけ。"""
+
+    def end_generation(self, assignment_id: str, state: str) -> None: ...
+
+    def open_assignment(self, assignment_id: str) -> bool:
+        """ready の課題を受付中にする。同じクラスに受付中の課題があれば False を返す。"""
+
+    def close_assignment(self, assignment_id: str) -> bool:
+        """受付中の課題を締め切る。受付中でなければ False を返す。"""
+
+    def submissions(self, assignment_id: str) -> dict[str, Doc]:
+        """提出をコードごと返す。"""
+
+    def submission_statuses(self, assignment_id: str) -> dict[str, Doc]:
+        """提出の状態と理由だけを返す。コードは含めない。"""
+
+    def submission_counts(self, assignment_id: str) -> dict[str, int]:
+        """状態ごとの件数を返す。0件の状態は含めない。"""
+
+    def save_generation_result(
+        self, assignment_id: str, student_id: str, status: str, reason: str | None, quiz: Doc | None, answer_key: Doc | None
+    ) -> None:
+        """生成の結果を書く。問いを作れなかった生徒には、前回の問いも残さない。"""
+
+    def get_quiz(self, assignment_id: str, student_id: str) -> Doc | None: ...
+
+    def get_answer_key(self, assignment_id: str, student_id: str) -> Doc | None: ...
+
+    def start_attempt(self, assignment_id: str, student_id: str, started_at: float) -> Doc:
+        """解答を始める。すでに始めていれば、最初の記録をそのまま返す。"""
+
+    def get_attempt(self, assignment_id: str, student_id: str) -> Doc | None: ...
+
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
+        """採点結果を書く。同時に呼ばれても True を返すのは1回だけ。"""
+
+    def attempts(self, assignment_id: str) -> dict[str, Doc]: ...
+
+    def followups(self, assignment_id: str) -> dict[str, Doc]: ...
+
+    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None: ...
+
+    def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None: ...
+
+
+class MemoryStore:
+    """手元の開発とテスト用。再起動で消え、複数のインスタンスでは共有できない。"""
+
     def __init__(self) -> None:
-        self.lock = threading.RLock()
-        self.classes: dict[str, ClassRecord] = {}
-        self.class_codes: dict[str, str] = {}  # 授業コードのハッシュ -> class_id
-        self.assignments: dict[str, AssignmentRecord] = {}
+        self._lock = threading.RLock()
+        self._classes: dict[str, ClassRecord] = {}
+        self._class_codes: dict[str, str] = {}
+        self._credentials: dict[tuple[str, str], str] = {}
+        self._assignments: dict[str, AssignmentRecord] = {}
+        self._submissions: dict[str, dict[str, Doc]] = {}
+        self._quizzes: dict[str, dict[str, Doc]] = {}
+        self._answer_keys: dict[str, dict[str, Doc]] = {}
+        self._attempts: dict[str, dict[str, Doc]] = {}
+        self._followups: dict[str, dict[str, Doc]] = {}
 
-    def open_assignment_for(self, class_id: str) -> str | None:
-        with self.lock:
-            for assignment in self.assignments.values():
-                if assignment.class_id == class_id and assignment.state == "open":
-                    return assignment.id
-        return None
+    def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
+        with self._lock:
+            self._classes[classroom.id] = copy.deepcopy(classroom)
+            self._class_codes[class_code_hash] = classroom.id
+            for code_hash, student_id in credentials.items():
+                self._credentials[(classroom.id, code_hash)] = student_id
+
+    def get_class(self, class_id: str) -> ClassRecord | None:
+        with self._lock:
+            return copy.deepcopy(self._classes.get(class_id))
+
+    def class_id_for_code(self, code_hash: str) -> str | None:
+        with self._lock:
+            return self._class_codes.get(code_hash)
+
+    def student_for_credential(self, class_id: str, code_hash: str) -> str | None:
+        with self._lock:
+            return self._credentials.get((class_id, code_hash))
+
+    def create_assignment(self, assignment: AssignmentRecord) -> None:
+        with self._lock:
+            self._assignments[assignment.id] = copy.deepcopy(assignment)
+            for table in (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups):
+                table[assignment.id] = {}
+
+    def get_assignment(self, assignment_id: str) -> AssignmentRecord | None:
+        with self._lock:
+            return copy.deepcopy(self._assignments.get(assignment_id))
+
+    def add_submissions(self, assignment_id: str, codes: dict[str, str]) -> bool:
+        with self._lock:
+            assignment = self._assignments[assignment_id]
+            if not can_add_submissions(assignment):
+                return False
+            for student_id, code in codes.items():
+                self._submissions[assignment_id][student_id] = {"code": code, "status": "queued", "reason": None}
+            self._assignments[assignment_id] = replace(assignment, state="draft")
+            return True
+
+    def begin_generation(self, assignment_id: str, now: float, stale_after: float) -> bool:
+        with self._lock:
+            assignment = self._assignments[assignment_id]
+            if not can_begin_generation(assignment, now, stale_after):
+                return False
+            self._assignments[assignment_id] = replace(assignment, state="generating", generating_since=now)
+            return True
+
+    def end_generation(self, assignment_id: str, state: str) -> None:
+        with self._lock:
+            self._assignments[assignment_id] = replace(self._assignments[assignment_id], state=state, generating_since=None)
+
+    def open_assignment(self, assignment_id: str) -> bool:
+        with self._lock:
+            assignment = self._assignments[assignment_id]
+            classroom = self._classes[assignment.class_id]
+            if assignment.state != "ready" or classroom.open_assignment_id is not None:
+                return False
+            self._assignments[assignment_id] = replace(assignment, state="open")
+            self._classes[assignment.class_id] = replace(classroom, open_assignment_id=assignment_id)
+            return True
+
+    def close_assignment(self, assignment_id: str) -> bool:
+        with self._lock:
+            assignment = self._assignments[assignment_id]
+            if assignment.state != "open":
+                return False
+            self._assignments[assignment_id] = replace(assignment, state="closed")
+            self._classes[assignment.class_id] = replace(self._classes[assignment.class_id], open_assignment_id=None)
+            return True
+
+    def submissions(self, assignment_id: str) -> dict[str, Doc]:
+        with self._lock:
+            return copy.deepcopy(self._submissions[assignment_id])
+
+    def submission_statuses(self, assignment_id: str) -> dict[str, Doc]:
+        with self._lock:
+            return {
+                student_id: {"status": doc["status"], "reason": doc["reason"]}
+                for student_id, doc in self._submissions[assignment_id].items()
+            }
+
+    def submission_counts(self, assignment_id: str) -> dict[str, int]:
+        with self._lock:
+            docs = self._submissions[assignment_id].values()
+            counts = {status: sum(1 for doc in docs if doc["status"] == status) for status in SUBMISSION_STATUSES}
+        return {status: count for status, count in counts.items() if count}
+
+    def save_generation_result(
+        self, assignment_id: str, student_id: str, status: str, reason: str | None, quiz: Doc | None, answer_key: Doc | None
+    ) -> None:
+        with self._lock:
+            self._submissions[assignment_id][student_id].update(status=status, reason=reason)
+            if quiz is None or answer_key is None:
+                self._quizzes[assignment_id].pop(student_id, None)
+                self._answer_keys[assignment_id].pop(student_id, None)
+            else:
+                self._quizzes[assignment_id][student_id] = copy.deepcopy(quiz)
+                self._answer_keys[assignment_id][student_id] = copy.deepcopy(answer_key)
+
+    def get_quiz(self, assignment_id: str, student_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._quizzes[assignment_id].get(student_id))
+
+    def get_answer_key(self, assignment_id: str, student_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._answer_keys[assignment_id].get(student_id))
+
+    def start_attempt(self, assignment_id: str, student_id: str, started_at: float) -> Doc:
+        with self._lock:
+            attempt = self._attempts[assignment_id].setdefault(student_id, {"started_at": started_at, "submitted_at": None, "graded": []})
+            return copy.deepcopy(attempt)
+
+    def get_attempt(self, assignment_id: str, student_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._attempts[assignment_id].get(student_id))
+
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
+        with self._lock:
+            attempt = self._attempts[assignment_id].get(student_id)
+            if attempt is None or attempt["submitted_at"] is not None:
+                return False
+            attempt.update(graded=copy.deepcopy(graded), submitted_at=submitted_at)
+            return True
+
+    def attempts(self, assignment_id: str) -> dict[str, Doc]:
+        with self._lock:
+            return copy.deepcopy(self._attempts[assignment_id])
+
+    def followups(self, assignment_id: str) -> dict[str, Doc]:
+        with self._lock:
+            return copy.deepcopy(self._followups[assignment_id])
+
+    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None:
+        with self._lock:
+            self._followups[assignment_id].setdefault(student_id, {}).update(question=question, line=line)
+
+    def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
+        with self._lock:
+            self._followups[assignment_id].setdefault(student_id, {}).update(copy.deepcopy(action))
+
+
+def default_store() -> Store:
+    """環境変数から選ぶ。指定がなければ本番用の Firestore を使う。"""
+    if os.environ.get("STORE_BACKEND", "firestore") == "memory":
+        return MemoryStore()
+    from .firestore_store import FirestoreStore
+
+    return FirestoreStore()

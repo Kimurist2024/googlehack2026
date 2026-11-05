@@ -1,5 +1,6 @@
 """問いの生成、採点、声をかける順の処理。"""
 import io
+import json
 import logging
 import re
 import time
@@ -10,12 +11,14 @@ from qgen.questions import Question, build_candidates, seeded_random
 from qgen.sandbox import Sandbox
 
 from .ordering import Candidate, rank, tau_from, within_budget
-from .store import AssignmentRecord, ClassRecord
+from .store import AssignmentRecord, ClassRecord, Store
 
 logger = logging.getLogger(__name__)
 MAX_FILE_BYTES = 64 * 1024
 MAX_TOTAL_BYTES = 8 * 1024 * 1024
 MAX_FILES = 500
+# Firestore の1文書の上限は 1MiB。余裕を見て、超えそうな提出は対象外にする
+MAX_DOC_BYTES = 900_000
 
 
 def read_submissions(data: bytes, known_numbers: set[str]) -> tuple[dict[str, str], list[str]]:
@@ -61,6 +64,10 @@ def choose_stdin(examples: list[str], assignment_id: str, student_id: str) -> st
     return seeded_random(assignment_id, student_id, "stdin").choice(examples)
 
 
+def _too_large(document: dict) -> bool:
+    return len(json.dumps(document, ensure_ascii=False).encode("utf-8")) > MAX_DOC_BYTES
+
+
 def generate_one(assignment: AssignmentRecord, student_id: str, code: str, sandbox: Sandbox, ai: QuizAI) -> dict:
     """提出1件の問いを作る。戻り値は保存する内容。"""
     stdin = choose_stdin(assignment.stdin_examples, assignment.id, student_id)
@@ -80,23 +87,23 @@ def generate_one(assignment: AssignmentRecord, student_id: str, code: str, sandb
     keys = {}
     for question in chosen:
         keys[question.id] = {**question.to_dict(), "explanation": ai.explain(question)}
-    return {
-        "status": "ready",
-        "quiz": {"questions": [question.public() for question in chosen], "code": code, "stdin": stdin},
-        "key": keys,
+    quiz = {"questions": [question.public() for question in chosen], "code": code, "stdin": stdin}
+    answer_key = {
+        "questions": keys,
         "trace": [f"{e['line']}行目: {e['name']} = {e['value']}" for e in result.get("history", [])[:200]],
     }
+    if _too_large(quiz) or _too_large(answer_key):
+        return {"status": "excluded", "reason": "too_much_output"}
+    return {"status": "ready", "quiz": quiz, "answer_key": answer_key}
 
 
-def generate_all(assignment: AssignmentRecord, sandbox: Sandbox, ai: QuizAI) -> None:
-    for student_id, submission in assignment.submissions.items():
+def generate_all(store: Store, assignment: AssignmentRecord, sandbox: Sandbox, ai: QuizAI) -> None:
+    for student_id, submission in store.submissions(assignment.id).items():
         outcome = generate_one(assignment, student_id, submission["code"], sandbox, ai)
-        submission["status"] = outcome["status"]
-        submission["reason"] = outcome.get("reason")
-        if outcome["status"] == "ready":
-            assignment.quizzes[student_id] = outcome["quiz"]
-            assignment.answer_keys[student_id] = {"questions": outcome["key"], "trace": outcome["trace"]}
-    assignment.state = "ready"
+        store.save_generation_result(
+            assignment.id, student_id, outcome["status"], outcome.get("reason"), outcome.get("quiz"), outcome.get("answer_key")
+        )
+    store.end_generation(assignment.id, "ready")
 
 
 def normalized(text: str) -> str:
@@ -121,35 +128,35 @@ def grade(key: dict, answers: dict[str, str]) -> list[dict]:
     return graded
 
 
-def create_followups(assignment: AssignmentRecord, ai: QuizAI) -> None:
+def create_followups(store: Store, assignment: AssignmentRecord, ai: QuizAI) -> None:
     """締切のあと、誤答のあった生徒ごとに授業で聞く一問を作る。"""
-    for student_id, attempt in assignment.attempts.items():
+    existing = store.followups(assignment.id)
+    for student_id, attempt in store.attempts(assignment.id).items():
         if attempt.get("submitted_at") is None:
             continue
         wrong = [item for item in attempt["graded"] if not item["correct"]]
-        if not wrong or student_id in assignment.followups:
+        if not wrong or student_id in existing:
             continue
-        keys = assignment.answer_keys[student_id]["questions"]
+        keys = store.get_answer_key(assignment.id, student_id)["questions"]
         # 行を示せる誤答を優先する。教員が具体的に聞きやすくなる
         item = next((entry for entry in wrong if keys[entry["id"]].get("line")), wrong[0])
         question = Question(**{k: v for k, v in keys[item["id"]].items() if k != "explanation"})
-        assignment.followups[student_id] = {"question": ai.followup(question, item["given"]), "line": question.line}
+        store.add_followup_question(assignment.id, student_id, ai.followup(question, item["given"]), question.line)
 
 
-def followup_view(assignment: AssignmentRecord, classroom: ClassRecord, budget_sec: float) -> dict:
-    durations = [
-        record["duration_ms"] / 1000
-        for record in assignment.followups.values()
-        if record.get("duration_ms")
-    ]
+def followup_view(store: Store, assignment: AssignmentRecord, classroom: ClassRecord, budget_sec: float) -> dict:
+    submissions = store.submission_statuses(assignment.id)
+    attempts = store.attempts(assignment.id)
+    followups = store.followups(assignment.id)
+    durations = [record["duration_ms"] / 1000 for record in followups.values() if record.get("duration_ms")]
     tau = tau_from(durations)
     candidates, excluded, not_attempted = [], [], []
     for student_id, number in classroom.student_numbers.items():
-        submission = assignment.submissions.get(student_id)
+        submission = submissions.get(student_id)
         if submission is None or submission.get("status") != "ready":
             excluded.append({"number": number, "reason": submission.get("reason") if submission else "not_submitted"})
             continue
-        attempt = assignment.attempts.get(student_id)
+        attempt = attempts.get(student_id)
         if attempt is None or attempt.get("submitted_at") is None:
             not_attempted.append({"number": number})
             continue
@@ -157,12 +164,12 @@ def followup_view(assignment: AssignmentRecord, classroom: ClassRecord, budget_s
         candidates.append(Candidate(student_id, wrong, len(attempt["graded"])))
     ranked = rank(candidates, assignment.weights, tau)
     # 処置が済んだ生徒に持ち時間は使わない。残りの生徒だけで計算する
-    pending = [item for item in ranked if not assignment.followups.get(item.student_id, {}).get("action")]
+    pending = [item for item in ranked if not followups.get(item.student_id, {}).get("action")]
     in_budget = {item.student_id for item in within_budget(pending, budget_sec)}
     rows = []
     for item in ranked:
-        record = assignment.followups.get(item.student_id, {})
-        attempt = assignment.attempts[item.student_id]
+        record = followups.get(item.student_id, {})
+        attempt = attempts[item.student_id]
         rows.append(
             {
                 "student_id": item.student_id,

@@ -30,7 +30,9 @@ sh scripts/dev.sh
 | `app/main.py` | FastAPI の API |
 | `app/ordering.py` | 声をかける順の計算 |
 | `app/service.py` | 提出の読み込み、採点、処理の流れ |
-| `app/store.py` | データの置き場所（今はメモリ上） |
+| `app/store.py` | 保存先の共通の操作と、手元用のメモリ版 |
+| `app/firestore_store.py` | 本番用の Firestore 版 |
+| `firestore.rules` | ブラウザからの読み書きをすべて拒否するルール |
 | `web/` | 教員と生徒の画面（デモ） |
 | `tests/unit/` | 単体テスト |
 | `tests/integration/` | 結合テスト |
@@ -52,13 +54,25 @@ sh scripts/dev.sh
 - 結合テスト専用の準備は `tests/integration/conftest.py` に置きます。単体テストからは使えません。
 - pytest の設定は `pyproject.toml` にあります。
 
+Firestore 版も試すときは、公式エミュレータの中で結合テストを動かします。Java 21 以上と Node.js が必要です。`demo-` で始まるプロジェクトはクラウドに接続しません。
+
+```sh
+npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushitori ".venv/bin/python -m pytest tests/integration"
+```
+
+エミュレータがあると、保存先を使う試験はメモリ版と Firestore 版の両方で動きます。
+
 ## 環境変数
 
-`.env.example` を参照してください。指定がないときは本番用の設定で動き、`SESSION_SECRET` がなければ起動後の処理を拒否します。
+`.env.example` を参照してください。指定がないときは本番用の設定（Firestore、Code Execution）で動き、`SESSION_SECRET` がなければ起動後の処理を拒否します。
+
+`SESSION_SECRET` は授業コードと個人コードのハッシュにも使います。変えると保存済みのコードで入室できなくなるので、本番では固定した値を Secret Manager に置きます。
 
 ## まだできていないこと
 
-- **Firestore：** 今はデータをメモリに持つので、再起動で消え、複数インスタンスでは動きません。
+- **Firestore のデータベース：** コードはエミュレータで確認済みですが、本物のデータベースはまだ作っていません。場所を後から変えられないので、`asia-northeast1` で作ります。
+- **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
+- **ログインの試行回数の制限：** インスタンスごとに数えているので、複数インスタンスでは正確に効きません。
 - **Cloud Run Jobs：** 問いの生成はAPIの中のバックグラウンド処理です。本番ではジョブに分けます。
 - **教員のログイン：** Firebase の検証コードはありますが、画面はローカル用の仮の認証のままです。
 - **デプロイ：** Dockerfile はありますが、まだビルドしていません。

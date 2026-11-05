@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 
 from app import service
 from app.main import create_app
-from app.store import Store
 from qgen.ai import TemplateAI
+from qgen.sandbox import LocalDevSandbox
 
 TEACHER = {"X-Dev-Teacher": "teacher-a"}
 CODE = """nums = [3, 8, 2, 5]
@@ -123,9 +123,9 @@ def test_correct_answers_score_full_marks(client):
     client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
     # 正解はサーバー内部からだけ取得できる
     store = client.app.state.store
-    record = store.assignments[assignment]
-    student_id = next(sid for sid, number in store.classes[record.class_id].student_numbers.items() if number == "1")
-    answers = {qid: item["answer"] for qid, item in record.answer_keys[student_id]["questions"].items()}
+    record = store.get_assignment(assignment)
+    student_id = next(sid for sid, number in store.get_class(record.class_id).student_numbers.items() if number == "1")
+    answers = {qid: item["answer"] for qid, item in store.get_answer_key(assignment, student_id)["questions"].items()}
     result = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).json()
     assert result["score"] == result["total"]
 
@@ -217,8 +217,7 @@ def test_no_problem_requires_a_reason(client):
     created, assignment = setup_open(client)
     view = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
     assert view["order"] == []
-    record = client.app.state.store.assignments[assignment]
-    student_id = next(iter(record.submissions))
+    student_id = next(iter(client.app.state.store.submissions(assignment)))
     url = f"/v1/assignments/{assignment}/followups/{student_id}"
     assert client.post(url, json={"action": "no_problem"}, headers=TEACHER).status_code == 422
     assert client.post(url, json={"action": "no_problem", "reason": "説明できた"}, headers=TEACHER).status_code == 200
@@ -246,10 +245,10 @@ class BrokenSandbox:
         raise RuntimeError("API unavailable")
 
 
-def test_sandbox_failure_marks_submission_and_does_not_hang(monkeypatch):
+def test_sandbox_failure_marks_submission_and_does_not_hang(monkeypatch, store):
     monkeypatch.setenv("APP_ENV", "local")
     monkeypatch.setenv("SESSION_SECRET", "x" * 32)
-    app_client = TestClient(create_app(Store(), BrokenSandbox, TemplateAI))
+    app_client = TestClient(create_app(store, BrokenSandbox, TemplateAI))
     seeded = app_client.post("/v1/dev/seed", headers=TEACHER).json()
     assignment = seeded["assignment_id"]
     app_client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER)
@@ -257,14 +256,14 @@ def test_sandbox_failure_marks_submission_and_does_not_hang(monkeypatch):
     assert status["state"] == "ready" and status["submissions"] == {"failed": 6}
 
 
-def test_sandbox_setup_failure_returns_to_draft(monkeypatch):
+def test_sandbox_setup_failure_returns_to_draft(monkeypatch, store):
     monkeypatch.setenv("APP_ENV", "local")
     monkeypatch.setenv("SESSION_SECRET", "x" * 32)
 
     def factory():
         raise RuntimeError("no credentials")
 
-    app_client = TestClient(create_app(Store(), factory, TemplateAI), raise_server_exceptions=False)
+    app_client = TestClient(create_app(store, factory, TemplateAI), raise_server_exceptions=False)
     seeded = app_client.post("/v1/dev/seed", headers=TEACHER).json()
     assignment = seeded["assignment_id"]
     app_client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER)
@@ -286,3 +285,52 @@ def test_missing_secret_fails_closed(client, monkeypatch):
     monkeypatch.delenv("SESSION_SECRET")
     response = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER)
     assert response.status_code == 503
+
+
+def test_two_instances_share_the_whole_flow(client, store):
+    """Cloud Run の複数インスタンスを想定し、先生と生徒で別のアプリを通す。"""
+    other = TestClient(create_app(store, LocalDevSandbox, TemplateAI))
+    created, assignment = setup_open(client)
+    headers, _ = login(other, created)
+    quiz = other.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
+    answers = {question["id"]: "まちがい" for question in quiz["questions"]}
+    assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).status_code == 200
+    assert other.post(f"/v1/assignments/{assignment}:close", headers=TEACHER).status_code == 200
+    view = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
+    assert [row["score"] for row in view["order"]] == [0]
+    assert view["order"][0]["question"]
+    assert [item["number"] for item in view["not_attempted"]] == ["2"]
+
+
+def test_export_follows_the_roster_order(client):
+    numbers = ("3", "10", "1", "2")
+    created, assignment = setup_open(client, numbers=numbers)
+    rows = client.get(f"/v1/assignments/{assignment}/export", headers=TEACHER).text.splitlines()[1:]
+    assert [row.split(",")[0] for row in rows] == list(numbers)
+
+
+def test_regeneration_does_not_serve_the_old_quiz(client):
+    created = client.post("/v1/classes", json={"name": "1-A", "student_numbers": ["1"]}, headers=TEACHER).json()
+    assignment = client.post("/v1/assignments", json={"class_id": created["class_id"], "title": "合計"}, headers=TEACHER).json()["assignment_id"]
+    url = f"/v1/assignments/{assignment}"
+    for code in (CODE, "import os\nprint(os.getcwd())\n"):
+        files = {"file": ("s.zip", make_zip({"1.py": code}), "application/zip")}
+        assert client.post(f"{url}/submissions", files=files, headers=TEACHER).json()["accepted"] == 1
+        assert client.post(f"{url}:generate", headers=TEACHER).status_code == 202
+    assert client.post(f"{url}:open", headers=TEACHER).status_code == 200
+    headers, _ = login(client, created)
+    assert client.post(f"{url}/attempt:start", headers=headers).status_code == 409
+
+
+def test_unknown_weight_kind_is_rejected(client):
+    created = client.post("/v1/classes", json={"name": "1-A", "student_numbers": ["1"]}, headers=TEACHER).json()
+    body = {"class_id": created["class_id"], "title": "合計", "weights": {"__x__": 1.0}}
+    assert client.post("/v1/assignments", json=body, headers=TEACHER).status_code == 422
+
+
+def test_answer_too_long_for_storage_is_rejected(client):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    quiz = client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
+    answers = {quiz["questions"][0]["id"]: "あ" * 20_001}
+    assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).status_code == 422
