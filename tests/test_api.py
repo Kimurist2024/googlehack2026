@@ -1,0 +1,279 @@
+"""APIの通し試験。実行環境は手元の合成コードだけを動かす。"""
+import io
+import zipfile
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app import service
+from app.main import create_app
+from app.store import Store
+from qgen.ai import TemplateAI
+from qgen.sandbox import LocalDevSandbox
+
+TEACHER = {"X-Dev-Teacher": "teacher-a"}
+CODE = """nums = [3, 8, 2, 5]
+total = 0
+for n in nums:
+    if n > 2:
+        total = total + n
+print(total)
+"""
+
+
+@pytest.fixture
+def client(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    return TestClient(create_app(Store(), LocalDevSandbox, TemplateAI))
+
+
+def make_zip(files: dict[str, str]) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+    return buffer.getvalue()
+
+
+def setup_open(client, numbers=("1", "2"), code=CODE, time_limit=300):
+    created = client.post("/v1/classes", json={"name": "1-A", "student_numbers": list(numbers)}, headers=TEACHER).json()
+    assignment = client.post(
+        "/v1/assignments",
+        json={"class_id": created["class_id"], "title": "合計", "learning_goal": "繰り返し", "time_limit_sec": time_limit},
+        headers=TEACHER,
+    ).json()["assignment_id"]
+    uploaded = client.post(
+        f"/v1/assignments/{assignment}/submissions",
+        files={"file": ("s.zip", make_zip({f"{n}.py": code for n in numbers}), "application/zip")},
+        headers=TEACHER,
+    )
+    assert uploaded.json()["accepted"] == len(numbers)
+    assert client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER).status_code == 202
+    assert client.get(f"/v1/assignments/{assignment}", headers=TEACHER).json()["state"] == "ready"
+    assert client.post(f"/v1/assignments/{assignment}:open", headers=TEACHER).status_code == 200
+    return created, assignment
+
+
+def login(client, created, number="1"):
+    response = client.post("/v1/sessions", json={"class_code": created["class_code"], "personal_code": created["personal_codes"][number]})
+    assert response.status_code == 200
+    return {"Authorization": "Bearer " + response.json()["token"]}, response.json()
+
+
+def test_full_flow_from_upload_to_followups(client):
+    created, assignment = setup_open(client)
+    headers, session = login(client, created)
+    assert session["assignment_id"] == assignment
+
+    started = client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
+    assert len(started["questions"]) == 3 and started["code"] == CODE
+    assert started["remaining_sec"] > 290
+
+    # 正解は解答前の応答に含まれない
+    assert '"answer"' not in str(started).replace("'", '"')
+
+    wrong = {question["id"]: "0" for question in started["questions"]}
+    result = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": wrong}, headers=headers).json()
+    assert result["score"] == 0 and result["total"] == 3
+    assert result["results"][0]["explanation"] and result["trace"]
+    assert "成績" in result["notice"]
+
+    assert client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER).status_code == 200
+    view = client.get(f"/v1/assignments/{assignment}/followups?budget_sec=90", headers=TEACHER).json()
+    assert view["order"][0]["number"] == "1" and view["order"][0]["in_budget"] is True
+    assert view["order"][0]["question"]
+    assert [row["number"] for row in view["not_attempted"]] == ["2"]
+
+    student_id = view["order"][0]["student_id"]
+    saved = client.post(
+        f"/v1/assignments/{assignment}/followups/{student_id}",
+        json={"action": "ask_in_class", "duration_ms": 12000},
+        headers=TEACHER,
+    )
+    assert saved.status_code == 200
+    assert client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()["tau_sec"] == 12.0
+    exported = client.get(f"/v1/assignments/{assignment}/export", headers=TEACHER).text
+    assert "ask_in_class" in exported and "山田" not in exported
+
+
+def test_followup_prefers_a_wrong_question_with_a_line_number(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    headers, _ = login(client, created)
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers)
+    client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    row = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()["order"][0]
+    assert "行目" in row["question"]
+
+
+def test_correct_answers_score_full_marks(client):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    # 正解はサーバー内部からだけ取得できる
+    store = client.app.state.store
+    record = store.assignments[assignment]
+    student_id = next(sid for sid, number in store.classes[record.class_id].student_numbers.items() if number == "1")
+    answers = {qid: item["answer"] for qid, item in record.answer_keys[student_id]["questions"].items()}
+    result = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).json()
+    assert result["score"] == result["total"]
+
+
+def test_submit_twice_is_rejected(client):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers).status_code == 200
+    assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers).status_code == 409
+    assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).status_code == 409
+
+
+def test_restart_keeps_the_original_clock(client, monkeypatch):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    current = [1000.0]
+    monkeypatch.setattr(service, "now", lambda: current[0])
+    assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()["remaining_sec"] == 300
+    current[0] += 100
+    assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()["remaining_sec"] == 200
+
+
+def test_late_submission_is_rejected_using_server_time(client, monkeypatch):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    current = [1000.0]
+    monkeypatch.setattr(service, "now", lambda: current[0])
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    current[0] += 311
+    assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers).status_code == 410
+
+
+def test_unusable_program_goes_to_the_separate_list(client):
+    created, assignment = setup_open(client, numbers=("1",), code="while True:\n    pass\n")
+    headers, _ = login(client, created)
+    assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).status_code == 409
+    view = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
+    assert view["excluded"][0]["reason"] == "too_long" and view["order"] == []
+
+
+def test_teacher_endpoints_require_authentication(client):
+    assert client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}).status_code == 401
+
+
+def test_dev_header_is_ignored_outside_local(client, monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    response = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER)
+    assert response.status_code == 401
+
+
+def test_other_teacher_cannot_read_assignment(client):
+    _, assignment = setup_open(client)
+    other = {"X-Dev-Teacher": "teacher-b"}
+    assert client.get(f"/v1/assignments/{assignment}/followups", headers=other).status_code == 404
+    assert client.post(f"/v1/assignments/{assignment}:close", headers=other).status_code == 404
+
+
+def test_student_token_cannot_reach_another_class(client):
+    created, _ = setup_open(client)
+    other_created = client.post("/v1/classes", json={"name": "1-B", "student_numbers": ["9"]}, headers=TEACHER).json()
+    other_assignment = client.post(
+        "/v1/assignments", json={"class_id": other_created["class_id"], "title": "x"}, headers=TEACHER
+    ).json()["assignment_id"]
+    headers, _ = login(client, created)
+    assert client.post(f"/v1/assignments/{other_assignment}/attempt:start", headers=headers).status_code == 404
+
+
+def test_tampered_token_is_rejected(client):
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    tampered = {"Authorization": headers["Authorization"][:-2] + "00"}
+    assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=tampered).status_code == 401
+
+
+def test_wrong_codes_are_rejected_and_rate_limited(client):
+    created, _ = setup_open(client)
+    payload = {"class_code": created["class_code"], "personal_code": "WRONGCODE"}
+    statuses = [client.post("/v1/sessions", json=payload).status_code for _ in range(11)]
+    assert statuses[:10] == [401] * 10 and statuses[10] == 429
+
+
+def test_names_are_not_accepted_as_student_numbers(client):
+    response = client.post("/v1/classes", json={"name": "x", "student_numbers": ["山田"]}, headers=TEACHER)
+    assert response.status_code == 422
+
+
+def test_no_problem_requires_a_reason(client):
+    created, assignment = setup_open(client)
+    view = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
+    assert view["order"] == []
+    record = client.app.state.store.assignments[assignment]
+    student_id = next(iter(record.submissions))
+    url = f"/v1/assignments/{assignment}/followups/{student_id}"
+    assert client.post(url, json={"action": "no_problem"}, headers=TEACHER).status_code == 422
+    assert client.post(url, json={"action": "no_problem", "reason": "説明できた"}, headers=TEACHER).status_code == 200
+
+
+def test_zip_problems_are_reported_without_failing(client):
+    created = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER).json()
+    assignment = client.post("/v1/assignments", json={"class_id": created["class_id"], "title": "x"}, headers=TEACHER).json()["assignment_id"]
+    data = make_zip({"1.py": CODE, "9.py": CODE, "a.txt": "x", "../../evil.py": CODE})
+    body = client.post(
+        f"/v1/assignments/{assignment}/submissions", files={"file": ("s.zip", data, "application/zip")}, headers=TEACHER
+    ).json()
+    assert body["accepted"] == 1 and len(body["problems"]) == 3
+
+
+def test_not_a_zip_is_rejected(client):
+    created = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER).json()
+    assignment = client.post("/v1/assignments", json={"class_id": created["class_id"], "title": "x"}, headers=TEACHER).json()["assignment_id"]
+    response = client.post(f"/v1/assignments/{assignment}/submissions", files={"file": ("s.zip", b"nope", "application/zip")}, headers=TEACHER)
+    assert response.status_code == 400
+
+
+class BrokenSandbox:
+    def analyze(self, code, stdin):
+        raise RuntimeError("API unavailable")
+
+
+def test_sandbox_failure_marks_submission_and_does_not_hang(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    app_client = TestClient(create_app(Store(), BrokenSandbox, TemplateAI))
+    seeded = app_client.post("/v1/dev/seed", headers=TEACHER).json()
+    assignment = seeded["assignment_id"]
+    app_client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER)
+    status = app_client.get(f"/v1/assignments/{assignment}", headers=TEACHER).json()
+    assert status["state"] == "ready" and status["submissions"] == {"failed": 6}
+
+
+def test_sandbox_setup_failure_returns_to_draft(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+
+    def factory():
+        raise RuntimeError("no credentials")
+
+    app_client = TestClient(create_app(Store(), factory, TemplateAI), raise_server_exceptions=False)
+    seeded = app_client.post("/v1/dev/seed", headers=TEACHER).json()
+    assignment = seeded["assignment_id"]
+    app_client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER)
+    assert app_client.get(f"/v1/assignments/{assignment}", headers=TEACHER).json()["state"] == "draft"
+
+
+def test_demo_seed_exists_only_locally(client, monkeypatch):
+    created = client.post("/v1/dev/seed", headers=TEACHER)
+    assert created.status_code == 201 and len(created.json()["personal_codes"]) == 6
+    assignment = created.json()["assignment_id"]
+    assert client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER).status_code == 202
+    status = client.get(f"/v1/assignments/{assignment}", headers=TEACHER).json()
+    assert status["submissions"] == {"ready": 4, "excluded": 2}
+    monkeypatch.setenv("APP_ENV", "production")
+    assert client.post("/v1/dev/seed", headers=TEACHER).status_code == 401
+
+
+def test_missing_secret_fails_closed(client, monkeypatch):
+    monkeypatch.delenv("SESSION_SECRET")
+    response = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER)
+    assert response.status_code == 503

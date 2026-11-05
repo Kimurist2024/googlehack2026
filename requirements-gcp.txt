@@ -1,0 +1,4 @@
+-r requirements.txt
+google-cloud-agentplatform==2.7.0
+google-genai==2.34.0
+firebase-admin>=7,<8
