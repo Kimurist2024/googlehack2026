@@ -11,3 +11,5 @@ data/
 *.xlsx
 .DS_Store
 .claude/
+# 生成した動画は Git で管理しない
+demo/

@@ -168,7 +168,7 @@ async function loadFollowups() {
   $("order").replaceChildren(...view.order.map((row, index) => {
     const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
     card.append(make("h3", `${index + 1}. 番号 ${row.number}（${row.score}/${row.total} 問正解）`));
-    if (!row.in_budget) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
+    if (!row.in_budget && !row.action) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
     if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
     if (row.action) card.append(make("p", `処置済み：${ACTION_LABEL[row.action]}`, "done"));
     else card.append(actionButtons(row));

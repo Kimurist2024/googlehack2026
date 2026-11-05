@@ -108,6 +108,25 @@ def test_followup_prefers_a_wrong_question_with_a_line_number(client):
     assert "行目" in row["question"]
 
 
+def test_acted_students_do_not_use_up_the_budget(client):
+    created, assignment = setup_open(client)
+    for number in ("1", "2"):
+        headers, _ = login(client, created, number)
+        client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+        client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers)
+    client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    url = f"/v1/assignments/{assignment}/followups?budget_sec=30"
+    before = client.get(url, headers=TEACHER).json()["order"]
+    assert [row["in_budget"] for row in before] == [True, False]
+    client.post(
+        f"/v1/assignments/{assignment}/followups/{before[0]['student_id']}",
+        json={"action": "ask_in_class", "duration_ms": 30000},
+        headers=TEACHER,
+    )
+    after = client.get(url, headers=TEACHER).json()["order"]
+    assert [row["in_budget"] for row in after] == [False, True]
+
+
 def test_correct_answers_score_full_marks(client):
     created, assignment = setup_open(client)
     headers, _ = login(client, created)

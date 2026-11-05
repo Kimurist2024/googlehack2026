@@ -156,7 +156,9 @@ def followup_view(assignment: AssignmentRecord, classroom: ClassRecord, budget_s
         wrong = tuple(item["type"] for item in attempt["graded"] if not item["correct"])
         candidates.append(Candidate(student_id, wrong, len(attempt["graded"])))
     ranked = rank(candidates, assignment.weights, tau)
-    in_budget = {item.student_id for item in within_budget(ranked, budget_sec)}
+    # 処置が済んだ生徒に持ち時間は使わない。残りの生徒だけで計算する
+    pending = [item for item in ranked if not assignment.followups.get(item.student_id, {}).get("action")]
+    in_budget = {item.student_id for item in within_budget(pending, budget_sec)}
     rows = []
     for item in ranked:
         record = assignment.followups.get(item.student_id, {})
