@@ -40,8 +40,6 @@ def test_tracks_variables_inside_functions(sandbox):
 @pytest.mark.parametrize(
     ("code", "status"),
     [
-        ("while True:\n    pass\n", "too_long"),
-        ("i = 0\nwhile True:\n    i = i + 1\n", "too_long"),
         ("a = [1]\nprint(a[5])\n", "error"),
         ("print(1\n", "syntax_error"),
         ("import random\nprint(random.random())\n", "unsupported_import"),
@@ -52,6 +50,12 @@ def test_tracks_variables_inside_functions(sandbox):
 )
 def test_excludes_programs_it_cannot_use(sandbox, code, status):
     assert sandbox.analyze(code, "")["status"] == status
+
+
+@pytest.mark.parametrize("code", ["while True:\n    pass\n", "i = 0\nwhile True:\n    i = i + 1\n"])
+def test_excludes_programs_that_do_not_finish(sandbox, code):
+    # 手順数の上限と1秒の時間制限のどちらが先に効くかは、マシンの負荷で変わる
+    assert sandbox.analyze(code, "")["status"] in {"too_long", "timeout"}
 
 
 def test_excludes_nondeterministic_output(sandbox):
