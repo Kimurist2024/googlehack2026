@@ -70,7 +70,7 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 ## まだできていないこと
 
-- **Firestore のデータベース：** コードはエミュレータで確認済みですが、本物のデータベースはまだ作っていません。場所を後から変えられないので、`asia-northeast1` で作ります。
+- **Firestore への接続：** データベースは 2026年11月6日に `asia-northeast1` で作成しました（Standard、ネイティブモード、ブラウザからの読み書きはすべて拒否）。アプリからの読み書きはまだ試していません。Cloud Run にデプロイするときに、サービスアカウントへ `roles/datastore.user` を付けます。
 - **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
 - **ログインの試行回数の制限：** インスタンスごとに数えているので、複数インスタンスでは正確に効きません。
 - **Cloud Run Jobs：** 問いの生成はAPIの中のバックグラウンド処理です。本番ではジョブに分けます。
