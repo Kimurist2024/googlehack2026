@@ -266,7 +266,10 @@ def test_answers_sent_after_reconnecting_are_kept_and_marked(client, store, monk
     assert response.status_code == 200 and response.json()["offline"] is True
     attempt = store.get_attempt(assignment, next(iter(store.attempts(assignment))))
     assert attempt["via"] == "offline" and attempt["submitted_at"] == current[0]
-    assert client.post(f"/v1/assignments/{assignment}/attempt:submit-offline", json=body, headers=headers).status_code == 409
+    # 送り直しは同じ結果を返す。2回目の解答で上書きはしない
+    again = client.post(f"/v1/assignments/{assignment}/attempt:submit-offline", json={**body, "answers": {}}, headers=headers)
+    assert again.status_code == 200 and again.json()["already_submitted"] is True
+    assert again.json()["results"] == response.json()["results"]
     assert '"attempt.offline_submitted"' in capsys.readouterr().out
 
 
@@ -307,3 +310,15 @@ def test_audit_never_records_the_unlock_code(client, capsys):
     package = make_package(client, assignment)
     assert package["unlock_code"] not in capsys.readouterr().out
     assert audit.ALLOWED_FIELDS.isdisjoint({"unlock_code", "sealed"})
+
+
+def test_resend_after_a_lost_reply_is_reported_as_delivered(client):
+    """解答はサーバーに届いたが、返事が途中で失われた場合。端末が送り直しても、届いていたと分かる。"""
+    created, assignment = setup_open(client)
+    headers, _ = login(client, created)
+    quiz = client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
+    answers = answers_for(quiz)
+    first = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).json()
+    resent = client.post(f"/v1/assignments/{assignment}/attempt:submit-offline", json={"answers": answers, "answered_at": time.time()}, headers=headers)
+    assert resent.status_code == 200 and resent.json()["already_submitted"] is True
+    assert resent.json()["offline"] is False and resent.json()["score"] == first["score"]

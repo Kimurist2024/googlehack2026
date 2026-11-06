@@ -335,6 +335,8 @@ $("quiz").onsubmit = async (event) => {
     $("quiz").hidden = true;
     $("result").hidden = false;
   } catch (error) {
+    // 通信が切れていたら、解答を端末にためて、つながってから送る（offline.js）
+    if (typeof queueOfflineAnswers === "function" && queueOfflineAnswers(error, studentAssignment, studentToken, answers)) return;
     $("quiz-error").textContent = error.message;
   }
 };

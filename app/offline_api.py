@@ -153,7 +153,7 @@ class EdgeResults(BaseModel):
 def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, login_limit: int) -> None:
     router = APIRouter()
 
-    def student_result(assignment_id: str, student_id: str, graded: list[dict], offline: bool) -> dict:
+    def student_result(assignment_id: str, student_id: str, graded: list[dict], offline: bool, already: bool = False) -> dict:
         key = store.get_answer_key(assignment_id, student_id)
         return {
             "score": sum(1 for item in graded if item["correct"]),
@@ -162,7 +162,13 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
             "trace": key["trace"],
             "notice": "この結果は成績には使いません。",
             "offline": offline,
+            "already_submitted": already,
         }
+
+    def stored_result(assignment_id: str, student_id: str) -> dict:
+        """送り直しへの応答。返事だけが途中で失われた場合、解答はもう届いているので、その結果を返す。"""
+        attempt = store.get_attempt(assignment_id, student_id)
+        return student_result(assignment_id, student_id, attempt["graded"], attempt.get("via") == "offline", already=True)
 
     # --- ③ 生徒の端末にためておいた解答 ---
 
@@ -183,7 +189,8 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
         if attempt is None:
             raise HTTPException(status_code=409, detail="まだ開始していません")
         if attempt["submitted_at"] is not None:
-            raise HTTPException(status_code=409, detail="すでに提出済みです")
+            # 端末は何度でも送り直すので、同じ結果を返す（冪等）。最初に届いた解答が正になる
+            return stored_result(assignment_id, student_id)
         if assignment.state not in ("open", "closed"):
             raise HTTPException(status_code=409, detail="受付中ではありません")
         now = service.now()
@@ -194,7 +201,7 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
         extra = {} if on_time else {"via": "offline", "answered_at_client": min(body.answered_at, now)}
         graded = service.grade(store.get_answer_key(assignment_id, student_id), body.answers)
         if not store.finish_attempt(assignment_id, student_id, graded, now, extra=extra):
-            raise HTTPException(status_code=409, detail="すでに提出済みです")
+            return stored_result(assignment_id, student_id)
         if not on_time:
             audit.event("attempt.offline_submitted", request, assignment_id=assignment_id, student_id=student_id)
         if assignment.state == "closed":
