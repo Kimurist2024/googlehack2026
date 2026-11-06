@@ -384,6 +384,12 @@ def firebase_teacher(monkeypatch):
     return lambda token: {"Authorization": f"Bearer {token}"}
 
 
+def test_me_tells_the_page_whether_the_account_is_a_teacher(client, firebase_teacher):
+    assert client.get("/v1/me", headers=firebase_teacher("good")).json() == {"email": "teacher@example.com"}
+    assert client.get("/v1/me", headers=firebase_teacher("other")).status_code == 403
+    assert client.get("/v1/me").status_code == 401
+
+
 def test_only_allowed_verified_teachers_pass(client, firebase_teacher):
     body = {"name": "1-A", "student_numbers": ["1"]}
     assert client.post("/v1/classes", json=body, headers=firebase_teacher("good")).status_code == 201

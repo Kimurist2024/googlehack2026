@@ -7,6 +7,7 @@ const REASONS = {
 };
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.14.1";
 let teacherAuth = null; // Firebase Hosting で配信したときだけ使う。手元の開発では null
+let teacherEmail = null; // 教員として確かめられたアカウント
 let assignmentId = null;
 let studentToken = null;
 let studentAssignment = null;
@@ -18,7 +19,9 @@ async function api(path, options = {}) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = Array.isArray(body.detail) ? body.detail[0]?.msg : body.detail;
-    throw new Error(detail || `通信に失敗しました（${response.status}）`);
+    const error = new Error(detail || `通信に失敗しました（${response.status}）`);
+    error.status = response.status;
+    throw error;
   }
   return body;
 }
@@ -54,9 +57,12 @@ function selectTab(name) {
     $(key).hidden = key !== name;
     $(`tab-${key}`).setAttribute("aria-selected", String(key === name));
   }
+  // 生徒の画面では教員のアカウントを見せない
+  $("account").hidden = name !== "teacher" || !teacherEmail;
 }
 $("tab-teacher").onclick = () => selectTab("teacher");
 $("tab-student").onclick = () => selectTab("student");
+$("to-student").onclick = () => selectTab("student");
 
 function setButtons({ generate = false, open = false, close = false }) {
   $("generate").disabled = !generate;
@@ -333,13 +339,14 @@ async function setupTeacherAuth() {
   } catch {
     config = null;
   }
-  if (!config) return;
+  if (!config) {
+    $("teacher-work").hidden = false;
+    return;
+  }
   await loadScript(`${FIREBASE_SDK}/firebase-app-compat.js`);
   await loadScript(`${FIREBASE_SDK}/firebase-auth-compat.js`);
   firebase.initializeApp(config);
   teacherAuth = firebase.auth();
-  $("signin-card").hidden = false;
-  $("seed").disabled = true;
   $("signin").onclick = async () => {
     $("signin-error").textContent = "";
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -351,12 +358,40 @@ async function setupTeacherAuth() {
     }
   };
   $("signout").onclick = () => teacherAuth.signOut();
-  teacherAuth.onAuthStateChanged((user) => {
-    $("who").textContent = user ? `${user.email} でログイン中` : "";
-    $("signin").hidden = Boolean(user);
-    $("signout").hidden = !user;
-    $("seed").disabled = !user;
+  // ログインの状態がわかるまでは、案内も作業の画面も出さない
+  teacherAuth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      showSignedOut();
+      return;
+    }
+    try {
+      const me = await api("/v1/me", { headers: await teacherHeaders() });
+      showSignedIn(me.email);
+    } catch (error) {
+      const message = error.status === 403
+        ? `${user.email} は教員として登録されていません。許可されたアカウントでログインしてください。`
+        : "ログインを確かめられませんでした。もう一度お試しください。";
+      await teacherAuth.signOut();
+      showSignedOut(message);
+    }
   });
+}
+
+function showSignedOut(message) {
+  teacherEmail = null;
+  $("signin-card").hidden = false;
+  $("teacher-work").hidden = true;
+  $("account").hidden = true;
+  if (message !== undefined) $("signin-error").textContent = message;
+}
+
+function showSignedIn(email) {
+  teacherEmail = email;
+  $("who").textContent = email;
+  $("signin-error").textContent = "";
+  $("signin-card").hidden = true;
+  $("teacher-work").hidden = false;
+  $("account").hidden = $("teacher").hidden;
 }
 
 setupTeacherAuth().catch((error) => {

@@ -131,6 +131,11 @@ def create_app(
     def health() -> dict:
         return {"status": "ok"}
 
+    @app.get("/v1/me")
+    def me(teacher: str = Depends(auth.current_teacher)) -> dict:
+        """ログインしたアカウントが教員として通るかを、画面が確かめるのに使う。"""
+        return {"email": teacher}
+
     @app.post("/v1/dev/seed", status_code=201)
     def seed_demo(teacher: str = Depends(auth.current_teacher)) -> dict:
         """合成データのデモを作る。手元の開発か、ALLOW_DEMO_SEED=1 の本番で、ログインした教員だけが使える。"""

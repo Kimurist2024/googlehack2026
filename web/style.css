@@ -26,6 +26,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif; }
 header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
 h1 { font-size: 20px; margin: 0; }
@@ -33,6 +34,16 @@ h1 small { font-size: 13px; font-weight: 400; color: var(--muted); }
 h2 { font-size: 17px; margin: 0 0 8px; }
 main { max-width: 860px; margin: 0 auto; padding: 16px; }
 nav { display: flex; gap: 4px; }
+.header-right { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: flex-end; }
+.account { display: flex; align-items: center; gap: 2px; font-size: 14px; color: var(--muted); }
+.account #who { overflow-wrap: anywhere; }
+button.link { min-height: 32px; padding: 2px 6px; border: 0; background: none; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.signin { max-width: 520px; margin: 32px auto; padding: 28px 24px; text-align: center; }
+.signin h2 { font-size: 19px; margin-bottom: 12px; }
+.signin p { margin: 0 0 20px; word-break: auto-phrase; text-wrap: pretty; }
+.signin #signin { min-width: 240px; }
+.signin .error { margin: 12px 0 0; min-height: 0; }
+.signin .signin-student { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
 nav button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
