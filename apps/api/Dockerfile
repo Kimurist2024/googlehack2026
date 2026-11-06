@@ -1,3 +1,5 @@
+# apps/api をビルドの起点にする: gcloud run deploy mushitori --source apps/api
+# 画面（apps/web）は Firebase Hosting が配るので、イメージには入れない
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
@@ -6,7 +8,6 @@ COPY requirements.txt requirements-gcp.txt ./
 RUN pip install --no-cache-dir -r requirements-gcp.txt
 COPY app ./app
 COPY qgen ./qgen
-COPY web ./web
 
 RUN useradd --create-home --uid 10001 appuser
 USER appuser

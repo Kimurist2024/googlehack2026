@@ -30,6 +30,8 @@ EXPLANATION_CHARS = 300
 QUESTION_TYPES = {"output", "trace", "impact"}
 MAX_ANSWER_CHARS = 20_000
 GENERATION_STALE_SEC = 30 * 60
+# 画面のファイル。リポジトリでは apps/api/app/main.py から見て ../../web にある
+WEB_DIR = Path(os.environ.get("WEB_DIR") or Path(__file__).resolve().parents[2] / "web")
 
 
 class ClassIn(BaseModel):
@@ -404,5 +406,6 @@ def create_app(
         return Response(content=output.getvalue(), media_type="text/csv; charset=utf-8")
 
     if os.environ.get("SERVE_WEB") == "1":
-        app.mount("/", StaticFiles(directory=Path(__file__).parent.parent / "web", html=True), name="web")
+        # 手元の開発だけで使う。本番の画面は Firebase Hosting が apps/web から配る
+        app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
     return app

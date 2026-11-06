@@ -1,6 +1,6 @@
 """デモ動画を自動で収録する。合成データだけを使い、demo/ に MP4 を書き出す。
 
-使い方: .venv/bin/python scripts/record_demo.py
+使い方: apps/api で ../../.venv/bin/python scripts/record_demo.py
 必要なもの: requirements-demo.txt と Google Chrome
 字幕は収録時に画面へ重ねるだけで、アプリ本体には含まれない。
 """
@@ -36,7 +36,8 @@ from app.main import create_app  # noqa: E402
 
 PORT = 8010
 BASE = f"http://127.0.0.1:{PORT}"
-OUTPUT = ROOT / "demo" / "mushitori_demo.mp4"
+# 動画はリポジトリ直下の demo/ に書き出す（Git では管理しない）
+OUTPUT = ROOT.parents[1] / "demo" / "mushitori_demo.mp4"
 
 OVERLAY = """
 () => {

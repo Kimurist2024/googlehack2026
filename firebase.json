@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "web",
+    "public": "apps/web",
     "ignore": ["**/.*"],
     "headers": [
       {
