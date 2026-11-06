@@ -22,12 +22,16 @@
 
 ## 信頼の境界
 
+![セキュリティの全体像](docs/security-architecture.svg)
+
 ```
- 生徒・教員のブラウザ ──HTTPS──▶ API（Cloud Run）──▶ Firestore（ブラウザからは全拒否）
-   CSP + Trusted Types              │  鍵付きハッシュ、署名付きトークン、監査ログ
-                                    ├──▶ Code Execution（生徒のコードを隔離して実行）
-                                    │      └ 実行ラッパー：使える部品を絞り、環境変数なし、メモリ上限
-                                    └──▶ Model Armor ──▶ Gemini ──▶ Model Armor ──▶ 機械的な検査
+ 生徒・教員のブラウザ ──HTTPS──▶ Firebase Hosting ──▶ API（Cloud Run）──▶ Firestore（ブラウザからは全拒否）
+   CSP + Trusted Types                                  │  鍵付きハッシュ、署名付きトークン、監査ログ
+                                                        ├──▶ Code Execution（生徒のコードを隔離して実行）
+                                                        │      └ 実行ラッパー：使える部品を絞り、環境変数なし、メモリ上限
+                                                        ├──▶ Model Armor ──▶ Gemini ──▶ Model Armor ──▶ 機械的な検査
+                                                        └──▶ Cloud KMS（授業パッケージの署名）
+ 教員PC（校内LAN版）：署名を確かめて授業パッケージを取り込む。外へは接続しない（MODES.md）
 ```
 
 境界をまたぐ値は、受け取った側でもう一度確かめます。隔離環境の出力、Gemini の返答、ブラウザからの入力は、どれも信用しません。
@@ -77,10 +81,10 @@ Model Armor は Gemini の呼び出しに組み込む方法もありますが、
 
 | 対策 | 内容 |
 | --- | --- |
-| Content Security Policy | `default-src 'none'` から始めて、自分の配信元のスクリプト、スタイル、通信だけを許す。インラインのスクリプトは置かない |
-| Trusted Types | `require-trusted-types-for 'script'` と `trusted-types 'none'`。`innerHTML` などに文字列を入れる書き方そのものをブラウザが拒否する。画面の文字はすべて `textContent` で入れている |
+| Content Security Policy | `default-src 'none'` から始めて、自分の配信元のスクリプト、スタイル、通信だけを許す。インラインのスクリプトは置かない。本番の画面は Firebase Hosting が配るので、`firebase.json` で同じ方針（Firebase の配信元だけを追加）を付ける。Google が勧める進め方どおり、まず Report-Only で出し、本番で違反がないことを確かめてから強制に切り替える |
+| Trusted Types | `require-trusted-types-for 'script'`。`innerHTML` などに文字列を入れる書き方そのものをブラウザが拒否する。画面の文字はすべて `textContent` で入れている。許すポリシーは Service Worker の登録用の `mushitori` だけ |
 | クリックジャッキング | `frame-ancestors 'none'` と `X-Frame-Options: DENY` |
-| その他のヘッダー | `X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy`、`Permissions-Policy` |
+| その他のヘッダー | `X-Content-Type-Options: nosniff`、`Referrer-Policy`、`Cross-Origin-Opener-Policy: same-origin-allow-popups`（Google ログインのポップアップを壊さない）、`Cross-Origin-Resource-Policy`、`Permissions-Policy` |
 | HTTPS | 本番では HSTS（2年、サブドメインを含む） |
 | キャッシュ | API の応答は `Cache-Control: no-store`。トークン、コード、結果を共有の端末やプロキシに残さない |
 | 実装を明かさない | 本番では `/docs` と `/openapi.json` を出さない。`server` ヘッダーを送らない |
@@ -105,6 +109,20 @@ Model Armor は Gemini の呼び出しに組み込む方法もありますが、
 - 接続元は鍵付きハッシュにしてから保存・記録します。入室の失敗の記録は TTL で自動的に消えます。
 - Firestore はブラウザからの読み書きをすべて拒否し、サーバーだけが触ります（`firestore.rules`）。
 
+### ネットが落ちても授業を止める仕組み
+
+授業前に「授業パッケージ」を教員PCに保存し、ネットが落ちたら教員PCが校内LANだけで授業を引き継ぎます。生徒の端末は送れなかった解答をためておきます。詳しい流れは [MODES.md](MODES.md) にあります。
+
+| 想定する攻撃 | 対策 |
+| --- | --- |
+| 偽の授業パッケージを教員PCに読ませる | クラウドが ECDSA P-256 で署名し（本番は Cloud KMS、秘密鍵はアプリの外）、教員PCは事前に保存した公開鍵で確かめる |
+| パッケージのファイルが漏れる | AES-256-GCM で暗号化。鍵は1回だけ画面に出す解除コードから導き、どこにも保存しない。コードは scrypt の照合値だけ。発行から7日で失効 |
+| 教室の端末から教員PCを操作する | 教員の操作は 127.0.0.1 からだけ。LAN に開くのは入室と解答だけ。問いを作る操作は校内LAN版では使えない |
+| 教員PCで結果を書き換える | クラウドに戻すときは、教員PCの採点を使わずクラウドの正解で採点し直す。クラウドで先に提出されたものを正とする |
+| 校内LAN版が外と通信する | クラウドの設定が残っていたら起動しない。外への接続が一度もないことを試験で確かめる |
+| 端末の時計をずらして持ち時間を延ばす | 受け付けた時刻はサーバーの時刻。持ち時間を過ぎたものには「オフライン提出」の印を付けて先生に見せる。開始から1日を過ぎたものは受け付けない |
+| 共用の端末に生徒のデータが残る | Service Worker は画面の部品だけを置き、問いや結果は置かない。ためた解答は送れたらすぐ消す |
+
 ### 監査と検知
 
 `app/audit.py` が Cloud Logging の形式（JSON 1行、`severity` 付き、リクエストのトレースと結びつけ）で次を記録します。
@@ -116,6 +134,7 @@ Model Armor は Gemini の呼び出しに組み込む方法もありますが、
 | `export.downloaded` | CSV の持ち出し。誰が、いつ、何人分 |
 | `login.succeeded`、`login.failed`、`login.rate_limited` | 入室。接続元はハッシュで |
 | `teacher.auth_failed`、`teacher.not_allowed` | 教員の認証の失敗と、許可されていないアカウント |
+| `package.issued`、`package.imported`、`package.rejected`、`edge.results_exported`、`edge.results_imported`、`attempt.offline_submitted` | 授業パッケージの持ち出しと取り込み、校内LANの結果、オフライン提出 |
 
 記録に入れてよい項目は決めてあり、それ以外の名前を渡すと記録する前に例外になります。コード、トークン、生徒のコード、生の IP アドレスは記録しません。試験でもこれを確かめています。
 
@@ -126,7 +145,7 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 アプリのコードは上の対策を備えています。次の設定は Google Cloud 側で、デプロイのときにチームが行います。
 
 1. **秘密を Secret Manager に置く。** `SESSION_SECRET` は環境変数に直接書かず、Secret Manager から渡します（`gcloud run deploy --set-secrets SESSION_SECRET=session-secret:latest`）。値を変えると、保存済みのコードで入室できなくなります。
-2. **専用のサービスアカウントで動かす。** 既定の Compute Engine のアカウントは使わず、必要なロールだけを付けます。`roles/datastore.user`（Firestore）、`roles/aiplatform.user`（Gemini と Code Execution）、`roles/modelarmor.user`（Model Armor）、`roles/firebaseauth.viewer`（トークンの失効の確認）、`roles/secretmanager.secretAccessor`（その秘密だけに付ける）。
+2. **専用のサービスアカウントで動かす。** 既定の Compute Engine のアカウントは使わず、必要なロールだけを付けます。`roles/datastore.user`（Firestore）、`roles/aiplatform.user`（Gemini と Code Execution）、`roles/modelarmor.user`（Model Armor）、`roles/secretmanager.secretAccessor`（その秘密だけに付ける）、`roles/cloudkms.signerVerifier`（授業パッケージの鍵だけに付ける）。
 3. **Model Armor のテンプレートを作る。** 日本語の検出には多言語の検出が必要で、`asia-northeast1` は対応していないため、`us` に作ります。Gemini はすでに `global` で呼んでいるので、データの所在の条件は変わりません。
 
    ```sh
@@ -149,21 +168,36 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
    done
    ```
 
-5. **接続元の判定を確かめる。** Cloud Run に直接つなぐ場合は何もしなくても右端の1つを信用します（`K_SERVICE` で判定）。前にロードバランサーを置く場合は、`TRUSTED_PROXY_HOPS` を実際の段数に合わせ、デプロイ後に監査ログの `client` が人ごとに変わることを確かめます。
+5. **接続元の判定を確かめる。** Cloud Run に直接つなぐ場合は何もしなくても右端の1つを信用します（`K_SERVICE` で判定）。Firebase Hosting を通すと中継が1段増える見込みですが、公式の説明がないため、デプロイ後に入室の監査ログの `forwarded`（`X-Forwarded-For` の項目数）を見て `TRUSTED_PROXY_HOPS` を決めます。合っていないと、全員が同じ接続元に見え、失敗の上限を全員で共有してしまいます。
+6. **授業パッケージの署名の鍵を作る。** 秘密鍵は Cloud KMS の外に出ません。Cloud Run のサービスアカウントには、その鍵にだけ署名の権限を付けます。
+
+   ```sh
+   gcloud kms keyrings create mushitori --location=asia-northeast1
+   gcloud kms keys create class-package --keyring=mushitori --location=asia-northeast1 \
+     --purpose=asymmetric-signing --default-algorithm=ec-sign-p256-sha256
+   gcloud kms keys add-iam-policy-binding class-package --keyring=mushitori --location=asia-northeast1 \
+     --member=serviceAccount:mushitori-run@mushitori-hackathon.iam.gserviceaccount.com --role=roles/cloudkms.signerVerifier
+   ```
+
+   `PACKAGE_SIGNING_KMS_KEY=projects/mushitori-hackathon/locations/asia-northeast1/keyRings/mushitori/cryptoKeys/class-package/cryptoKeyVersions/1` を設定します。設定がないと、授業パッケージは作られません（503）。
+7. **画面の CSP を強制に切り替える。** デプロイしたら、ログインから締切までを一通り操作し、開発者ツールのコンソールに CSP の違反が出ないことを確かめます。出なければ `firebase.json` の `Content-Security-Policy-Report-Only` を `Content-Security-Policy` に変えて、もう一度デプロイします。
+8. **（任意）トークンの失効も確かめる。** サービスアカウントに `roles/firebaseauth.viewer` を付けてから `FIREBASE_CHECK_REVOKED=1` にします。付けずに有効にすると、全員がログインできなくなります。
 
 ## まだできていないこと
 
 - **エッジでの防御：** Cloud Armor（WAF、IP 単位の上限、ボット対策）はロードバランサーが必要なので入れていません。アプリ側の上限は接続元ごとなので、多数の接続元からの分散した総当たりには効きにくいです。ただしコードは授業コードと個人コードの両方が必要で、それぞれ31種類の文字の8桁です。
-- **教員のログイン画面：** Firebase の検証コードはありますが、画面はまだです。画面を足すときは CSP の `script-src` と `connect-src` に Firebase の配信元を、ポップアップでログインするなら `Cross-Origin-Opener-Policy` を `same-origin-allow-popups` にします（`app/security.py`）。
+- **画面の CSP：** 本番の画面では、まだ Report-Only です。上の手順 7 で強制に切り替えます。
+- **校内LAN版の証明書：** 教員PCが作る自己署名の証明書は、生徒の端末に信頼させるまで警告が出ます。学校の管理コンソールから配る手順が要ります。保存ファイルの鍵は OS の鍵保管庫ではなく、権限を絞ったファイルに置いています。
 - **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
-- **インターネットにつながない動かし方：** 校内LAN版と1台版は設計だけです（[MODES.md](MODES.md)）。
+- **準備まで完全にオフラインにする：** 教員PCでのコードの隔離実行（WebAssembly）とローカルの AI は設計だけです（[MODES.md](MODES.md)）。
 - **名簿の保存期間：** クラス（出席番号の名簿、担当教員のメール、コードのハッシュ）は、教員が消すまで残ります。生徒のデータより重さは低いですが、年度の終わりに消す運用が必要です。
-- **本番での確認：** Model Armor、Firestore の入室の数え方、TTL の印は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
+- **本番での確認：** Model Armor、Cloud KMS の署名、Firestore の入室の数え方と TTL の印は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
 
 ## 確かめ方
 
 ```sh
-.venv/bin/python -m pytest tests/unit/test_auth.py tests/unit/test_security.py tests/unit/test_guard.py tests/integration/test_security_api.py tests/integration/test_retention_api.py
+.venv/bin/python -m pytest tests/unit/test_auth.py tests/unit/test_security.py tests/unit/test_guard.py tests/unit/test_classpack.py \
+  tests/integration/test_security_api.py tests/integration/test_retention_api.py tests/integration/test_offline_api.py
 ```
 
 | 試験 | 確かめること |
@@ -172,5 +206,7 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 | `tests/unit/test_security.py` | 偽の `X-Forwarded-For` で接続元を偽れない。CSV の数式が無害になる |
 | `tests/unit/test_guard.py` | Model Armor が検出した文や、検査に失敗した文が Gemini にも画面にも届かない。生徒の答えが `<data>` の外に出られない |
 | `tests/unit/test_service.py` | zip 爆弾、暗号化、重複、壊れたファイル。隔離環境が返す偽の理由を保存しない |
+| `tests/unit/test_classpack.py` | 解除コードがないと読めない、別の鍵の署名や改ざん、期限切れを拒む。偽の Cloud KMS で署名と CRC32C の確認 |
+| `tests/integration/test_offline_api.py` | 校内LANでの授業の一巡と、結果をクラウドで採点し直すこと。教室の端末から教員の操作ができない、クラウドのトークンが通らない、再起動しても続く、保存ファイルが暗号化されている、外への接続が一度もない、送り直しが冪等 |
 | `tests/integration/test_retention_api.py` | 期限を過ぎた課題、消した課題やクラスに、教員からも生徒からも届かない。Firestore では生徒のデータの文書すべてに TTL の印がある |
 | `tests/integration/test_security_api.py` | ヘッダー、本番の設定、不正な ID や本文で 500 にならない、入室の上限がインスタンス間で共有される、隔離を破ろうとするコードが対象外になる、監査ログにコードが残らない |

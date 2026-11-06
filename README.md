@@ -4,7 +4,7 @@
 
 提出コードを隔離環境で実行して問いと正解を作り、生徒が授業中に解きます。教員は誤答をもとに、持ち時間の中で声をかける順を決めます。正解と採点はコードの実行結果で決まり、AIは使いません。Geminiは問いの選定と、つまずきの説明を担当します。
 
-セキュリティの設計と対策は [SECURITY.md](SECURITY.md) に、インターネットにつながない校内LAN版と1台版の設計は [MODES.md](MODES.md) にまとめています。
+セキュリティの概要は下の「[セキュリティ](#セキュリティ)」に、詳しい対策は [SECURITY.md](SECURITY.md) に、ネットが落ちても授業を止めない仕組みは [MODES.md](MODES.md) にまとめています。
 
 このリポジトリは開発用です。審査は提出用リポジトリ（`Devfest-Hackathon-2026/df-2026-t032`）の内容で行われるので、最終版は提出期限までにそちらへ移します。
 
@@ -34,6 +34,11 @@ sh scripts/dev.sh
 | `app/auth.py` | 教員と生徒の認証、用途ごとの鍵 |
 | `app/security.py` | セキュリティヘッダー、本文の上限、接続元の判定 |
 | `app/audit.py` | 監査ログ（Cloud Logging の形式） |
+| `app/offline_api.py` | 授業パッケージ、校内LAN版、オフライン提出の API |
+| `app/classpack.py` | 授業パッケージの署名（Cloud KMS）、暗号化、コードの照合値 |
+| `app/lan_store.py` | 校内LAN版の保存先（暗号化したファイル） |
+| `scripts/lan.py` | 校内LAN版を教員PCで起動する |
+| `web/offline.js`、`web/sw.js` | 送れなかった解答をためる、画面をオフラインでも開く、授業パッケージの画面 |
 | `app/ordering.py` | 声をかける順の計算 |
 | `app/service.py` | 提出の読み込み、採点、処理の流れ |
 | `app/store.py` | 保存先の共通の操作と、手元用のメモリ版 |
@@ -78,6 +83,33 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 `AI_BACKEND=gemini` で本番として動かすときは、`MODEL_ARMOR_TEMPLATE` が必須です。ないときは Gemini を使わずテンプレートで動きます。テンプレートの作り方は [SECURITY.md](SECURITY.md#デプロイのときに行う設定) にあります。
 
+## セキュリティ
+
+![セキュリティの全体像](docs/security-architecture.svg)
+
+生徒のコードも、AI への入力も、ブラウザからの値も「信用できないデータ」として扱い、層を重ねて守ります。Google が公開している考え方（[SAIF](https://saif.google/secure-ai-framework)、Strict CSP と Trusted Types、鍵の用途分離、最小権限）に沿っています。
+
+| 層 | していること | 主な場所 |
+| --- | --- | --- |
+| ブラウザ | 厳しい CSP と Trusted Types、クリックジャッキング対策、HSTS。本番の画面は CSP を Report-Only から始める | `app/security.py`、`firebase.json` |
+| 認証 | 教員は Firebase のログインと許可リスト、生徒は署名付きトークン。鍵は `SESSION_SECRET` から用途ごとに導出。入室の失敗は接続元ごとに Firestore で数える | `app/auth.py`、`app/main.py` |
+| 生徒のコードの実行 | Code Execution の中でさらに、危ない書き方（`__import__`、`open`、特殊な属性）を断り、環境変数を渡さず、メモリと CPU 時間を制限する | `qgen/harness.py` |
+| AI | 生徒由来の文はデータとして囲み、Gemini の前後を Model Armor で検査する。検査できなければテンプレートに戻す | `qgen/guard.py`、`qgen/ai.py` |
+| データ | 30日で自動削除（TTL と API の両方）、教員がすぐ消せる、ブラウザから DB は触れない、監査ログにコードや IP を残さない | `app/store.py`、`app/audit.py` |
+| 障害に強い | 授業パッケージ（Cloud KMS で署名、暗号化）で、教員PCが校内LANだけで授業を引き継ぐ。生徒の端末は解答をためて後で送る | `app/offline_api.py`、`web/offline.js` |
+
+![ネットが落ちても授業を止めない3段階](docs/resilience-flow.svg)
+
+![AIの入出力の検査](docs/ai-guard-flow.svg)
+
+### main に取り込むときに変わること
+
+- 授業コードと個人コードのハッシュの作り方が変わるので、今あるクラスのコードでは入れなくなります。デモクラスは作り直してください。
+- `AI_BACKEND=gemini` の本番で `MODEL_ARMOR_TEMPLATE` がないと、Gemini を使わずテンプレートで動きます。
+- 授業パッケージは署名の鍵（`PACKAGE_SIGNING_KMS_KEY`）がないと作れません（503）。授業そのものには影響しません。
+- クラスを作るときに照合値（scrypt）を計算するので、生徒1人あたり数十ミリ秒かかります。
+- デプロイ前後の設定は [SECURITY.md の「デプロイのときに行う設定」](SECURITY.md#デプロイのときに行う設定) にまとめています。
+
 ## 本番の構成
 
 公開URLは https://mushitori-hackathon.web.app です（2026年11月6日にデプロイ）。画面は Firebase Hosting から配信し、Cloud Run のURLには画面を置いていません。
@@ -109,7 +141,8 @@ gcloud run services update mushitori --region asia-northeast1 --project mushitor
 
 - **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
 - **入室の試行回数の制限：** 失敗した入室だけを、接続元ごとに毎分30回まで Firestore で数えます（インスタンスをまたいで効きます）。Cloud Run では `X-Forwarded-For` の右端を接続元とします。記録を自動で消す TTL の設定と、デプロイ後に接続元が正しく分かれるかの確認が残っています（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
-- **Model Armor：** 検査のコードと試験はありますが、テンプレートはまだ作っていません。
+- **Model Armor、Cloud KMS：** 検査と署名のコードと試験はありますが、テンプレートと鍵はまだ作っていません。
+- **画面の CSP：** 本番の画面ではまだ Report-Only です。違反がないことを確かめてから強制にします。
 - **TTL：** 期限の印は書いていますが、Firestore の TTL の設定はまだです。設定するまでは、期限後のデータは API から見えなくなるだけで、DB には残ります（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
 - **Cloud Run Jobs：** 問いの生成はAPIの中のバックグラウンド処理です。本番ではジョブに分けます。
 - **Cloud Shell へのコードの持ち込み：** GitHub との連携を設定していないので、今は手作業で送っています。

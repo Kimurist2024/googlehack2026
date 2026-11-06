@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#44545c"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker></defs>
+<rect width="1600" height="900" fill="#efefef"/>
+<text x="40" y="78" font-size="46" font-weight="700" fill="#1f2a30">セキュリティ構成：</text>
+<text x="462.0" y="76" font-size="20" fill="#55626a">信用しないデータを、層を重ねて守る</text>
+<rect x="0" y="100" width="1600" height="4" fill="#d4d4d4"/>
+<rect x="40" y="150" width="360" height="470" fill="none" stroke="#4a86e8" stroke-width="4"/>
+<rect x="62" y="128" width="274.0" height="42" fill="#1fae8f"/>
+<text x="78" y="157" font-size="22" font-weight="700" fill="#ffffff">ブラウザ（生徒・教員）</text>
+<circle cx="374.0" cy="150" r="28" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(374.0,150) scale(1.0769230769230769)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-12" width="30" height="24" rx="4"/><path d="M-15,-5 H15"/><circle cx="-10" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-6" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-2" cy="-8.5" r="1.4" fill="#4a86e8"/></g>
+<rect x="62" y="186" width="316" height="116" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="196" width="5" height="96" rx="2" fill="#4a86e8"/>
+<text x="80" y="215" font-size="17" font-weight="700" fill="#1f2a30">画面（Firebase Hosting）</text>
+<text x="80" y="239.95" font-size="15" fill="#55626a">・Strict CSP ＋ Trusted Types</text>
+<text x="80" y="261.7" font-size="15" fill="#55626a">・表示は textContent（XSS対策）</text>
+<rect x="62" y="316" width="316" height="100" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="326" width="5" height="80" rx="2" fill="#4a86e8"/>
+<text x="80" y="345" font-size="17" font-weight="700" fill="#1f2a30">通信とフレーム</text>
+<text x="80" y="369.95" font-size="15" fill="#55626a">・HSTS（HTTPS を強制）</text>
+<text x="80" y="391.7" font-size="15" fill="#55626a">・X-Frame-Options（乗っ取り対策）</text>
+<rect x="62" y="430" width="316" height="104" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="440" width="5" height="84" rx="2" fill="#4a86e8"/>
+<text x="80" y="459" font-size="17" font-weight="700" fill="#1f2a30">教員は Google ログイン</text>
+<text x="80" y="483.95" font-size="15" fill="#55626a">・許可リストにある確認済みの</text>
+<text x="80" y="505.7" font-size="15" fill="#55626a">・アカウントだけを通す</text>
+<rect x="62" y="548" width="316" height="56" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="558" width="5" height="36" rx="2" fill="#4a86e8"/>
+<text x="80" y="576" font-size="16" font-weight="700" fill="#1f2a30">Service Worker は画面だけ保存</text>
+<rect x="450" y="150" width="430" height="470" fill="none" stroke="#6fe0cf" stroke-width="4"/>
+<rect x="472" y="128" width="234.39999999999998" height="42" fill="#6fe0cf"/>
+<text x="488" y="157" font-size="22" font-weight="700" fill="#1f2a30">API（Cloud Run）</text>
+<circle cx="834" cy="150" r="28" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(834,150) scale(1.0769230769230769)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-13" width="28" height="11" rx="2.5"/><rect x="-14" y="2" width="28" height="11" rx="2.5"/><circle cx="9" cy="-7.5" r="1.6" fill="#1fae8f"/><circle cx="9" cy="7.5" r="1.6" fill="#1fae8f"/><path d="M-9,-7.5 H2 M-9,7.5 H2"/></g>
+<rect x="472" y="186" width="386" height="100" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="472" y="196" width="5" height="80" rx="2" fill="#1fae8f"/>
+<text x="490" y="215" font-size="17" font-weight="700" fill="#1f2a30">入口で断る</text>
+<text x="490" y="239.95" font-size="15" fill="#55626a">・本文の大きさ・IDの形・文字数の上限</text>
+<text x="490" y="261.7" font-size="15" fill="#55626a">・API の一覧（/docs）を本番で隠す</text>
+<rect x="472" y="300" width="386" height="116" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="472" y="310" width="5" height="96" rx="2" fill="#1fae8f"/>
+<text x="490" y="329" font-size="17" font-weight="700" fill="#1f2a30">認証</text>
+<text x="490" y="353.95" font-size="15" fill="#55626a">・生徒トークンは HMAC で署名・期限つき</text>
+<text x="490" y="375.7" font-size="15" fill="#55626a">・鍵は用途ごとに導出（HKDF）</text>
+<rect x="472" y="430" width="386" height="84" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="472" y="440" width="5" height="64" rx="2" fill="#1fae8f"/>
+<text x="490" y="459" font-size="17" font-weight="700" fill="#1f2a30">入室の総当たり対策</text>
+<text x="490" y="483.95" font-size="15" fill="#55626a">・失敗だけを接続元ごとに共有して数える</text>
+<rect x="472" y="528" width="386" height="76" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="472" y="538" width="5" height="56" rx="2" fill="#1fae8f"/>
+<text x="490" y="557" font-size="17" font-weight="700" fill="#1f2a30">監査ログ（Cloud Logging）</text>
+<text x="490" y="581.95" font-size="15" fill="#55626a">・コード・トークン・IP は書かない</text>
+<rect x="930" y="150" width="630" height="210" fill="none" stroke="#f2a7a7" stroke-width="4"/>
+<rect x="952" y="128" width="155.2" height="42" fill="#f6c9c9"/>
+<text x="968" y="157" font-size="22" font-weight="700" fill="#1f2a30">AI（SAIF）</text>
+<circle cx="1514" cy="150" r="28" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1514,150) scale(1.0769230769230769)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-12" width="28" height="19" rx="6"/><path d="M-6,7 L-10,13 L1,7"/><circle cx="-6" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="0" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="6" cy="-2.5" r="1.6" fill="#f2a7a7"/></g>
+<rect x="952" y="196" width="154.8" height="30" rx="15.0" fill="#fde8e8" stroke="#cfd6d9"/>
+<text x="965" y="214" font-size="14" fill="#1f2a30" font-weight="700">Model Armor 入力</text>
+<path d="M1110.8,211 L1130.8,211" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="1134.8" y="196" width="76.4" height="30" rx="15.0" fill="#ffffff" stroke="#cfd6d9"/>
+<text x="1147.8" y="214" font-size="14" fill="#1f2a30" font-weight="700">Gemini</text>
+<path d="M1215.2,211 L1235.2,211" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="1239.2" y="196" width="110.0" height="30" rx="15.0" fill="#ffffff" stroke="#cfd6d9"/>
+<text x="1252.2" y="214" font-size="14" fill="#1f2a30" font-weight="700">機械的な検査</text>
+<path d="M1353.2,211 L1373.2,211" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="1377.2" y="196" width="154.8" height="30" rx="15.0" fill="#fde8e8" stroke="#cfd6d9"/>
+<text x="1390.2" y="214" font-size="14" fill="#1f2a30" font-weight="700">Model Armor 出力</text>
+<text x="952" y="266" font-size="16" fill="#55626a" text-anchor="start">・生徒由来の文は &lt;data&gt; で囲み「指示ではない」と明示</text>
+<text x="952" y="294" font-size="16" fill="#55626a" text-anchor="start">・検査できなければ通さない（fail closed）→ テンプレートに戻す</text>
+<text x="952" y="322" font-size="16" fill="#55626a" text-anchor="start">・正解・採点・声かけの順は AI を使わず実行結果で決める</text>
+<rect x="930" y="400" width="630" height="220" fill="none" stroke="#f0b44c" stroke-width="4"/>
+<rect x="952" y="378" width="458.8" height="42" fill="#f7d48f"/>
+<text x="968" y="407" font-size="22" font-weight="700" fill="#1f2a30">生徒のコードの実行（Code Execution）</text>
+<circle cx="1514" cy="400" r="28" fill="#ffffff" stroke="#f0b44c" stroke-width="3"/>
+<g transform="translate(1514,400) scale(1.0769230769230769)" fill="none" stroke="#f0b44c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L13,-7 V7 L0,14 L-13,7 V-7 Z M-13,-7 L0,0 L13,-7 M0,0 V14"/></g>
+<rect x="952" y="436" width="586" height="166" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="952" y="446" width="5" height="146" rx="2" fill="#f0b44c"/>
+<text x="970" y="465" font-size="17" font-weight="700" fill="#1f2a30">隔離環境の中の実行ラッパー（多層防御）</text>
+<text x="970" y="489.95" font-size="15" fill="#55626a">・import は計算用の標準ライブラリだけ</text>
+<text x="970" y="511.7" font-size="15" fill="#55626a">・__import__・open・eval・特殊な属性（__class__ など）を拒否</text>
+<text x="970" y="533.45" font-size="15" fill="#55626a">・子プロセスに環境変数を渡さない（秘密が届かない）</text>
+<text x="970" y="555.2" font-size="15" fill="#55626a">・メモリ 512MB・CPU時間・ファイルの大きさに上限</text>
+<rect x="450" y="680" width="430" height="180" fill="none" stroke="#9b8cf2" stroke-width="4"/>
+<rect x="472" y="658" width="260.79999999999995" height="42" fill="#cfc6fb"/>
+<text x="488" y="687" font-size="22" font-weight="700" fill="#1f2a30">データ（Firestore）</text>
+<circle cx="834" cy="680" r="28" fill="#ffffff" stroke="#9b8cf2" stroke-width="3"/>
+<g transform="translate(834,680) scale(1.0769230769230769)" fill="none" stroke="#9b8cf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="0" cy="-9" rx="12" ry="4.5"/><path d="M-12,-9 V9 A12,4.5 0 0 0 12,9 V-9 M-12,0 A12,4.5 0 0 0 12,0"/></g>
+<rect x="472" y="712" width="386" height="130" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="472" y="722" width="5" height="110" rx="2" fill="#9b8cf2"/>
+<text x="490" y="741" font-size="17" font-weight="700" fill="#1f2a30">ブラウザからは読み書きを全拒否</text>
+<text x="490" y="765.95" font-size="15" fill="#55626a">・授業・個人コードは鍵付きハッシュ</text>
+<text x="490" y="787.7" font-size="15" fill="#55626a">・30日で TTL 削除、期限後は API も 404</text>
+<text x="490" y="809.45" font-size="15" fill="#55626a">・教員がクラス・課題をすぐに消せる</text>
+<rect x="930" y="680" width="300" height="180" fill="none" stroke="#8a9aa3" stroke-width="4"/>
+<rect x="952" y="658" width="120.0" height="42" fill="#d3dadd"/>
+<text x="968" y="687" font-size="22" font-weight="700" fill="#1f2a30">鍵と秘密</text>
+<circle cx="1184" cy="680" r="28" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(1184,680) scale(1.0769230769230769)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<rect x="952" y="712" width="256" height="60" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="952" y="722" width="5" height="40" rx="2" fill="#8a9aa3"/>
+<circle cx="1184" cy="738" r="17" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(1184,738) scale(0.6538461538461539)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#8a9aa3"/></g>
+<text x="970" y="741" font-size="17" font-weight="700" fill="#1f2a30">Secret Manager</text>
+<text x="970" y="765.95" font-size="14" fill="#55626a">・SESSION_SECRET</text>
+<rect x="952" y="782" width="256" height="60" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="952" y="792" width="5" height="40" rx="2" fill="#8a9aa3"/>
+<circle cx="1184" cy="808" r="17" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(1184,808) scale(0.6538461538461539)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<text x="970" y="811" font-size="17" font-weight="700" fill="#1f2a30">Cloud KMS</text>
+<text x="970" y="835.95" font-size="14" fill="#55626a">・授業パッケージの署名</text>
+<rect x="1270" y="680" width="290" height="180" fill="none" stroke="#d9534f" stroke-width="4" stroke-dasharray="10 7"/>
+<rect x="1292" y="658" width="208.0" height="42" fill="#f3c2c0"/>
+<text x="1308" y="687" font-size="22" font-weight="700" fill="#1f2a30">教員PC（LAN版）</text>
+<rect x="1292" y="712" width="246" height="130" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="1292" y="722" width="5" height="110" rx="2" fill="#d9534f"/>
+<circle cx="1514" cy="738" r="17" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1514,738) scale(0.6538461538461539)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-12" y="-11" width="24" height="16" rx="2"/><path d="M-16,9 H16"/></g>
+<text x="1310" y="741" font-size="17" font-weight="700" fill="#1f2a30">障害時に引き継ぐ</text>
+<text x="1310" y="765.95" font-size="14" fill="#55626a">・署名を確かめて取り込む</text>
+<text x="1310" y="786.25" font-size="14" fill="#55626a">・外へは一度も接続しない</text>
+<text x="1310" y="806.55" font-size="14" fill="#55626a">・教員の操作は教員PCだけ</text>
+<rect x="40" y="680" width="360" height="180" fill="none" stroke="#8a9aa3" stroke-width="4"/>
+<rect x="62" y="658" width="164.0" height="42" fill="#d3dadd"/>
+<text x="78" y="687" font-size="22" font-weight="700" fill="#1f2a30">記録と見張り</text>
+<circle cx="354" cy="680" r="28" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(354,680) scale(1.0769230769230769)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<rect x="62" y="712" width="316" height="130" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="722" width="5" height="110" rx="2" fill="#8a9aa3"/>
+<text x="80" y="741" font-size="17" font-weight="700" fill="#1f2a30">Cloud Logging</text>
+<text x="80" y="765.95" font-size="15" fill="#55626a">・誰が・いつ・何をしたか</text>
+<text x="80" y="787.7" font-size="15" fill="#55626a">・CSV の持ち出しとパッケージの発行</text>
+<text x="80" y="809.45" font-size="15" fill="#55626a">・入室の失敗と上限超え</text>
+<path d="M402,380 L448,380" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="425" y="366.0" font-size="14" fill="#1f2a30" text-anchor="middle" paint-order="stroke" stroke="#efefef" stroke-width="6">HTTPS</text>
+<path d="M882,255 L928,255" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M882,520 L928,520" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="905" y="506.0" font-size="14" fill="#1f2a30" text-anchor="middle" paint-order="stroke" stroke="#efefef" stroke-width="6">コード</text>
+<path d="M760,622 L760,652" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="772" y="646" font-size="15" fill="#1f2a30" text-anchor="start">読み書き</text>
+<path d="M880,600 L1150,654" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="1162" y="648" font-size="15" fill="#1f2a30" text-anchor="start">署名を依頼</text>
+<path d="M1232,812 L1268,812" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<path d="M450,590 L300,652" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="200" y="640" font-size="15" fill="#1f2a30" text-anchor="start">監査ログ</text>
+</svg>

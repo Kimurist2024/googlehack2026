@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#44545c"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker></defs>
+<rect width="1600" height="900" fill="#efefef"/>
+<text x="40" y="78" font-size="46" font-weight="700" fill="#1f2a30">AI の入出力の検査：</text>
+<text x="498.8" y="76" font-size="20" fill="#55626a">SAIF に沿い、検査できなければ通さない</text>
+<rect x="0" y="100" width="1600" height="4" fill="#d4d4d4"/>
+<rect x="40" y="150" width="1520" height="470" fill="none" stroke="#f2a7a7" stroke-width="4"/>
+<rect x="62" y="128" width="340.0" height="42" fill="#f6c9c9"/>
+<text x="78" y="157" font-size="22" font-weight="700" fill="#1f2a30">生徒由来の文が画面に出るまで</text>
+<circle cx="1514" cy="150" r="28" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1514,150) scale(1.0769230769230769)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<rect x="62" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="206" width="5" height="180" rx="2" fill="#8a9aa3"/>
+<circle cx="232" cy="222" r="17" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(232,222) scale(0.6538461538461539)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<text x="80" y="224" font-size="16" font-weight="700" fill="#1f2a30">生徒の入力</text>
+<text x="80" y="247.6" font-size="15" fill="#55626a">・コードと答え</text>
+<text x="80" y="269.35" font-size="15" fill="#55626a">・信用しないデータと</text>
+<text x="80" y="291.1" font-size="15" fill="#55626a">　して扱う</text>
+<path d="M260,296 L286,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="290" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="290" y="206" width="5" height="180" rx="2" fill="#8a9aa3"/>
+<text x="308" y="224" font-size="16" font-weight="700" fill="#1f2a30">減らして囲む</text>
+<text x="308" y="247.6" font-size="15" fill="#55626a">・コメントを消す</text>
+<text x="308" y="269.35" font-size="15" fill="#55626a">・答えは先頭200字</text>
+<text x="308" y="291.1" font-size="15" fill="#55626a">・&lt;data&gt; で囲む</text>
+<path d="M488,296 L514,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="518" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="518" y="206" width="5" height="180" rx="2" fill="#d9534f"/>
+<circle cx="688" cy="222" r="17" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(688,222) scale(0.6538461538461539)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="536" y="224" font-size="16" font-weight="700" fill="#1f2a30">Model Armor </text>
+<text x="536" y="245.6" font-size="16" font-weight="700" fill="#1f2a30">入力</text>
+<text x="536" y="269.2" font-size="15" fill="#55626a">・プロンプト注入</text>
+<text x="536" y="290.95" font-size="15" fill="#55626a">・ジェイルブレイク</text>
+<text x="536" y="312.7" font-size="15" fill="#55626a">・有害・悪意URL・機密</text>
+<path d="M716,296 L742,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M615.0,398 L615.0,498" fill="none" stroke="#c9302c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow-red)"/>
+<rect x="746" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="746" y="206" width="5" height="180" rx="2" fill="#4a86e8"/>
+<circle cx="916" cy="222" r="17" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(916,222) scale(0.6538461538461539)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-12" width="28" height="19" rx="6"/><path d="M-6,7 L-10,13 L1,7"/><circle cx="-6" cy="-2.5" r="1.6" fill="#4a86e8"/><circle cx="0" cy="-2.5" r="1.6" fill="#4a86e8"/><circle cx="6" cy="-2.5" r="1.6" fill="#4a86e8"/></g>
+<text x="764" y="224" font-size="16" font-weight="700" fill="#1f2a30">Gemini</text>
+<text x="764" y="247.6" font-size="15" fill="#55626a">・問いの選定</text>
+<text x="764" y="269.35" font-size="15" fill="#55626a">・つまずきの説明</text>
+<path d="M944,296 L970,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="974" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="974" y="206" width="5" height="180" rx="2" fill="#d9534f"/>
+<circle cx="1144" cy="222" r="17" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1144,222) scale(0.6538461538461539)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-11" width="22" height="25" rx="3"/><path d="M-5,-11 V-14 H5 V-11"/><path d="M-5,2 L-1,6 L6,-2"/></g>
+<text x="992" y="224" font-size="16" font-weight="700" fill="#1f2a30">機械的な検査</text>
+<text x="992" y="247.6" font-size="15" fill="#55626a">・JSONの形・長さ</text>
+<text x="992" y="269.35" font-size="15" fill="#55626a">・評価語・URL</text>
+<text x="992" y="291.1" font-size="15" fill="#55626a">・記録にない数値</text>
+<path d="M1172,296 L1198,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M1071.0,398 L1071.0,498" fill="none" stroke="#c9302c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow-red)"/>
+<rect x="1202" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="1202" y="206" width="5" height="180" rx="2" fill="#d9534f"/>
+<circle cx="1372" cy="222" r="17" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1372,222) scale(0.6538461538461539)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="1220" y="224" font-size="16" font-weight="700" fill="#1f2a30">Model Armor </text>
+<text x="1220" y="245.6" font-size="16" font-weight="700" fill="#1f2a30">出力</text>
+<text x="1220" y="269.2" font-size="15" fill="#55626a">・有害な表現</text>
+<text x="1220" y="290.95" font-size="15" fill="#55626a">・悪意のあるURL</text>
+<path d="M1400,296 L1426,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M1299.0,398 L1299.0,498" fill="none" stroke="#c9302c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow-red)"/>
+<rect x="1430" y="256" width="108" height="80" rx="12" fill="#e2f1ea" stroke="#1fae8f" stroke-width="2"/>
+<text x="1484.0" y="304" font-size="20" fill="#1f2a30" text-anchor="middle" font-weight="700">画面へ</text>
+<rect x="62" y="500" width="1476" height="96" rx="12" fill="#fde8e8" stroke="#d9534f" stroke-width="2"/>
+<text x="800" y="540" font-size="20" fill="#1f2a30" text-anchor="middle" font-weight="700">検出した・検査に失敗した・API が落ちた → Gemini を使わず、テンプレートの文に戻す（fail closed）</text>
+<text x="800" y="574" font-size="17" fill="#55626a" text-anchor="middle">授業は止まらない。どのフィルタが反応したかは監査ログに残す</text>
+<rect x="40" y="680" width="1520" height="180" fill="none" stroke="#8a9aa3" stroke-width="4"/>
+<rect x="62" y="658" width="225.6" height="42" fill="#d3dadd"/>
+<text x="78" y="687" font-size="22" font-weight="700" fill="#1f2a30">AI に任せないこと</text>
+<circle cx="1514" cy="680" r="28" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(1514,680) scale(1.0769230769230769)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-11" width="22" height="25" rx="3"/><path d="M-5,-11 V-14 H5 V-11"/><path d="M-5,2 L-1,6 L6,-2"/></g>
+<rect x="62" y="716" width="720" height="124" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="726" width="5" height="104" rx="2" fill="#8a9aa3"/>
+<text x="80" y="746" font-size="18" font-weight="700" fill="#1f2a30">正解・採点・声をかける順</text>
+<text x="80" y="772.3" font-size="16" fill="#55626a">・コードを実際に動かした結果と計算だけで決まる</text>
+<text x="80" y="795.5" font-size="16" fill="#55626a">・Gemini の返答は問いの選定と文面だけに使う</text>
+<rect x="806" y="716" width="732" height="124" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="806" y="726" width="5" height="104" rx="2" fill="#8a9aa3"/>
+<text x="824" y="746" font-size="18" font-weight="700" fill="#1f2a30">本番で Model Armor の設定がないとき</text>
+<text x="824" y="772.3" font-size="16" fill="#55626a">・Gemini を使わず、最初からテンプレートで動く</text>
+<text x="824" y="795.5" font-size="16" fill="#55626a">・検査なしで Gemini を呼ぶのは手元の開発だけ</text>
+</svg>
