@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ムシトリ</title>
+<link rel="stylesheet" href="style.css">
+<!-- 教員のログインで使う先へ、先につないでおく（初めて開くときの待ち時間を減らす） -->
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com">
+<link rel="preconnect" href="https://securetoken.googleapis.com">
+</head>
+<body>
+<header>
+  <h1>ムシトリ<small>（仮称）</small></h1>
+  <div class="header-right">
+    <div id="account" class="account" hidden>
+      <span id="who"></span>
+      <button id="signout" class="link">ログアウト</button>
+    </div>
+    <nav role="tablist">
+      <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
+      <button role="tab" id="tab-student" aria-selected="false">生徒</button>
+    </nav>
+  </div>
+</header>
+<main>
+  <section id="teacher">
+    <div class="card signin" id="signin-card" hidden>
+      <h2>教員としてログイン</h2>
+      <p>授業の準備や、声をかける順の確認には、許可された Google アカウントでのログインが必要です。</p>
+      <button id="signin" class="primary">Google でログイン</button>
+      <p id="signin-error" class="error" role="alert"></p>
+      <p class="hint signin-student">生徒の方はログインは不要です。<button id="to-student" class="link">生徒の画面へ</button></p>
+    </div>
+    <div id="teacher-work" hidden>
+    <div class="card" id="prepare-card">
+      <h2>1. 課題を準備する</h2>
+      <p class="hint">デモは合成データだけを使います。実在の生徒の提出物は入れないでください。</p>
+      <div class="row">
+        <button id="seed" class="primary">デモクラスを作る</button>
+        <button id="generate" disabled>問いを作る</button>
+        <button id="open" disabled>受付を開始</button>
+        <button id="close" disabled>締切</button>
+        <button id="delete" class="danger" disabled>データを消す</button>
+      </div>
+      <p id="status" role="status" class="status"></p>
+    </div>
+    <div class="card" id="codes-card" hidden>
+      <h2>2. 生徒に配るコード</h2>
+      <p>授業コード <strong id="class-code" class="code"></strong></p>
+      <table><thead><tr><th>番号</th><th>個人コード</th><th></th></tr></thead><tbody id="codes"></tbody></table>
+    </div>
+    <div class="card" id="followups-card" hidden>
+      <h2>3. 声をかける順</h2>
+      <div class="row">
+        <label>持ち時間（秒） <input id="budget" type="number" min="0" step="10" value="90"></label>
+        <button id="refresh">更新</button>
+        <span id="tau" class="hint"></span>
+      </div>
+      <div id="class-summary" class="class-summary"></div>
+      <div id="order"></div>
+      <div id="others"></div>
+    </div>
+    </div>
+  </section>
+
+  <section id="student" hidden>
+    <form id="login" class="card">
+      <h2>入室する</h2>
+      <label>授業コード <input id="class-input" autocomplete="off" required></label>
+      <label>個人コード <input id="personal-input" autocomplete="off" required></label>
+      <button class="primary">入室</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+    <div id="ready" class="card" hidden>
+      <h2 id="welcome"></h2>
+      <p>自分の提出したコードについて、短い問いに答えます。始めると持ち時間が進みます。</p>
+      <p class="hint">コードを手元で動かしたり、AIに聞いたりせずに答えてください。結果は成績には使いません。</p>
+      <button id="start" class="primary">始める</button>
+      <p id="start-error" class="error" role="alert"></p>
+    </div>
+    <form id="quiz" hidden>
+      <div class="card sticky"><strong id="timer" role="timer"></strong></div>
+      <div class="card"><h2>あなたのコード</h2><pre id="code"></pre><p id="stdin" class="hint"></p></div>
+      <div id="questions"></div>
+      <button class="primary wide">解答を送る</button>
+      <p id="quiz-error" class="error" role="alert"></p>
+    </form>
+    <div id="result" hidden>
+      <div class="card"><h2 id="score"></h2><p id="notice" class="hint"></p></div>
+      <div id="result-items"></div>
+      <div class="card" id="explain-card" hidden>
+        <h2>自分の言葉で説明してみよう</h2>
+        <p class="hint">まちがえた問いが指している行です。この行で何が起きるのか、なぜこう書いたのかを、自分の言葉で書いてください。うまく書けなくても大丈夫です。AIや友だちには聞かずに書いてください。先生が読みます。成績には使いません。名前などの個人情報は書かないでください。</p>
+        <div id="explain-items"></div>
+      </div>
+      <div class="card" id="chat-card">
+        <h2>AIと振り返る</h2>
+        <p class="hint">自分のコードについて質問できます。AIは答えではなく、考えるためのヒントを返します。名前などの個人情報は書かないでください。成績には使いません。</p>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="row chat-form">
+          <input id="chat-input" maxlength="300" autocomplete="off" placeholder="例：3行目で total はどう変わるの？" aria-label="AIへの質問">
+          <button class="primary" id="chat-send">送る</button>
+        </form>
+        <p id="chat-remaining" class="hint"></p>
+        <p id="chat-error" class="error" role="alert"></p>
+      </div>
+      <details class="card"><summary>コードの実行の流れを見る</summary><pre id="trace"></pre></details>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+<script src="offline.js"></script>
+</body>
+</html>

@@ -1,9 +1,0 @@
--r requirements.txt
-pytest>=8,<10
-httpx>=0.27,<1
-# エミュレータで FirestoreStore を試すのに使う
-google-cloud-firestore==2.34.1
-# 偽の応答で ModelArmorGuard を試すのに使う。本物の API は呼ばない
-google-cloud-modelarmor==0.7.5
-# 偽の Cloud KMS で授業パッケージの署名を試すのに使う。本物の API は呼ばない
-google-cloud-kms==3.18.0
