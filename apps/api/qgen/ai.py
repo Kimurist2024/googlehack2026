@@ -25,6 +25,8 @@ OVERVIEW_LIMIT = 140
 SUMMARY_POINT_LIMIT = 100
 CHAT_REPLY_LIMIT = 200
 NUMBER = r"\d+(?:\.\d+)?"
+LINE_REFERENCE = r"(\d+)\s*行目"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 JUDGING_WORDS = (
     "理解していない", "理解できていない", "分かっていない", "わかっていない", "不正", "カンニング", "AIで書いた",
     "AIを使", "生成AI", "ChatGPT", "コピー", "丸写し", "写した", "自力で", "自分で書いていない", "書かせた",
@@ -73,7 +75,7 @@ def checked_text(text: object, limit: int, allowed_numbers: set[str], line_count
         return None
     if any(word in text for word in JUDGING_WORDS) or LINK_PATTERN.search(text):
         return None
-    if any(not 1 <= int(number) <= line_count for number in re.findall(r"(\d+)\s*行目", text)):
+    if any(not 1 <= int(number) <= line_count for number in re.findall(LINE_REFERENCE, text)):
         return None
     # 行番号、順番、個数を表す数は値ではないので別に扱う
     rest = re.sub(r"\d+\s*(?:行目|番目|回目|つ)", "", text)
@@ -166,7 +168,7 @@ def valid_review(payload: object, spots: list[dict], allowed_numbers: set[str], 
         text = checked_text(ask, ASK_LIMIT, allowed_numbers, line_count)
         if text is None:
             return None
-        lines = {int(number) for number in re.findall(r"(\d+)\s*行目", text)}
+        lines = {int(number) for number in re.findall(LINE_REFERENCE, text)}
         if lines - ({spot["line"]} if spot.get("line") else set()):
             return None
         asks.append(text)
@@ -211,13 +213,13 @@ def valid_explanation(text: object, question: Question) -> str | None:
     if any(word in text for word in JUDGING_WORDS) or LINK_PATTERN.search(text):
         return None
     # 行番号は関係する行だけを認める。「0行目」のような誤りを通さない。
-    if any(int(number) != question.line for number in re.findall(r"(\d+)\s*行目", text)):
+    if any(int(number) != question.line for number in re.findall(LINE_REFERENCE, text)):
         return None
     # 実行の記録にない数値を書かせない。行番号と順番を表す数は別に扱う。
     rest = re.sub(r"\d+\s*(?:行目|番目|回目)", "", text)
     known = question.trace + [question.answer] + question.options
-    allowed = set(re.findall(r"\d+(?:\.\d+)?", " ".join(known)))
-    if any(number not in allowed for number in re.findall(r"\d+(?:\.\d+)?", rest)):
+    allowed = set(re.findall(NUMBER, " ".join(known)))
+    if any(number not in allowed for number in re.findall(NUMBER, rest)):
         return None
     return text.strip()
 
@@ -230,7 +232,7 @@ class GeminiAI:
     """
 
     def __init__(
-        self, project: str, location: str = "global", model: str = "gemini-3.5-flash-lite", client=None, guard: Guard | None = None
+        self, project: str, location: str = "global", model: str = DEFAULT_MODEL, client=None, guard: Guard | None = None
     ) -> None:
         self._model = model
         self._guard = guard or NoGuard()
@@ -426,4 +428,4 @@ def default_ai() -> QuizAI:
             return TemplateAI()
         logger.warning("MODEL_ARMOR_TEMPLATE がないので、Model Armor の検査なしで Gemini を使います（ローカル開発のみ）")
         guard = NoGuard()
-    return GeminiAI(project=os.environ["GOOGLE_CLOUD_PROJECT"], model=os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite"), guard=guard)
+    return GeminiAI(project=os.environ["GOOGLE_CLOUD_PROJECT"], model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL), guard=guard)

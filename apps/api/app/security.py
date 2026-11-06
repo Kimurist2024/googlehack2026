@@ -95,7 +95,7 @@ class BodyLimit:
             except ValueError:
                 too_large = True
             if too_large:
-                return await _reject(send, 413, "本文が大きすぎます")
+                return await reject(send, 413, "本文が大きすぎます")
         received = 0
         started = False
 
@@ -118,10 +118,11 @@ class BodyLimit:
             await self.app(scope, counting_receive, tracking_send)
         except BodyTooLarge:
             if not started:
-                await _reject(send, 413, "本文が大きすぎます")
+                await reject(send, 413, "本文が大きすぎます")
 
 
-async def _reject(send, status: int, detail: str) -> None:
+async def reject(send, status: int, detail: str) -> None:
+    """指定した状態と理由でJSONの応答を返す。"""
     body = json.dumps({"detail": detail}, ensure_ascii=False).encode("utf-8")
     await send(
         {

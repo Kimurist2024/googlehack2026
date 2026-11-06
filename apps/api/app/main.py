@@ -1,6 +1,4 @@
 """ムシトリのAPI。生徒のコードは実行せず、Geminiも直接は呼ばない。"""
-import csv
-import io
 import logging
 import os
 import re
@@ -10,7 +8,6 @@ from pathlib import Path
 from typing import Annotated, Callable, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
-from fastapi import Path as PathParam
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
@@ -18,6 +15,20 @@ from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
 from . import audit, auth, classpack, demo, offline_api, security, service
+from .access import student_assignment
+from .csv_export import build_csv, csv_cell  # noqa: F401  csv_cell はテストが app.main から読む
+from .fields import (
+    GENERATION_STALE_SEC,
+    MAX_ANSWERS,
+    MAX_DURATION_MS,
+    REASON_CHARS,
+    AnswerKey,
+    AnswerText,
+    AssignmentId,
+    ClassId,
+    ResourceId,
+    StudentId,
+)
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, can_begin_generation, default_store, is_expired
 
 logger = logging.getLogger(__name__)
@@ -28,8 +39,6 @@ LOGIN_FAILURES_PER_MIN = 30
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 # multipart の区切りなどの分を足した、リクエスト本文の上限
 MAX_BODY_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
-# サーバーが作るID（secrets.token_hex(8)）の形。これ以外は保存先に問い合わせる前に断る
-ID_PATTERN = r"^[0-9a-f]{16}$"
 # 授業コードが違っていたときも同じ回数だけ保存先を読み、応答時間から「どちらが違うか」を推測させない
 NO_CLASS_ID = "0" * 16
 MAX_STDIN_CHARS = 2_000
@@ -38,21 +47,11 @@ NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
 ACTIONS = {"explained", "not_explained", "ask_in_class", "no_problem", "question_bad"}
 EXPLANATION_CHARS = 300
 QUESTION_TYPES = {"output", "trace", "impact"}
-MAX_ANSWER_CHARS = 20_000
-MAX_ANSWERS = 10
-GENERATION_STALE_SEC = 30 * 60
 # 画面のファイル。リポジトリでは apps/api/app/main.py から見て ../../web にある
 WEB_DIR = Path(os.environ.get("WEB_DIR") or Path(__file__).resolve().parents[2] / "web")
 # 生徒のデータ（提出コード、問い、正解、解答と採点結果、声かけの記録）を残す日数。課題を作った時点から数える
 DEFAULT_RETENTION_DAYS = 30
 MAX_RETENTION_DAYS = 365
-# 表計算ソフトが数式として実行してしまう先頭の文字（CSV インジェクション）
-CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
-
-ResourceId = Annotated[str, StringConstraints(pattern=ID_PATTERN)]
-AssignmentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
-ClassId = Annotated[str, PathParam(pattern=ID_PATTERN)]
-StudentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
 
 
 class ClassIn(BaseModel):
@@ -94,9 +93,7 @@ class SessionIn(BaseModel):
 
 
 class SubmitIn(BaseModel):
-    answers: dict[Annotated[str, StringConstraints(max_length=64)], Annotated[str, StringConstraints(max_length=MAX_ANSWER_CHARS)]] = Field(
-        max_length=MAX_ANSWERS
-    )
+    answers: dict[AnswerKey, AnswerText] = Field(max_length=MAX_ANSWERS)
 
 
 class ChatTurn(BaseModel):
@@ -116,8 +113,8 @@ class ExplainIn(BaseModel):
 
 class ActionIn(BaseModel):
     action: str
-    reason: str = Field(default="", max_length=400)
-    duration_ms: int = Field(default=0, ge=0, le=3_600_000)
+    reason: str = Field(default="", max_length=REASON_CHARS)
+    duration_ms: int = Field(default=0, ge=0, le=MAX_DURATION_MS)
 
     @model_validator(mode="after")
     def reason_when_no_problem(self) -> "ActionIn":
@@ -135,13 +132,6 @@ def retention_sec() -> float:
     except ValueError:
         days = DEFAULT_RETENTION_DAYS
     return min(max(days, 1), MAX_RETENTION_DAYS) * 24 * 60 * 60
-
-
-def csv_cell(value: object) -> object:
-    """表計算ソフトで開いたときに数式として動かないようにする。"""
-    if isinstance(value, str) and value.startswith(CSV_FORMULA_PREFIXES):
-        return "'" + value
-    return value
 
 
 def warm_up(shared_ai: Callable[[], QuizAI]) -> None:
@@ -208,12 +198,6 @@ def create_app(
         if assignment is None or is_expired(assignment, service.now()):
             raise HTTPException(status_code=404, detail="課題が見つかりません")
         owned_class(assignment.class_id, teacher)
-        return assignment
-
-    def student_assignment(assignment_id: str, claims: dict) -> AssignmentRecord:
-        assignment = store.get_assignment(assignment_id)
-        if assignment is None or assignment.class_id != claims["class"] or is_expired(assignment, service.now()):
-            raise HTTPException(status_code=404, detail="課題が見つかりません")
         return assignment
 
     def run_generation(assignment: AssignmentRecord) -> None:
@@ -412,7 +396,7 @@ def create_app(
 
     @app.post("/v1/assignments/{assignment_id}/attempt:start")
     def start_attempt(assignment_id: AssignmentId, claims: dict = Depends(auth.current_student)) -> dict:
-        assignment = student_assignment(assignment_id, claims)
+        assignment = student_assignment(store, assignment_id, claims)
         student_id = claims["student"]
         if assignment.state != "open":
             raise HTTPException(status_code=409, detail="受付中ではありません")
@@ -427,7 +411,7 @@ def create_app(
 
     @app.post("/v1/assignments/{assignment_id}/attempt:submit")
     def submit_attempt(assignment_id: AssignmentId, body: SubmitIn, claims: dict = Depends(auth.current_student)) -> dict:
-        assignment = student_assignment(assignment_id, claims)
+        assignment = student_assignment(store, assignment_id, claims)
         student_id = claims["student"]
         attempt = store.get_attempt(assignment_id, student_id)
         already_submitted = HTTPException(status_code=409, detail="すでに提出済みです")
@@ -443,18 +427,12 @@ def create_app(
         graded = service.grade(key, body.answers)
         if not store.finish_attempt(assignment_id, student_id, graded, service.now()):
             raise already_submitted
-        return {
-            "score": sum(1 for item in graded if item["correct"]),
-            "total": len(graded),
-            "results": graded,
-            "trace": key["trace"],
-            "notice": "この結果は成績には使いません。",
-        }
+        return service.result_view(graded, key)
 
     @app.post("/v1/assignments/{assignment_id}/attempt:chat")
     def chat(assignment_id: AssignmentId, body: ChatIn, claims: dict = Depends(auth.current_student)) -> dict:
         """解答を送ったあとの振り返り。AI は答えを言わず、ヒントか問い返しを返す。"""
-        student_assignment(assignment_id, claims)
+        student_assignment(store, assignment_id, claims)
         student_id = claims["student"]
         attempt = store.get_attempt(assignment_id, student_id)
         if attempt is None or attempt["submitted_at"] is None:
@@ -469,7 +447,7 @@ def create_app(
     @app.post("/v1/assignments/{assignment_id}/attempt:explain")
     def explain(assignment_id: AssignmentId, body: ExplainIn, claims: dict = Depends(auth.current_student)) -> dict:
         """説明できなかった行を、生徒が自分の言葉で書く。AIは使わず、そのまま教員に見せる。"""
-        student_assignment(assignment_id, claims)
+        student_assignment(store, assignment_id, claims)
         student_id = claims["student"]
         attempt = store.get_attempt(assignment_id, student_id)
         if attempt is None or attempt["submitted_at"] is None:
@@ -520,28 +498,11 @@ def create_app(
         submissions = store.submission_statuses(assignment_id)
         attempts = store.attempts(assignment_id)
         followups = store.followups(assignment_id)
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["number", "status", "reason", "score", "total", "action", "duration_ms"])
-        for student_id, number in classroom.student_numbers.items():
-            submission = submissions.get(student_id, {})
-            attempt = attempts.get(student_id, {})
-            graded = attempt.get("graded", [])
-            record = followups.get(student_id, {})
-            row = [
-                number,
-                submission.get("status", "not_submitted"),
-                submission.get("reason") or "",
-                sum(1 for item in graded if item["correct"]) if graded else "",
-                len(graded) if graded else "",
-                record.get("action", ""),
-                record.get("duration_ms", ""),
-            ]
-            writer.writerow([csv_cell(value) for value in row])
+        content = build_csv(classroom.student_numbers, submissions, attempts, followups)
         # 成績に近い情報がまとめて出ていくので、誰がいつ持ち出したかを必ず残す
         audit.event("export.downloaded", request, principal=teacher, assignment_id=assignment_id, count=len(classroom.student_numbers))
         return Response(
-            content=output.getvalue(),
+            content=content,
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="mushitori-{assignment_id}.csv"'},
         )

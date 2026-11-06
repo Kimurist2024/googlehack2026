@@ -11,26 +11,31 @@ LAN版の入室（/v1/sessions）はここで先に登録するので、main.py 
 import os
 import re
 import secrets
-from typing import Annotated, Callable, Literal
+from typing import Callable, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
-from fastapi import Path as PathParam
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field
 from starlette.middleware import Middleware
 
 from . import audit, auth, classpack, security, service
+from .access import student_assignment
+from .fields import (
+    CLOCK_SKEW_SEC,
+    GENERATION_STALE_SEC,
+    MAX_ANSWERS,
+    MAX_DURATION_MS,
+    REASON_CHARS,
+    AnswerKey,
+    AnswerText,
+    AssignmentId,
+    ResourceId,
+)
 from .store import AssignmentRecord, ClassRecord, Store, is_expired
 
-ID_PATTERN = r"^[0-9a-f]{16}$"
-AssignmentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
-ResourceId = Annotated[str, StringConstraints(pattern=ID_PATTERN)]
-AnswerKey = Annotated[str, StringConstraints(max_length=64)]
-AnswerText = Annotated[str, StringConstraints(max_length=20_000)]
 # 解答を端末にためておける長さ。これを過ぎた提出は受け付けない
 OFFLINE_WINDOW_SEC = 24 * 60 * 60
 LAN_TEACHER = "lan-teacher"
 LOOPBACK = {"127.0.0.1", "::1"}
-GENERATION_STALE_SEC = 30 * 60
 # 校内LAN版でも、教室の端末から誰でも呼べる経路。これ以外は教員PC（ループバック）からだけ受け付ける
 LAN_STUDENT_PATHS = [
     ("GET", re.compile(r"^/(?!v1/).*$")),
@@ -83,11 +88,11 @@ class LanGuard:
             return await self.app(scope, receive, send)
         method, path = scope["method"], scope["path"]
         if any(method == m and pattern.match(path) for m, pattern in LAN_DISABLED_PATHS):
-            return await security._reject(send, 404, "校内LAN版では使えません。クラウドで行ってください")
+            return await security.reject(send, 404, "校内LAN版では使えません。クラウドで行ってください")
         student = any(method == m and pattern.match(path) for m, pattern in LAN_STUDENT_PATHS)
         client = (scope.get("client") or ("", 0))[0]
         if not student and client not in LOOPBACK:
-            return await security._reject(send, 403, "この操作は教員のPCからだけ行えます")
+            return await security.reject(send, 403, "この操作は教員のPCからだけ行えます")
         await self.app(scope, receive, send)
 
 
@@ -122,7 +127,7 @@ class SessionIn(BaseModel):
 
 
 class OfflineSubmitIn(BaseModel):
-    answers: dict[AnswerKey, AnswerText] = Field(max_length=10)
+    answers: dict[AnswerKey, AnswerText] = Field(max_length=MAX_ANSWERS)
     answered_at: float = Field(ge=0)
 
 
@@ -134,13 +139,13 @@ class ImportIn(BaseModel):
 class EdgeAttempt(BaseModel):
     started_at: float = Field(ge=0)
     submitted_at: float | None = Field(default=None, ge=0)
-    answers: dict[AnswerKey, AnswerText] = Field(default_factory=dict, max_length=10)
+    answers: dict[AnswerKey, AnswerText] = Field(default_factory=dict, max_length=MAX_ANSWERS)
 
 
 class EdgeFollowup(BaseModel):
     action: Literal["ask_in_class", "no_problem", "question_bad"]
-    reason: str = Field(default="", max_length=400)
-    duration_ms: int = Field(default=0, ge=0, le=3_600_000)
+    reason: str = Field(default="", max_length=REASON_CHARS)
+    duration_ms: int = Field(default=0, ge=0, le=MAX_DURATION_MS)
 
 
 class EdgeResults(BaseModel):
@@ -150,17 +155,21 @@ class EdgeResults(BaseModel):
     followups: dict[ResourceId, EdgeFollowup] = Field(default_factory=dict, max_length=1000)
 
 
-def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, login_limit: int) -> None:
+def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, login_limit: int) -> None:
     router = APIRouter()
+
+    def owned_assignment(assignment_id: str, teacher: str) -> tuple[AssignmentRecord, ClassRecord]:
+        """課題とクラスを読み、担当教員と保存期限を確かめる。"""
+        assignment = store.get_assignment(assignment_id)
+        classroom = store.get_class(assignment.class_id) if assignment else None
+        if assignment is None or classroom is None or classroom.teacher != teacher or is_expired(assignment, service.now()):
+            raise HTTPException(status_code=404, detail="課題が見つかりません")
+        return assignment, classroom
 
     def student_result(assignment_id: str, student_id: str, graded: list[dict], offline: bool, already: bool = False) -> dict:
         key = store.get_answer_key(assignment_id, student_id)
         return {
-            "score": sum(1 for item in graded if item["correct"]),
-            "total": len(graded),
-            "results": graded,
-            "trace": key["trace"],
-            "notice": "この結果は成績には使いません。",
+            **service.result_view(graded, key),
             "offline": offline,
             "already_submitted": already,
         }
@@ -182,9 +191,7 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
         # ためている間に入室の期限が切れても、署名が正しく、期限から OFFLINE_WINDOW_SEC 以内なら受け付ける
         claims = auth.read_student_token(authorization[len("Bearer "):], leeway_sec=OFFLINE_WINDOW_SEC)
         student_id = claims["student"]
-        assignment = store.get_assignment(assignment_id)
-        if assignment is None or assignment.class_id != claims["class"] or is_expired(assignment, service.now()):
-            raise HTTPException(status_code=404, detail="課題が見つかりません")
+        assignment = student_assignment(store, assignment_id, claims)
         attempt = store.get_attempt(assignment_id, student_id)
         if attempt is None:
             raise HTTPException(status_code=409, detail="まだ開始していません")
@@ -206,7 +213,7 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
             audit.event("attempt.offline_submitted", request, assignment_id=assignment_id, student_id=student_id)
         if assignment.state == "closed":
             # 締切のあとに届いた解答にも、授業で聞く一問を作る
-            tasks.add_task(service.create_followups, store, assignment, ai_factory())
+            tasks.add_task(service.create_followups, store, assignment, shared_ai())
         return student_result(assignment_id, student_id, graded, offline=not on_time)
 
     # --- ① クラウド：授業パッケージを作る、LANの結果を取り込む ---
@@ -224,10 +231,7 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
     @router.post("/v1/assignments/{assignment_id}/package")
     def make_package(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
         """授業パッケージを作る。解除コードはこの応答で1回だけ返し、どこにも保存しない。"""
-        assignment = store.get_assignment(assignment_id)
-        classroom = store.get_class(assignment.class_id) if assignment else None
-        if assignment is None or classroom is None or classroom.teacher != teacher or is_expired(assignment, service.now()):
-            raise HTTPException(status_code=404, detail="課題が見つかりません")
+        assignment, classroom = owned_assignment(assignment_id, teacher)
         if assignment.state not in ("ready", "open"):
             raise HTTPException(status_code=409, detail="問いを作り終えてから保存してください")
         signer = classpack.default_signer()
@@ -252,17 +256,14 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
         assignment_id: AssignmentId, body: EdgeResults, request: Request, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)
     ) -> dict:
         """校内LANで行った授業の結果を取り込む。LAN 側の採点は使わず、クラウドの正解で採点し直す。"""
-        assignment = store.get_assignment(assignment_id)
-        classroom = store.get_class(assignment.class_id) if assignment else None
-        if assignment is None or classroom is None or classroom.teacher != teacher or is_expired(assignment, service.now()):
-            raise HTTPException(status_code=404, detail="課題が見つかりません")
+        assignment, classroom = owned_assignment(assignment_id, teacher)
         if body.assignment_id != assignment_id:
             raise HTTPException(status_code=400, detail="別の課題の結果です")
         now = service.now()
         imported = skipped = 0
         for student_id, item in body.attempts.items():
             key = store.get_answer_key(assignment_id, student_id)
-            valid_time = item.submitted_at is not None and item.started_at <= item.submitted_at <= now + 300
+            valid_time = item.submitted_at is not None and item.started_at <= item.submitted_at <= now + CLOCK_SKEW_SEC
             if student_id not in classroom.student_numbers or key is None or not valid_time:
                 skipped += 1
                 continue
@@ -282,7 +283,7 @@ def install(app: FastAPI, store: Store, ai_factory: Callable, grace_sec: float, 
                 store.record_action(assignment_id, student_id, {**followup.model_dump(), "by": teacher, "via": "lan"})
         audit.event("edge.results_imported", request, principal=teacher, assignment_id=assignment_id, count=imported, problems=skipped)
         if assignment.state == "closed":
-            tasks.add_task(service.create_followups, store, assignment, ai_factory())
+            tasks.add_task(service.create_followups, store, assignment, shared_ai())
         return {"imported": imported, "skipped": skipped}
 
     @router.get("/v1/edge/status")

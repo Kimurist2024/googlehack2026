@@ -197,6 +197,10 @@ class MemoryStore:
         self._login_failures: dict[tuple[str, int], int] = {}
         self._offline_verifiers: dict[str, Doc] = {}
 
+    def _assignment_tables(self) -> tuple[dict[str, dict[str, Doc]], ...]:
+        """課題ごとに分けて持つ表。校内LAN版は復元のときに表を置き換えるので、毎回ここで集める。"""
+        return (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups)
+
     def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
         with self._lock:
             self._classes[classroom.id] = copy.deepcopy(classroom)
@@ -219,7 +223,7 @@ class MemoryStore:
     def create_assignment(self, assignment: AssignmentRecord) -> None:
         with self._lock:
             self._assignments[assignment.id] = copy.deepcopy(assignment)
-            for table in (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups):
+            for table in self._assignment_tables():
                 table[assignment.id] = {}
 
     def get_assignment(self, assignment_id: str) -> AssignmentRecord | None:
@@ -387,16 +391,12 @@ class MemoryStore:
         with self._lock:
             return self._login_failures.get((client_key, window), 0)
 
-    def delete_assignment(self, assignment_id: str) -> None:
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         with self._lock:
-            assignment = self._assignments.pop(assignment_id, None)
-            for table in (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups):
-                table.pop(assignment_id, None)
-            if assignment is not None:
-                self.remove_entries(assignment.class_id, assignment_id)
-            classroom = self._classes.get(assignment.class_id) if assignment else None
-            if classroom is not None and classroom.open_assignment_id == assignment_id:
-                self._classes[classroom.id] = replace(classroom, open_assignment_id=None)
+            # 古い時間帯の記録は残しておく意味がないので、ここで捨てる
+            for key in [key for key in self._login_failures if key[1] < window - 1]:
+                del self._login_failures[key]
+            self._login_failures[(client_key, window)] = self._login_failures.get((client_key, window), 0) + 1
 
     def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
         with self._lock:
@@ -405,6 +405,17 @@ class MemoryStore:
     def offline_verifiers(self, class_id: str) -> Doc | None:
         with self._lock:
             return copy.deepcopy(self._offline_verifiers.get(class_id))
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        with self._lock:
+            assignment = self._assignments.pop(assignment_id, None)
+            for table in self._assignment_tables():
+                table.pop(assignment_id, None)
+            if assignment is not None:
+                self.remove_entries(assignment.class_id, assignment_id)
+                classroom = self._classes.get(assignment.class_id)
+                if classroom is not None and classroom.open_assignment_id == assignment_id:
+                    self._classes[classroom.id] = replace(classroom, open_assignment_id=None)
 
     def delete_class(self, class_id: str) -> None:
         with self._lock:
@@ -418,13 +429,6 @@ class MemoryStore:
             for key in [key for key in self._records if key[0] == class_id]:
                 del self._records[key]
             self._classes.pop(class_id, None)
-
-    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
-        with self._lock:
-            # 古い時間帯の記録は残しておく意味がないので、ここで捨てる
-            for key in [key for key in self._login_failures if key[1] < window - 1]:
-                del self._login_failures[key]
-            self._login_failures[(client_key, window)] = self._login_failures.get((client_key, window), 0) + 1
 
 
 def default_store() -> Store:
