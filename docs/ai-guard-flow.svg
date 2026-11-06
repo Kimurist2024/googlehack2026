@@ -15,8 +15,8 @@
 <g transform="translate(232,222) scale(0.6538461538461539)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
 <text x="80" y="224" font-size="16" font-weight="700" fill="#1f2a30">生徒の入力</text>
 <text x="80" y="247.6" font-size="15" fill="#55626a">・コードと答え</text>
-<text x="80" y="269.35" font-size="15" fill="#55626a">・信用しないデータと</text>
-<text x="80" y="291.1" font-size="15" fill="#55626a">　して扱う</text>
+<text x="80" y="269.35" font-size="15" fill="#55626a">・信用しないデー</text>
+<text x="80" y="291.1" font-size="15" fill="#55626a">　タとして扱う</text>
 <path d="M260,296 L286,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
 <rect x="290" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
 <rect x="290" y="206" width="5" height="180" rx="2" fill="#8a9aa3"/>
@@ -32,8 +32,10 @@
 <text x="536" y="224" font-size="16" font-weight="700" fill="#1f2a30">Model Armor </text>
 <text x="536" y="245.6" font-size="16" font-weight="700" fill="#1f2a30">入力</text>
 <text x="536" y="269.2" font-size="15" fill="#55626a">・プロンプト注入</text>
-<text x="536" y="290.95" font-size="15" fill="#55626a">・ジェイルブレイク</text>
-<text x="536" y="312.7" font-size="15" fill="#55626a">・有害・悪意URL・機密</text>
+<text x="536" y="290.95" font-size="15" fill="#55626a">・ジェイルブレイ</text>
+<text x="536" y="312.7" font-size="15" fill="#55626a">　ク</text>
+<text x="536" y="334.45" font-size="15" fill="#55626a">・有害・悪意URL</text>
+<text x="536" y="356.2" font-size="15" fill="#55626a">　・機密</text>
 <path d="M716,296 L742,296" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
 <path d="M615.0,398 L615.0,498" fill="none" stroke="#c9302c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow-red)"/>
 <rect x="746" y="196" width="194" height="200" rx="10" fill="#ffffff" stroke="#cfd6d9"/>

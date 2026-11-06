@@ -34,11 +34,12 @@
 <circle cx="1514" cy="212" r="17" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
 <g transform="translate(1514,212) scale(0.6538461538461539)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#1fae8f"/></g>
 <text x="1240" y="215" font-size="17" font-weight="700" fill="#1f2a30">パッケージの守り</text>
-<text x="1240" y="239.95" font-size="15" fill="#55626a">・Cloud KMS で署名（ECDSA P-256）</text>
-<text x="1240" y="261.7" font-size="15" fill="#55626a">・AES-256-GCM で暗号化</text>
-<text x="1240" y="283.45" font-size="15" fill="#55626a">・解除コードは画面に1回だけ</text>
-<text x="1240" y="305.2" font-size="15" fill="#55626a">・コードは scrypt の照合値だけ</text>
-<text x="1240" y="326.95" font-size="15" fill="#55626a">・発行から7日で失効</text>
+<text x="1240" y="239.95" font-size="15" fill="#55626a">・Cloud KMS で署名（ECDSA P-2</text>
+<text x="1240" y="261.7" font-size="15" fill="#55626a">　56）</text>
+<text x="1240" y="283.45" font-size="15" fill="#55626a">・AES-256-GCM で暗号化</text>
+<text x="1240" y="305.2" font-size="15" fill="#55626a">・解除コードは画面に1回だけ</text>
+<text x="1240" y="326.95" font-size="15" fill="#55626a">・コードは scrypt の照合値だけ</text>
+<text x="1240" y="348.7" font-size="15" fill="#55626a">・発行から7日で失効</text>
 <path d="M1182,240 L1220,240" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
 <text x="62" y="330" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">授業中に要るのは「配り済みの問い・正解・採点の計算」だけ。AI もコードの実行もいらない。</text>
 <text x="62" y="362" font-size="19" fill="#55626a" text-anchor="start">だから授業はネットがなくても回る。</text>

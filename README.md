@@ -102,6 +102,14 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 ![AIの入出力の検査](docs/ai-guard-flow.svg)
 
+### 全体構成（木村さんの実装との統合）
+
+左が今の `feature/kimura`、右がこのブランチのセキュリティを合わせた全体です。赤い「＋」がセキュリティで足したもの、黄色の「◇」は統合するときに対応するものです。
+
+| 木村さんの実装 | 統合後 |
+| --- | --- |
+| ![木村さんの実装](docs/system-kimura.svg) | ![統合後の全体構成](docs/system-integrated.svg) |
+
 ### main に取り込むときに変わること
 
 - 授業コードと個人コードのハッシュの作り方が変わるので、今あるクラスのコードでは入れなくなります。デモクラスは作り直してください。

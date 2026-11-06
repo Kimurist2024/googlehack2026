@@ -92,15 +92,21 @@ def wrap(text: str, size: float, width: float) -> list[str]:
     return lines + ([current] if current else [])
 
 
+ADDED, PLANNED = "#c0392b", "#b7791f"
+# 行頭が "+ " なら「セキュリティで追加」、"~ " なら「統合時に対応」として色を変える
+MARKS = {"+ ": ("＋", ADDED), "~ ": ("◇", PLANNED)}
+
+
 class Svg:
-    def __init__(self, title: str, subtitle: str) -> None:
+    def __init__(self, title: str, subtitle: str, height: int = H) -> None:
+        self.height = height
         self.parts = [
-            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" font-family="{FONT}">',
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {height}" width="{W}" height="{height}" font-family="{FONT}">',
             "<defs>"
             f'<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="{LINE}"/></marker>'
             '<marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker>'
             "</defs>",
-            f'<rect width="{W}" height="{H}" fill="{BG}"/>',
+            f'<rect width="{W}" height="{height}" fill="{BG}"/>',
             f'<text x="40" y="78" font-size="46" font-weight="700" fill="{INK}">{escape(title)}</text>',
             f'<text x="{48 + text_width(title, 46)}" y="76" font-size="20" fill="{MUTED}">{escape(subtitle)}</text>',
             f'<rect x="0" y="100" width="{W}" height="4" fill="#d4d4d4"/>',
@@ -147,9 +153,12 @@ class Svg:
             cursor += title_size * 1.35
         cursor += 2
         for item in lines:
-            for index, line in enumerate(wrap(item, size, w - 46)):
-                bullet = "・" if index == 0 else "　"
-                self.add(f'<text x="{x + 18}" y="{cursor}" font-size="{size}" fill="{MUTED}">{bullet}{escape(line)}</text>')
+            mark, color = "・", MUTED
+            if item[:2] in MARKS:
+                (mark, color), item = MARKS[item[:2]], item[2:]
+            for index, line in enumerate(wrap(item, size, w - 46 - (34 if icon else 0))):
+                bullet = mark if index == 0 else "　"
+                self.add(f'<text x="{x + 18}" y="{cursor}" font-size="{size}" fill="{color}">{bullet}{escape(line)}</text>')
                 cursor += size * 1.45
         return cursor
 
@@ -174,9 +183,35 @@ class Svg:
                     f'text-anchor="middle" paint-order="stroke" stroke="{BG}" stroke-width="6">{escape(line)}</text>'
                 )
 
+    def legend(self, x, y, items):
+        """右上の凡例。items は（記号, 色, 説明）の並び。"""
+        for mark, color, label in items:
+            self.note(x, y, f"{mark} {label}", size=17, color=color, bold=True)
+            x += text_width(f"{mark} {label}", 17) + 28
+
     def note(self, x, y, text, size=17, color=INK, anchor="start", bold=False):
         weight = ' font-weight="700"' if bold else ""
         self.add(f'<text x="{x}" y="{y}" font-size="{size}" fill="{color}" text-anchor="{anchor}"{weight}>{escape(text)}</text>')
+
+    def flow(self, x, y, labels, fills, size=13):
+        """横に並んだ丸い札と矢印（順に通る処理）。"""
+        for index, (label, fill) in enumerate(zip(labels, fills)):
+            stroke = ADDED if fill == "added" else "#cfd6d9"
+            w = self.pill(x, y, label, fill="#fde8e8" if fill == "added" else "#ffffff", size=size, bold=True, stroke=stroke)
+            if index < len(labels) - 1:
+                self.arrow([(x + w + 3, y + size / 2 + 8), (x + w + 19, y + size / 2 + 8)])
+            x += w + 22
+
+    def tags(self, x, y, labels, width, size=14):
+        """矢印のない札を幅に合わせて折り返して並べる（別々の機能）。最後の行の下端を返す。"""
+        left = x
+        for label in labels:
+            w = text_width(label, size) + 26
+            if x + w > left + width:
+                x, y = left, y + size + 26
+            self.pill(x, y, label, size=size, bold=True)
+            x += w + 10
+        return y + size + 16
 
     def save(self, name: str) -> None:
         (HERE / name).write_text("\n".join(self.parts + ["</svg>"]) + "\n", encoding="utf-8")
@@ -323,8 +358,102 @@ def ai_guard() -> None:
     s.save("ai-guard-flow.svg")
 
 
+SYSTEM_H = 960
+
+
+def system_kimura() -> None:
+    """木村さんのブランチ（feature/kimura）の構成。セキュリティの変更を入れる前。"""
+    s = Svg("木村さんの実装：", "feature/kimura（0a28f28 時点）の全体構成", SYSTEM_H)
+    s.group(40, 150, 380, 440, "画面（Firebase Hosting）", "blue", icon="browser")
+    s.card(62, 186, 336, 130, "教員の画面", ["Google ログイン", "課題の準備・受付・締切", "声をかける順・声かけメモ"], accent="#4a86e8")
+    s.card(62, 330, 336, 130, "生徒の画面", ["授業コード＋個人コードで入室", "解答するとその場で採点", "振り返りの対話（10回まで）"], accent="#4a86e8")
+    s.card(62, 474, 336, 96, "web/（HTML・CSS・JS）", ["外部のライブラリなし"], accent="#4a86e8")
+    s.group(470, 150, 440, 440, "API（Cloud Run・FastAPI）", "teal", icon="server")
+    s.card(492, 186, 396, 112, "問いを作る（授業前）", ["提出（zip）を読み、隔離して実行", "実行結果から問いと正解を作る"])
+    s.card(492, 312, 396, 140, "授業と締切", ["入室・解答・採点（AI を使わない）", "締切で声かけメモとクラスのまとめ", "振り返りの対話（答えは言わない）"])
+    s.card(492, 466, 396, 104, "声をかける順", ["誤答と持ち時間から計算（AI を使わない）", "CSV の書き出し"])
+    s.group(960, 150, 600, 230, "AI（Gemini 3.5 Flash-Lite）", "pink", icon="ai")
+    s.tags(982, 192, ["問いの選定", "つまずきの説明", "声かけメモ", "クラスのまとめ", "振り返りの対話"], 556)
+    s.note(982, 300, "・出力は checked_text で検査し、通らなければ既定の文に戻す", size=16, color=MUTED)
+    s.note(982, 330, "・生徒の対話はデータとして区切って渡す", size=16, color=MUTED)
+    s.note(982, 360, "・正解・採点・声をかける順には使わない", size=16, color=MUTED)
+    s.group(960, 420, 600, 170, "生徒のコードの実行（Code Execution）", "amber", icon="sandbox")
+    s.card(982, 456, 556, 114, "隔離環境で実行（asia-northeast1）", ["import は計算用の標準ライブラリだけ", "実行の記録・出力・変えたときの結果を返す"], accent="#f0b44c")
+    s.group(40, 650, 380, 280, "授業の流れ", "slate", icon="check")
+    s.card(62, 686, 336, 224, "教員と生徒の5分", [
+        "① 提出をまとめて登録", "② 問いを作る（実行＋Gemini）", "③ 受付を始める", "④ 生徒が解答・その場で採点",
+        "⑤ 締切 → メモとまとめ", "⑥ 声をかける順に話しかける",
+    ], accent="#8a9aa3", size=15)
+    s.group(470, 650, 440, 280, "データ（Firestore）", "violet", icon="database")
+    s.card(492, 686, 396, 224, "asia-northeast1・ネイティブモード", [
+        "クラスと名簿（出席番号だけ、氏名なし）", "提出・問い・正解・解答", "声かけメモ・クラスのまとめ・対話の回数",
+        "授業コード・個人コードはハッシュ", "ブラウザからは読み書きを全拒否",
+    ], accent="#9b8cf2", size=15)
+    s.group(960, 650, 600, 280, "認証と秘密", "slate", icon="key")
+    s.card(982, 686, 268, 120, "Firebase Auth", ["Google ログイン", "許可した教員だけ"], accent="#8a9aa3", size=15, icon="lock")
+    s.card(1270, 686, 268, 120, "Secret Manager", ["SESSION_SECRET", "トークンとハッシュの鍵"], accent="#8a9aa3", size=15, icon="key")
+    s.card(982, 820, 556, 90, "公開", ["mushitori-hackathon.web.app（/v1/** は Cloud Run へ）"], accent="#8a9aa3", size=15)
+    s.arrow([(422, 380), (468, 380)], "HTTPS", (445, 366), size=14)
+    s.arrow([(912, 265), (958, 265)])
+    s.arrow([(912, 505), (958, 505)], "コード", (935, 491), size=14)
+    s.arrow([(820, 592), (820, 626)])
+    s.note(832, 618, "読み書き", size=15)
+    s.arrow([(912, 580), (1260, 628)])
+    s.note(1272, 622, "トークンの検証", size=15)
+    s.save("system-kimura.svg")
+
+
+def system_integrated() -> None:
+    """木村さんの実装にセキュリティ（security/Taiga）を合わせた全体構成。"""
+    s = Svg("統合後の全体構成：", "木村さんの実装 ＋ セキュリティ", SYSTEM_H)
+    s.legend(1010, 76, [("・", MUTED, "木村さんの実装"), ("＋", ADDED, "セキュリティで追加"), ("◇", PLANNED, "統合時に対応")])
+    s.group(40, 150, 380, 440, "画面（Firebase Hosting）", "blue", icon="browser")
+    s.card(62, 186, 336, 130, "教員の画面", ["Google ログイン", "準備・受付・締切・声をかける順", "+ 授業パッケージの保存・取り込み"], accent="#4a86e8")
+    s.card(62, 330, 336, 104, "生徒の画面", ["入室・解答・採点・振り返り", "+ 回線が切れたら解答を端末にためる"], accent="#4a86e8")
+    s.card(62, 448, 336, 122, "画面の守り", ["+ Strict CSP・Trusted Types", "+ HSTS・クリックジャッキング対策", "+ Service Worker は画面だけ保存"], accent=ADDED)
+    s.group(470, 150, 440, 440, "API（Cloud Run・FastAPI）", "teal", icon="server")
+    s.card(492, 186, 396, 112, "問いを作る（授業前）", ["提出を隔離して実行し、問いと正解", "+ 危ない書き方は実行せず先生に表示"])
+    s.card(492, 312, 396, 122, "授業と締切", ["入室・解答・採点（AI を使わない）", "声かけメモ・まとめ・振り返りの対話", "+ 30日で自動削除・教員がすぐ消せる"])
+    s.card(492, 448, 396, 122, "API の守り", ["+ 本文・ID・文字数の上限", "+ 用途別の鍵・入室制限を全体で共有", "+ 監査ログ（コード・IP は残さない）"], accent=ADDED)
+    s.group(960, 150, 600, 230, "AI（Gemini ＋ Model Armor）", "pink", icon="ai")
+    s.flow(982, 196, ["Model Armor 入力", "Gemini", "checked_text", "Model Armor 出力"], ["added", "", "", "added"])
+    s.note(982, 270, "＋ 生徒由来の文は <data> で囲み、検査できなければ通さない", size=16, color=ADDED)
+    s.note(982, 300, "＋ 本番で Model Armor の設定がなければ Gemini を使わない", size=16, color=ADDED)
+    s.note(982, 330, "◇ 声かけメモ・まとめ・振り返りの対話にも Model Armor", size=16, color=PLANNED)
+    s.note(982, 360, "・正解・採点・声をかける順には使わない", size=16, color=MUTED)
+    s.group(960, 420, 600, 170, "生徒のコードの実行（Code Execution）", "amber", icon="sandbox")
+    s.card(982, 456, 556, 114, "隔離環境の中の実行ラッパー", [
+        "import は計算用の標準ライブラリだけ", "+ __import__・open・eval・特殊な属性を拒否", "+ 環境変数を渡さない・メモリと CPU 時間に上限",
+    ], accent="#f0b44c", size=15)
+    s.group(40, 650, 380, 280, "ネット障害のとき", "red", dashed=True)
+    s.card(62, 686, 336, 130, "教員PC（校内LAN版）", ["+ 署名を確かめて取り込む", "+ 外へは一度も接続しない"], accent=ADDED, size=15, icon="laptop")
+    s.card(62, 830, 336, 80, "生徒の端末", ["+ 解答をためて、つながったら送る"], accent=ADDED, size=15, icon="phone")
+    s.group(470, 650, 440, 280, "データ（Firestore）", "violet", icon="database")
+    s.card(492, 686, 396, 224, "asia-northeast1・ネイティブモード", [
+        "クラスと名簿（出席番号だけ）", "提出・問い・正解・解答・メモ", "ブラウザからは読み書きを全拒否",
+        "+ 用途別の鍵でコードをハッシュ", "+ 期限の印（TTL）と入室の失敗の記録",
+    ], accent="#9b8cf2", size=15)
+    s.group(960, 650, 600, 280, "認証・鍵・記録", "slate", icon="key")
+    s.card(982, 686, 268, 104, "Firebase Auth", ["Google ログイン", "許可した教員だけ"], accent="#8a9aa3", size=15, icon="lock")
+    s.card(1270, 686, 268, 104, "Secret Manager", ["SESSION_SECRET"], accent="#8a9aa3", size=15, icon="key")
+    s.card(982, 806, 268, 104, "Cloud KMS", ["+ 授業パッケージに署名", "+ 秘密鍵は外に出ない"], accent=ADDED, size=15, icon="key")
+    s.card(1270, 806, 268, 104, "Cloud Logging", ["+ 監査ログ", "+ 持ち出しと削除の記録"], accent=ADDED, size=15, icon="log")
+    s.arrow([(422, 380), (468, 380)], "HTTPS", (445, 366), size=14)
+    s.arrow([(912, 265), (958, 265)])
+    s.arrow([(912, 505), (958, 505)], "コード", (935, 491), size=14)
+    s.arrow([(820, 592), (820, 626)])
+    s.note(832, 618, "読み書き", size=15)
+    s.arrow([(912, 580), (1260, 628)])
+    s.note(1272, 622, "検証・署名・記録", size=15)
+    s.arrow([(480, 592), (395, 640)], dashed=True)
+    s.note(260, 626, "授業パッケージ", size=15, color=ADDED)
+    s.save("system-integrated.svg")
+
+
 if __name__ == "__main__":
     architecture()
     resilience()
     ai_guard()
-    print("docs/security-architecture.svg, docs/resilience-flow.svg, docs/ai-guard-flow.svg")
+    system_kimura()
+    system_integrated()
+    print("docs/*.svg を作りました")
