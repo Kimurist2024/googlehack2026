@@ -195,7 +195,7 @@ class Svg:
 
     def flow(self, x, y, labels, fills, size=13):
         """横に並んだ丸い札と矢印（順に通る処理）。"""
-        for index, (label, fill) in enumerate(zip(labels, fills)):
+        for index, (label, fill) in enumerate(zip(labels, fills, strict=True)):
             stroke = ADDED if fill == "added" else "#cfd6d9"
             w = self.pill(x, y, label, fill="#fde8e8" if fill == "added" else "#ffffff", size=size, bold=True, stroke=stroke)
             if index < len(labels) - 1:
