@@ -175,7 +175,10 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 2. **専用のサービスアカウントで動かす。** 既定の Compute Engine のアカウントは使わず、必要なロールだけを付けます。`roles/datastore.user`（Firestore）、`roles/aiplatform.user`（Gemini と Code Execution）、`roles/modelarmor.user`（Model Armor）、`roles/secretmanager.secretAccessor`（その秘密だけに付ける）、`roles/cloudkms.signerVerifier`（授業パッケージの鍵だけに付ける）。
 3. **Model Armor のテンプレートを作る。** 日本語の検出には多言語の検出が必要で、`asia-northeast1` は対応していないため、`us` に作ります。Gemini はすでに `global` で呼んでいるので、データの所在の条件は変わりません。
 
+   `gcloud` の Model Armor のコマンドは、地域のエンドポイントを指定しないと権限があっても `PERMISSION_DENIED` になります（2026年11月6日に確認）。
+
    ```sh
+   export CLOUDSDK_API_ENDPOINT_OVERRIDES_MODELARMOR=https://modelarmor.us.rep.googleapis.com/
    gcloud model-armor templates create mushitori-guard --location=us \
      --pi-and-jailbreak-filter-settings-enforcement=enabled \
      --pi-and-jailbreak-filter-settings-confidence-level=low-and-above \
