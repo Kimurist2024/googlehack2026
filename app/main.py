@@ -24,7 +24,9 @@ GRACE_SEC = 10
 LOGIN_FAILURES_PER_MIN = 30
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
-ACTIONS = {"ask_in_class", "no_problem", "question_bad"}
+# explained と not_explained は、質問案で聞いた結果。生徒の記録に残り、次の課題の材料になる
+ACTIONS = {"explained", "not_explained", "ask_in_class", "no_problem", "question_bad"}
+EXPLANATION_CHARS = 300
 QUESTION_TYPES = {"output", "trace", "impact"}
 MAX_ANSWER_CHARS = 20_000
 GENERATION_STALE_SEC = 30 * 60
@@ -80,6 +82,11 @@ class ChatTurn(BaseModel):
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=300)
     history: list[ChatTurn] = Field(default_factory=list, max_length=8)
+
+
+class ExplainIn(BaseModel):
+    line: int = Field(ge=1)
+    text: str = Field(min_length=1, max_length=EXPLANATION_CHARS)
 
 
 class ActionIn(BaseModel):
@@ -160,6 +167,10 @@ def create_app(
         )["assignment_id"]
         by_number = {number: sid for sid, number in store.get_class(created["class_id"]).student_numbers.items()}
         store.add_submissions(assignment_id, {by_number[number]: code for number, code in demo.PROGRAMS.items()})
+        # これまでの課題の記録も合成で入れる。締切のときに、記録との違いから質問案を作る
+        for number, student_id in by_number.items():
+            for entry in demo.past_entries(number, service.now()):
+                store.save_student_entry(created["class_id"], student_id, entry)
         return {**created, "assignment_id": assignment_id}
 
     @app.post("/v1/classes", status_code=201)
@@ -326,6 +337,20 @@ def create_app(
         reply = ai_factory().chat(context, [turn.model_dump() for turn in body.history], body.message)
         return {**reply, "remaining": remaining}
 
+    @app.post("/v1/assignments/{assignment_id}/attempt:explain")
+    def explain(assignment_id: str, body: ExplainIn, claims: dict = Depends(auth.current_student)) -> dict:
+        """説明できなかった行を、生徒が自分の言葉で書く。AIは使わず、そのまま教員に見せる。"""
+        student_assignment(assignment_id, claims)
+        student_id = claims["student"]
+        attempt = store.get_attempt(assignment_id, student_id)
+        if attempt is None or attempt["submitted_at"] is None:
+            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+        if body.line not in service.explainable_lines(attempt, store.get_answer_key(assignment_id, student_id)):
+            raise HTTPException(status_code=400, detail="この行は説明の対象ではありません")
+        if not store.save_explanation(assignment_id, student_id, body.line, body.text.strip()):
+            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+        return {"saved": True}
+
     @app.get("/v1/assignments/{assignment_id}/followups")
     def followups(assignment_id: str, budget_sec: float = 90, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
@@ -339,7 +364,16 @@ def create_app(
         store.record_action(
             assignment_id, student_id, {"action": body.action, "reason": body.reason, "duration_ms": body.duration_ms, "by": teacher}
         )
+        store.set_entry_action(assignment.class_id, student_id, assignment_id, {"action": body.action, "reason": body.reason})
         return {"saved": True}
+
+    @app.get("/v1/assignments/{assignment_id}/students/{student_id}/record")
+    def student_record(assignment_id: str, student_id: str, teacher: str = Depends(auth.current_teacher)) -> dict:
+        assignment = owned_assignment(assignment_id, teacher)
+        classroom = store.get_class(assignment.class_id)
+        if student_id not in classroom.student_numbers:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        return service.student_record_view(store, classroom, student_id)
 
     @app.get("/v1/assignments/{assignment_id}/export")
     def export(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> Response:

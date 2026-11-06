@@ -164,7 +164,7 @@ def test_gemini_failure_falls_back_to_templates():
     assert len(ai.select("目標", "x = 1\n", pool, 3, "s")) == 3
     question = q()
     assert ai.explain(question) == TemplateAI().explain(question)
-    assert ai.memo("x = 1\n", [question], {"trace-1": "3"}) == TemplateAI().memo("x = 1\n", [question], {"trace-1": "3"})
+    assert ai.review(REVIEW_CODE, [], SPOTS, []) == TemplateAI().review(REVIEW_CODE, [], SPOTS, [])
 
 
 def test_gemini_invalid_selection_falls_back_and_valid_is_used():
@@ -190,32 +190,58 @@ def test_gemini_is_not_asked_to_explain_without_a_trace():
 
 
 
-MEMO_CODE = "t = 0\nfor n in [3, 8]:\n    t = t + n\nprint(t)\nprint(t)\n"
+REVIEW_CODE = "t = 0\nfor n in [3, 8]:\n    t += n\nprint(t)\n"
+SPOTS = [
+    {"line": 3, "code": "t += n", "constructs": ["`+=` などの累算代入"], "new": ["`+=` などの累算代入"], "rare": [], "unexplained": ["変数 `t` の2番目の値"]},
+    {"line": None, "code": "", "constructs": [], "new": [], "rare": [], "unexplained": ["最後に表示する内容"]},
+]
+HISTORY = [{"課題": "合計を求める", "正答": "2/3", "説明を聞いた書き方": ["`for` 文"], "誤答した問いの種類": ["trace"], "教員の記録": "explained"}]
 
 
-def test_template_memo_has_a_hypothesis_and_two_questions():
-    memo = TemplateAI().memo(MEMO_CODE, [q()], {"trace-1": "3"})
-    assert memo["by"] == "template" and memo["hypothesis"]
-    assert len(memo["questions"]) == 2 and "5行目" in memo["questions"][0]
-
-
-def test_gemini_memo_is_used_when_it_passes_the_checks():
-    reply = '{"hypothesis": "ループの2回目で t に 8 を足す前の値を使っている可能性があります。", "questions": ["3行目を2回目に実行したとき、t はいくつですか。", "なぜ 3 と答えたのですか。"]}'
+def gemini_review(reply: str, code: str = REVIEW_CODE, history=None):
     client = FixedClient(reply)
-    memo = GeminiAI("p", client=client).memo(MEMO_CODE + "# 山田\n", [q()], {"trace-1": "3"})
-    assert memo["by"] == "gemini" and memo["questions"][0].startswith("3行目")
-    assert "山田" not in client.prompts[0]
+    return GeminiAI("p", client=client).review(code, HISTORY if history is None else history, SPOTS, ["`for` 文"]), client
 
 
-def test_gemini_memo_falls_back_when_it_invents_numbers_or_lines():
+def test_template_review_asks_about_each_spot_and_counts_the_history():
+    review = TemplateAI().review(REVIEW_CODE, HISTORY, SPOTS, ["`for` 文"])
+    assert review["by"] == "template" and len(review["asks"]) == len(SPOTS)
+    # 初めて使った書き方は名前を出してたずね、行を指せない箇所は流れをたずねる
+    assert review["asks"][0].startswith("3行目の`+=` などの累算代入") and "行目" not in review["asks"][1]
+    assert "直近1回" in review["overview"] and "`for` 文" in review["overview"]
+    assert "最初" in TemplateAI().review(REVIEW_CODE, [], SPOTS, [])["overview"]
+
+
+def test_gemini_review_is_used_when_it_passes_the_checks():
+    reply = '{"overview": "前の課題でも繰り返しの行で説明を聞いています。今回は累算代入を初めて使いました。", "asks": ["3行目の `t += n` で、t はどう変わりますか。", "最後に表示されるまでの流れを順に話してもらえますか。"]}'
+    review, client = gemini_review(reply, REVIEW_CODE + "# 山田\n")
+    assert review["by"] == "gemini" and review["asks"][0].startswith("3行目")
+    assert "山田" not in client.prompts[0] and "<spots>" in client.prompts[0]
+
+
+def test_gemini_review_falls_back_on_wrong_lines_ai_guesses_or_bad_shape():
     for reply in (
-        '{"hypothesis": "値が 99 になると考えた可能性があります。", "questions": ["どうですか。", "なぜですか。"]}',
-        '{"hypothesis": "可能性があります。", "questions": ["40行目はどうですか。", "なぜですか。"]}',
-        '{"hypothesis": "理解していない可能性があります。", "questions": ["どうですか。", "なぜですか。"]}',
-        '{"hypothesis": "可能性があります。", "questions": ["どうですか。"]}',
+        # 別の行を指している
+        '{"overview": "様子です。", "asks": ["4行目はどうですか。", "流れを話してください。"]}',
+        # 行を指せない箇所なのに行番号を書いている
+        '{"overview": "様子です。", "asks": ["3行目はどうですか。", "1行目から流れを話してください。"]}',
+        # まとめに行番号を書いている（課題ごとにコードが違う）
+        '{"overview": "3行目でつまずいています。", "asks": ["3行目はどうですか。", "流れを話してください。"]}',
+        # AIの使用を推測している
+        '{"overview": "AIに頼った可能性があります。", "asks": ["3行目はどうですか。", "流れを話してください。"]}',
+        '{"overview": "様子です。", "asks": ["3行目は自力で書きましたか。", "流れを話してください。"]}',
+        # 入力にない数値、質問の数の不一致、同じ質問
+        '{"overview": "正答は 99 回です。", "asks": ["3行目はどうですか。", "流れを話してください。"]}',
+        '{"overview": "様子です。", "asks": ["3行目はどうですか。"]}',
+        '{"overview": "様子です。", "asks": ["流れを話してください。", "流れを話してください。"]}',
     ):
-        memo = GeminiAI("p", client=FixedClient(reply)).memo(MEMO_CODE, [q()], {"trace-1": "3"})
-        assert memo["by"] == "template"
+        review, _ = gemini_review(reply)
+        assert review["by"] == "template", reply
+
+
+def test_gemini_review_may_count_the_records_it_was_given():
+    reply = '{"overview": "直近1回の課題でも、繰り返しの行で説明を聞いています。", "asks": ["3行目で t はどう変わりますか。", "流れを話してください。"]}'
+    assert gemini_review(reply)[0]["by"] == "gemini"
 
 
 STATS = [
@@ -285,3 +311,8 @@ def test_gemini_chat_falls_back_on_unknown_numbers_lines_or_judging_words():
         '{"reply": ""}',
     ):
         assert GeminiAI("p", client=FixedClient(reply)).chat(CHAT_CONTEXT, [], "なぜ？")["by"] == "template"
+
+
+def test_template_asks_about_a_change_when_only_impact_questions_were_missed():
+    spot = {"line": 1, "code": "x = 7", "constructs": [], "new": [], "rare": [], "unexplained": ["1行目の `7` を `8` に変えると"], "kinds": ["impact"]}
+    assert "変える" in TemplateAI().review("x = 7\n", [], [spot], [])["asks"][0]

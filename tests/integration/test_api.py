@@ -74,9 +74,12 @@ def test_full_flow_from_upload_to_followups(client):
     assert client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER).status_code == 200
     view = client.get(f"/v1/assignments/{assignment}/followups?budget_sec=90", headers=TEACHER).json()
     assert view["order"][0]["number"] == "1" and view["order"][0]["in_budget"] is True
-    memo = view["order"][0]["memo"]
-    assert memo["hypothesis"] and len(memo["questions"]) == 2
-    assert view["order"][0]["question"] == memo["questions"][0]
+    review = view["order"][0]["review"]
+    assert review["overview"] and review["by"] == "template"
+    # 行を指す誤答があれば、その行を先に挙げる。出力の予測は行を指せないので最後に置く
+    assert review["spots"][0]["line"] and review["spots"][0]["unexplained"]
+    assert all(spot["question"] for spot in review["spots"])
+    assert view["order"][0]["question"] == review["spots"][0]["question"]
     assert [item["given"] for item in view["order"][0]["evidence"]] == ["0", "0", "0"]
     assert [row["number"] for row in view["not_attempted"]] == ["2"]
 
@@ -451,3 +454,103 @@ def test_chat_is_only_for_submitted_attempts_and_has_a_limit(client, monkeypatch
     assert client.post(url, json={"message": "もう少し", "history": history}, headers=headers).json()["remaining"] == 0
     assert client.post(url, json={"message": "もう一回"}, headers=headers).status_code == 429
     assert client.post(url, json={"message": "あ" * 301}, headers=headers).status_code == 422
+
+
+SHORTHAND = CODE.replace("total = total + n", "total += n")
+
+
+def open_in_class(client, created, codes: dict[str, str], title="合計"):
+    """同じクラスに、次の課題を出して受付を始める。"""
+    assignment = client.post(
+        "/v1/assignments", json={"class_id": created["class_id"], "title": title, "learning_goal": "繰り返し"}, headers=TEACHER
+    ).json()["assignment_id"]
+    files = {f"{number}.py": code for number, code in codes.items()}
+    client.post(f"/v1/assignments/{assignment}/submissions", files={"file": ("s.zip", make_zip(files), "application/zip")}, headers=TEACHER)
+    client.post(f"/v1/assignments/{assignment}:generate", headers=TEACHER)
+    assert client.post(f"/v1/assignments/{assignment}:open", headers=TEACHER).status_code == 200
+    return assignment
+
+
+def close_and_view(client, assignment):
+    client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    return client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
+
+
+def test_records_accumulate_and_a_new_way_of_writing_is_raised(client):
+    created, first = setup_open(client, numbers=("1", "2", "3"))
+    answer_all(client, created, first, ("1", "2", "3"), "0")
+    rows = close_and_view(client, first)["order"]
+    assert all(row["review"]["spots"][0]["new"] == [] for row in rows)  # 最初の課題では「初めて」を判断しない
+    assert "最初" in rows[0]["review"]["overview"]
+
+    # 2回目は番号1だけが、これまで使っていなかった += を使う。クラスでもほかに使った人はいない
+    second = open_in_class(client, created, {"1": SHORTHAND, "2": CODE, "3": CODE}, title="合計その2")
+    answer_all(client, created, second, ("1", "2", "3"), "0")
+    rows = {row["number"]: row for row in close_and_view(client, second)["order"]}
+    flagged = [spot for spot in rows["1"]["review"]["spots"] if spot["new"]]
+    assert flagged and flagged[0]["line"] == 5 and flagged[0]["rare"] == ["`+=` などの累算代入"]
+    assert flagged[0]["question"].startswith("5行目の`+=`")
+    assert not any(spot["new"] for spot in rows["2"]["review"]["spots"])
+    assert "直近1回" in rows["1"]["review"]["overview"]
+
+    record = client.get(f"/v1/assignments/{second}/students/{rows['1']['student_id']}/record", headers=TEACHER).json()
+    assert record["number"] == "1" and [entry["title"] for entry in record["entries"]] == ["合計その2", "合計"]
+    assert "`+=` などの累算代入" in record["entries"][0]["constructs"] and record["entries"][0]["score"] == 0
+
+
+def test_closing_again_does_not_duplicate_the_record(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    answer_all(client, created, assignment, ("1",), "0")
+    row = close_and_view(client, assignment)["order"][0]
+    service.create_followups(client.app.state.store, client.app.state.store.get_assignment(assignment), TemplateAI())
+    record = client.get(f"/v1/assignments/{assignment}/students/{row['student_id']}/record", headers=TEACHER).json()
+    assert len(record["entries"]) == 1
+
+
+def test_teacher_result_is_kept_in_the_student_record(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    answer_all(client, created, assignment, ("1",), "0")
+    row = close_and_view(client, assignment)["order"][0]
+    saved = client.post(f"/v1/assignments/{assignment}/followups/{row['student_id']}", json={"action": "not_explained"}, headers=TEACHER)
+    assert saved.status_code == 200
+    record = client.get(f"/v1/assignments/{assignment}/students/{row['student_id']}/record", headers=TEACHER).json()
+    assert record["entries"][0]["action"] == {"action": "not_explained", "reason": ""}
+    assert client.post(f"/v1/assignments/{assignment}/followups/{row['student_id']}", json={"action": "guess"}, headers=TEACHER).status_code == 422
+
+
+def test_student_record_is_only_for_the_owning_teacher(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    answer_all(client, created, assignment, ("1",), "0")
+    row = close_and_view(client, assignment)["order"][0]
+    url = f"/v1/assignments/{assignment}/students/{row['student_id']}/record"
+    assert client.get(url).status_code == 401
+    assert client.get(url, headers={"X-Dev-Teacher": "teacher-b"}).status_code == 404
+    assert client.get(f"/v1/assignments/{assignment}/students/nobody/record", headers=TEACHER).status_code == 404
+
+
+def test_students_explain_missed_lines_in_their_own_words(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    headers, _ = login(client, created)
+    url = f"/v1/assignments/{assignment}/attempt:explain"
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    assert client.post(url, json={"line": 5, "text": "合計に足す"}, headers=headers).status_code == 409
+    result = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers).json()
+    missed = sorted({item["line"] for item in result["results"] if not item["correct"] and item["line"]})
+    assert missed
+    assert client.post(url, json={"line": missed[0], "text": "  n が 2 より大きいときだけ足す  "}, headers=headers).status_code == 200
+    assert client.post(url, json={"line": 6, "text": "表示する"}, headers=headers).status_code == 400  # 誤答した問いが指していない行
+    assert client.post(url, json={"line": missed[0], "text": "あ" * 301}, headers=headers).status_code == 422
+    assert client.post(url, json={"line": missed[0], "text": "x"}).status_code == 401
+    row = close_and_view(client, assignment)["order"][0]
+    assert row["explanations"] == {str(missed[0]): "n が 2 より大きいときだけ足す"}
+
+
+def test_demo_seed_brings_past_records(client, monkeypatch):
+    monkeypatch.setenv("ALLOW_DEMO_SEED", "1")
+    created = client.post("/v1/dev/seed", headers=TEACHER).json()
+    store = client.app.state.store
+    classroom = store.get_class(created["class_id"])
+    by_number = {number: student_id for student_id, number in classroom.student_numbers.items()}
+    record = client.get(f"/v1/assignments/{created['assignment_id']}/students/{by_number['2']}/record", headers=TEACHER).json()
+    assert [entry["title"] for entry in record["entries"]] == ["最大値を探す（第2回）", "合計を求める（第1回）"]
+    assert store.get_student_record(created["class_id"], by_number["6"]) is None

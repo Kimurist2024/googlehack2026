@@ -2,13 +2,14 @@
 
 classes/{id}                          クラスと名簿（出席番号）、受付中の課題
 classes/{id}/credentials/{hash}       個人コードのハッシュ -> student_id
+classes/{id}/students/{sid}           生徒ごとの記録（課題ごとの結果、説明を聞いた行、教員の処置）
 classCodes/{hash}                     授業コードのハッシュ -> class_id
 assignments/{id}                      課題
 assignments/{id}/submissions/{sid}    提出のコードと状態
 assignments/{id}/quizzes/{sid}        問い（正解なし）
 assignments/{id}/answerKeys/{sid}     正解、解説、実行の記録
 assignments/{id}/attempts/{sid}       開始と提出の時刻、採点結果
-assignments/{id}/followups/{sid}      授業で聞く一問と処置
+assignments/{id}/followups/{sid}      教員に渡す質問案と処置
 
 ブラウザからは読み書きさせない（firestore.rules）。サーバーの権限でAPIだけが触る。
 """
@@ -22,7 +23,7 @@ from google.api_core.exceptions import Aborted
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-from .store import SUBMISSION_STATUSES, AssignmentRecord, ClassRecord, Doc, can_add_submissions, can_begin_generation
+from .store import SUBMISSION_STATUSES, AssignmentRecord, ClassRecord, Doc, can_add_submissions, can_begin_generation, merged_entries
 
 
 MAX_TRANSACTION_ATTEMPTS = 10
@@ -242,15 +243,63 @@ class FirestoreStore:
 
         return self._in_transaction(work)
 
+    def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
+        reference = self._part(assignment_id, "attempts").document(student_id)
+
+        def work(transaction) -> bool:
+            snapshot = reference.get(transaction=transaction)
+            data = snapshot.to_dict() if snapshot.exists else None
+            if data is None or data.get("submitted_at") is None:
+                return False
+            # 行番号を項目名にすると数字で始まる名前になるので、map ごと書き直す
+            explanations = {**(data.get("explanations") or {}), str(line): text}
+            transaction.update(reference, {"explanations": explanations})
+            return True
+
+        return self._in_transaction(work)
+
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         return self._all(assignment_id, "followups")
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None:
+    def add_followup(self, assignment_id: str, student_id: str, question: str, line: int | None, review: Doc | None) -> None:
         reference = self._part(assignment_id, "followups").document(student_id)
-        reference.set({"question": question, "line": line, "memo": memo}, merge=True)
+        reference.set({"question": question, "line": line, "review": review}, merge=True)
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         self._part(assignment_id, "followups").document(student_id).set(action, merge=True)
 
     def set_class_summary(self, assignment_id: str, summary: Doc) -> None:
         self._assignment(assignment_id).update({"class_summary": summary})
+
+    def _record(self, class_id: str, student_id: str):
+        return self._class(class_id).collection("students").document(student_id)
+
+    def get_student_record(self, class_id: str, student_id: str) -> Doc | None:
+        return self._record(class_id, student_id).get().to_dict()
+
+    def save_student_entry(self, class_id: str, student_id: str, entry: Doc) -> None:
+        reference = self._record(class_id, student_id)
+
+        def work(transaction) -> None:
+            snapshot = reference.get(transaction=transaction)
+            entries = (snapshot.to_dict() or {}).get("entries", []) if snapshot.exists else []
+            transaction.set(reference, {"entries": merged_entries(entries, entry)})
+
+        self._in_transaction(work)
+
+    def set_entry_action(self, class_id: str, student_id: str, assignment_id: str, action: Doc) -> None:
+        reference = self._record(class_id, student_id)
+
+        def work(transaction) -> None:
+            snapshot = reference.get(transaction=transaction)
+            if not snapshot.exists:
+                return
+            entries = (snapshot.to_dict() or {}).get("entries", [])
+            if not any(entry["assignment_id"] == assignment_id for entry in entries):
+                return
+            for entry in entries:
+                if entry["assignment_id"] == assignment_id:
+                    entry["action"] = action
+            transaction.update(reference, {"entries": entries})
+
+        self._in_transaction(work)

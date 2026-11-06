@@ -8,6 +8,8 @@ import threading
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
+from .insight import MAX_ENTRIES
+
 Doc = dict[str, Any]
 
 # 進み具合は状態ごとの件数で返すので、提出の状態はここに挙げたものだけにする
@@ -36,6 +38,13 @@ class AssignmentRecord:
     state: str = "draft"  # draft, generating, ready, open, closed
     generating_since: float | None = None
     class_summary: dict | None = None  # 締切のあとに作るクラス全体のまとめ
+
+
+def merged_entries(entries: list[Doc], entry: Doc) -> list[Doc]:
+    """同じ課題の記録は置き換える。締切の順に並べ、古いものから消して MAX_ENTRIES 件に収める。"""
+    kept = [old for old in entries if old["assignment_id"] != entry["assignment_id"]] + [entry]
+    kept.sort(key=lambda item: item.get("closed_at", 0))
+    return kept[-MAX_ENTRIES:]
 
 
 def can_add_submissions(assignment: AssignmentRecord) -> bool:
@@ -108,13 +117,26 @@ class Store(Protocol):
     def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
         """振り返りの質問を1回分使う。残りの回数を返し、使い切っていれば None を返す。"""
 
+    def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
+        """生徒が自分の言葉で書いた、行の説明を残す。解答を送る前なら何もせず False を返す。"""
+
     def followups(self, assignment_id: str) -> dict[str, Doc]: ...
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None: ...
+    def add_followup(self, assignment_id: str, student_id: str, question: str, line: int | None, review: Doc | None) -> None:
+        """教員に渡す質問案。question は最初の質問で、review に行ごとの根拠と質問をまとめて持つ。"""
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None: ...
 
     def set_class_summary(self, assignment_id: str, summary: Doc) -> None: ...
+
+    def get_student_record(self, class_id: str, student_id: str) -> Doc | None:
+        """生徒ごとの記録。{"entries": [課題ごとの記録, ...]} の形で、古い順に並ぶ。"""
+
+    def save_student_entry(self, class_id: str, student_id: str, entry: Doc) -> None:
+        """課題ごとの記録を足す。同じ課題の記録があれば置き換え、古いものから MAX_ENTRIES 件に収める。"""
+
+    def set_entry_action(self, class_id: str, student_id: str, assignment_id: str, action: Doc) -> None:
+        """教員の処置を、その課題の記録に書き足す。記録がなければ何もしない。"""
 
 
 class MemoryStore:
@@ -131,6 +153,7 @@ class MemoryStore:
         self._answer_keys: dict[str, dict[str, Doc]] = {}
         self._attempts: dict[str, dict[str, Doc]] = {}
         self._followups: dict[str, dict[str, Doc]] = {}
+        self._records: dict[tuple[str, str], Doc] = {}
 
     def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
         with self._lock:
@@ -269,13 +292,21 @@ class MemoryStore:
             attempt["chat_used"] = used + 1
             return limit - used - 1
 
+    def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
+        with self._lock:
+            attempt = self._attempts[assignment_id].get(student_id)
+            if attempt is None or attempt["submitted_at"] is None:
+                return False
+            attempt.setdefault("explanations", {})[str(line)] = text
+            return True
+
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         with self._lock:
             return copy.deepcopy(self._followups[assignment_id])
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None:
+    def add_followup(self, assignment_id: str, student_id: str, question: str, line: int | None, review: Doc | None) -> None:
         with self._lock:
-            self._followups[assignment_id].setdefault(student_id, {}).update(question=question, line=line, memo=copy.deepcopy(memo))
+            self._followups[assignment_id].setdefault(student_id, {}).update(question=question, line=line, review=copy.deepcopy(review))
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         with self._lock:
@@ -284,6 +315,22 @@ class MemoryStore:
     def set_class_summary(self, assignment_id: str, summary: Doc) -> None:
         with self._lock:
             self._assignments[assignment_id] = replace(self._assignments[assignment_id], class_summary=copy.deepcopy(summary))
+
+    def get_student_record(self, class_id: str, student_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._records.get((class_id, student_id)))
+
+    def save_student_entry(self, class_id: str, student_id: str, entry: Doc) -> None:
+        with self._lock:
+            record = self._records.setdefault((class_id, student_id), {"entries": []})
+            record["entries"] = merged_entries(record["entries"], copy.deepcopy(entry))
+
+    def set_entry_action(self, class_id: str, student_id: str, assignment_id: str, action: Doc) -> None:
+        with self._lock:
+            record = self._records.get((class_id, student_id))
+            for entry in record["entries"] if record else []:
+                if entry["assignment_id"] == assignment_id:
+                    entry["action"] = copy.deepcopy(action)
 
 
 def default_store() -> Store:

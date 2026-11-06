@@ -207,13 +207,59 @@ def test_finishing_at_the_same_time_lets_one_win(store):
 
 def test_followup_question_and_action_are_merged(store):
     assignment_id = make_assignment(store, make_class(store).id)
-    store.add_followup_question(assignment_id, "s1", "3行目はどう変わりますか。", 3)
+    review = {"overview": "記録は今回が最初です。", "spots": [{"line": 3, "question": "3行目はどう変わりますか。"}], "by": "template"}
+    store.add_followup(assignment_id, "s1", "3行目はどう変わりますか。", 3, review)
     store.record_action(assignment_id, "s1", {"action": "ask_in_class", "reason": "", "duration_ms": 1000, "by": "teacher"})
     store.record_action(assignment_id, "s2", {"action": "no_problem", "reason": "説明できた", "duration_ms": 0, "by": "teacher"})
     followups = store.followups(assignment_id)
     assert followups["s1"]["question"] == "3行目はどう変わりますか。" and followups["s1"]["line"] == 3
-    assert followups["s1"]["action"] == "ask_in_class"
+    assert followups["s1"]["review"] == review and followups["s1"]["action"] == "ask_in_class"
     assert followups["s2"]["reason"] == "説明できた" and "question" not in followups["s2"]
+
+
+def entry(assignment_id: str, closed_at: float, **extra) -> dict:
+    return {"assignment_id": assignment_id, "title": assignment_id, "closed_at": closed_at, "score": 1, "total": 3, "spots": [], **extra}
+
+
+def test_student_record_keeps_one_entry_per_assignment_in_closing_order(store):
+    class_id = make_class(store).id
+    assert store.get_student_record(class_id, "s1") is None
+    store.save_student_entry(class_id, "s1", entry("a2", 200.0))
+    store.save_student_entry(class_id, "s1", entry("a1", 100.0))
+    store.save_student_entry(class_id, "s1", entry("a2", 200.0, score=3))
+    entries = store.get_student_record(class_id, "s1")["entries"]
+    assert [item["assignment_id"] for item in entries] == ["a1", "a2"] and entries[1]["score"] == 3
+    assert store.get_student_record(class_id, "s2") is None
+
+
+def test_student_record_drops_the_oldest_entries(store, monkeypatch):
+    monkeypatch.setattr("app.store.MAX_ENTRIES", 2)
+    class_id = make_class(store).id
+    for index in range(3):
+        store.save_student_entry(class_id, "s1", entry(f"a{index}", float(index)))
+    assert [item["assignment_id"] for item in store.get_student_record(class_id, "s1")["entries"]] == ["a1", "a2"]
+
+
+def test_teacher_action_is_written_into_the_matching_entry(store):
+    class_id = make_class(store).id
+    store.set_entry_action(class_id, "s1", "a1", {"action": "explained", "reason": ""})  # 記録がなくても失敗しない
+    store.save_student_entry(class_id, "s1", entry("a1", 100.0, action=None))
+    store.save_student_entry(class_id, "s1", entry("a2", 200.0, action=None))
+    store.set_entry_action(class_id, "s1", "a1", {"action": "explained", "reason": ""})
+    entries = store.get_student_record(class_id, "s1")["entries"]
+    assert entries[0]["action"] == {"action": "explained", "reason": ""} and entries[1]["action"] is None
+
+
+def test_explanations_are_kept_only_after_submitting(store):
+    assignment_id = make_assignment(store, make_class(store).id, "open")
+    assert store.save_explanation(assignment_id, "s1", 3, "合計に足す") is False
+    store.start_attempt(assignment_id, "s1", 100.0)
+    assert store.save_explanation(assignment_id, "s1", 3, "合計に足す") is False
+    store.finish_attempt(assignment_id, "s1", [], 110.0)
+    assert store.save_explanation(assignment_id, "s1", 3, "合計に足す") is True
+    assert store.save_explanation(assignment_id, "s1", 5, "条件を確かめる") is True
+    assert store.save_explanation(assignment_id, "s1", 3, "60点以上だけ合計に足す") is True
+    assert store.get_attempt(assignment_id, "s1")["explanations"] == {"3": "60点以上だけ合計に足す", "5": "条件を確かめる"}
 
 
 def test_class_summary_is_saved_on_the_assignment(store):

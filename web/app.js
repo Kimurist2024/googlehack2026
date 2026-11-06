@@ -11,6 +11,7 @@ let teacherEmail = null; // 教員として確かめられたアカウント
 let assignmentId = null;
 let studentToken = null;
 let studentAssignment = null;
+let studentCode = "";
 let timerHandle = null;
 let lastActionAt = Date.now();
 let chatHistory = [];
@@ -150,7 +151,12 @@ async function record(studentId, action, reason = "") {
 
 function actionButtons(row) {
   const actions = make("div", undefined, "row");
-  const ask = make("button", "授業で聞く");
+  // 質問案で聞いた結果は生徒の記録に残り、次の課題で AI が様子をまとめる材料になる
+  const explained = make("button", "聞いて説明できた", "primary");
+  explained.onclick = () => guarded(() => record(row.student_id, "explained"));
+  const struggled = make("button", "説明が難しかった");
+  struggled.onclick = () => guarded(() => record(row.student_id, "not_explained"));
+  const ask = make("button", "あとで授業で聞く");
   ask.onclick = () => guarded(() => record(row.student_id, "ask_in_class"));
   const fine = make("button", "問題なし＋理由");
   const bad = make("button", "問いが不適切");
@@ -171,7 +177,7 @@ function actionButtons(row) {
     actions.replaceChildren(form);
     input.focus();
   };
-  actions.append(ask, fine, bad);
+  actions.append(explained, struggled, ask, fine, bad);
   return actions;
 }
 
@@ -198,7 +204,18 @@ function classSummaryBlock(summary, minStudents) {
   return box;
 }
 
-// 声かけメモ。仮説と質問は AI（または既定の文）、根拠は採点結果そのもの
+function evidenceDetails(row) {
+  const details = make("details", undefined, "memo-evidence");
+  details.append(make("summary", `誤答した問いと答え（${row.evidence.length}問）`));
+  for (const item of row.evidence) {
+    const line = richText("p", item.stem);
+    line.append(document.createTextNode(`　答え：${item.given || "（未回答）"} ／ 正解：${item.answer}`));
+    details.append(line);
+  }
+  return details;
+}
+
+// 以前の締切で作った声かけメモ。新しい締切では reviewBlock を使う
 function memoBlock(row) {
   const box = make("div", undefined, "memo");
   const head = make("p", undefined, "memo-head");
@@ -209,20 +226,84 @@ function memoBlock(row) {
   const asks = make("ol", undefined, "memo-asks");
   for (const question of row.memo.questions) asks.append(richText("li", question));
   box.append(asks);
-  if (row.evidence && row.evidence.length) {
-    const details = make("details", undefined, "memo-evidence");
-    details.append(make("summary", `根拠：誤答した問い（${row.evidence.length}問）`));
-    for (const item of row.evidence) {
-      const line = richText("p", item.stem);
-      line.append(document.createTextNode(`　答え：${item.given || "（未回答）"} ／ 正解：${item.answer}`));
-      details.append(line);
-    }
-    box.append(details);
-  }
+  if (row.evidence && row.evidence.length) box.append(evidenceDetails(row));
   return box;
 }
 
-const ACTION_LABEL = { ask_in_class: "授業で聞く", no_problem: "問題なし", question_bad: "問いが不適切" };
+// 本人の説明を聞きたい箇所。どの行を挙げるかと根拠は機械的に決め、AI は質問の言い回しだけを書く
+function spotBlock(spot, explanations) {
+  const item = make("div", undefined, "spot");
+  const where = make("p", undefined, "spot-where");
+  where.append(make("strong", spot.line ? `${spot.line}行目` : "プログラム全体の流れ"));
+  if (spot.code) where.append(make("code", spot.code));
+  item.append(where);
+  const chips = make("p", undefined, "chips");
+  if (spot.unexplained.length) {
+    chips.append(make("span", spot.line ? `この行を指す問いに誤答（${spot.unexplained.length}問）` : "最後の表示を予測する問いに誤答", "chip"));
+  }
+  for (const label of spot.new) chips.append(richText("span", `これまで使っていなかった書き方：${label}`, "chip"));
+  for (const label of spot.rare) chips.append(richText("span", `クラスでほとんど使われていない書き方：${label}`, "chip"));
+  item.append(chips);
+  item.append(richText("p", `聞いてみる：${spot.question}`, "ask"));
+  const own = spot.line && explanations[String(spot.line)];
+  if (own) item.append(ownWords(spot.line, own));
+  return item;
+}
+
+// 生徒が自分の言葉で書いた説明。HTML としては解釈させない
+function ownWords(line, text) {
+  const box = make("p", undefined, "own-words");
+  box.append(make("span", `${line}行目の本人の説明`, "chat-who"), document.createTextNode(text));
+  return box;
+}
+
+function reviewBlock(row) {
+  const box = make("div", undefined, "memo");
+  const head = make("p", undefined, "memo-head");
+  head.append(make("strong", "本人の説明を聞きたい箇所"));
+  if (row.review.by === "gemini") head.append(make("span", "質問案とまとめはAI", "ai-badge"));
+  box.append(head);
+  box.append(make("p", "書いた本人なら説明できるはずの箇所です。説明を聞いて確かめてください。AIを使ったかどうかの判定ではありません。", "hint"));
+  for (const spot of row.review.spots) box.append(spotBlock(spot, row.explanations));
+  const shown = new Set(row.review.spots.map((spot) => String(spot.line)));
+  for (const [line, text] of Object.entries(row.explanations)) if (!shown.has(line)) box.append(ownWords(line, text));
+  box.append(make("p", "これまでの様子", "memo-label"), richText("p", row.review.overview));
+  return box;
+}
+
+const ACTION_LABEL = {
+  explained: "聞いて説明できた", not_explained: "説明が難しかった", ask_in_class: "あとで授業で聞く",
+  no_problem: "問題なし", question_bad: "問いが不適切",
+};
+
+// 生徒ごとのこれまでの記録。開いたときに読み込む
+function historyDetails(row) {
+  const details = make("details", undefined, "memo-evidence history");
+  details.append(make("summary", "これまでの記録"));
+  details.ontoggle = () => guarded(async () => {
+    if (!details.open || details.dataset.loaded) return;
+    details.dataset.loaded = "1";
+    const record = await api(`/v1/assignments/${assignmentId}/students/${row.student_id}/record`, { headers: await teacherHeaders() });
+    if (!record.entries.length) {
+      details.append(make("p", "まだ記録がありません。"));
+      return;
+    }
+    const list = make("ul", undefined, "history-list");
+    for (const entry of record.entries) {
+      const item = make("li");
+      item.append(make("strong", entry.title), document.createTextNode(`　${entry.total}問中 ${entry.score}問正解`));
+      if (entry.action) item.append(document.createTextNode(`　／ ${ACTION_LABEL[entry.action.action] || entry.action.action}`));
+      for (const spot of entry.spots) {
+        const label = spot.line ? `${spot.line}行目` : "全体の流れ";
+        const names = spot.constructs.length ? `（${spot.constructs.join("、")}）` : "";
+        item.append(richText("p", `説明を聞いた箇所：${label}${names}`, "hint"));
+      }
+      list.append(item);
+    }
+    details.append(list);
+  });
+  return details;
+}
 
 async function loadFollowups() {
   const budget = Number($("budget").value) || 0;
@@ -233,8 +314,12 @@ async function loadFollowups() {
     const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
     card.append(make("h3", `${index + 1}. 番号 ${row.number}（${row.score}/${row.total} 問正解）`));
     if (!row.in_budget && !row.action) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
-    if (row.memo) card.append(memoBlock(row));
+    if (row.review) card.append(reviewBlock(row));
+    else if (row.memo) card.append(memoBlock(row));
     else if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
+    else card.append(make("p", "今回は、説明を聞きたい箇所はありません。", "hint"));
+    if (row.review && row.evidence.length) card.append(evidenceDetails(row));
+    card.append(historyDetails(row));
     if (row.action) card.append(make("p", `処置済み：${ACTION_LABEL[row.action]}`, "done"));
     else card.append(actionButtons(row));
     return card;
@@ -373,6 +458,7 @@ $("start").onclick = async () => {
   $("start-error").textContent = "";
   try {
     const quiz = await api(`/v1/assignments/${studentAssignment}/attempt:start`, { method: "POST", headers: studentHeaders() });
+    studentCode = quiz.code;
     showCode($("code"), quiz.code);
     $("stdin").textContent = quiz.stdin ? `入力：${quiz.stdin.trim()}` : "";
     $("questions").replaceChildren(...quiz.questions.map(questionCard));
@@ -407,6 +493,7 @@ $("quiz").onsubmit = async (event) => {
     }));
     showCode($("trace"), result.trace.join("\n"));
     $("trace").style.counterReset = "none";
+    showExplainItems(result.results);
     $("quiz").hidden = true;
     resetChat();
     $("result").hidden = false;
@@ -414,6 +501,46 @@ $("quiz").onsubmit = async (event) => {
     $("quiz-error").textContent = error.message;
   }
 };
+
+// まちがえた問いが指す行ごとに、自分の言葉で説明を書く欄を出す。AI は使わず、そのまま先生に届く
+function showExplainItems(results) {
+  const codeLines = studentCode.split("\n");
+  const lines = [...new Set(results.filter((item) => !item.correct && item.line).map((item) => item.line))].sort((a, b) => a - b);
+  $("explain-card").hidden = !lines.length;
+  $("explain-items").replaceChildren(...lines.map((line) => {
+    const form = make("form", undefined, "explain-item");
+    const where = make("p", undefined, "spot-where");
+    where.append(make("strong", `${line}行目`), make("code", (codeLines[line - 1] || "").trim()));
+    const text = make("textarea");
+    text.maxLength = 300;
+    text.rows = 3;
+    text.required = true;
+    text.placeholder = "例：この行では、60点以上のときだけ合計に足している。";
+    text.setAttribute("aria-label", `${line}行目の説明`);
+    const save = make("button", "先生に送る");
+    const state = make("p", undefined, "hint");
+    state.setAttribute("role", "status");
+    form.append(where, text, make("div", undefined, "row"), state);
+    form.querySelector(".row").append(save);
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      save.disabled = true;
+      state.textContent = "";
+      try {
+        await api(`/v1/assignments/${studentAssignment}/attempt:explain`, {
+          method: "POST",
+          headers: studentHeaders(),
+          body: JSON.stringify({ line, text: text.value }),
+        });
+        state.textContent = "送りました。書き直して、もう一度送ることもできます。";
+      } catch (error) {
+        state.textContent = error.message;
+      }
+      save.disabled = false;
+    };
+    return form;
+  }));
+}
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {

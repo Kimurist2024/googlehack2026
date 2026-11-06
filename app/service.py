@@ -7,9 +7,10 @@ import time
 import zipfile
 
 from qgen.ai import QuizAI
-from qgen.questions import IMPACT, OUTPUT, TRACE, Question, build_candidates, seeded_random
+from qgen.questions import IMPACT, OUTPUT, TRACE, build_candidates, seeded_random
 from qgen.sandbox import Sandbox
 
+from . import insight
 from .ordering import Candidate, rank, tau_from, within_budget
 from .store import AssignmentRecord, ClassRecord, Store
 
@@ -128,27 +129,69 @@ def grade(key: dict, answers: dict[str, str]) -> list[dict]:
                 "answer": item["answer"],
                 "correct": normalized(given) == normalized(item["answer"]) and bool(given.strip()),
                 "explanation": item["explanation"],
+                "line": item.get("line"),
             }
         )
     return graded
 
 
+def lined_items(attempt: dict, key: dict) -> list[dict]:
+    """採点結果に、問いが指す行を添える。行は解答の前に保存した正解の側から取る。"""
+    return [
+        {"type": item["type"], "stem": item["stem"], "correct": item["correct"], "line": key["questions"][item["id"]].get("line")}
+        for item in attempt["graded"]
+    ]
+
+
+def explainable_lines(attempt: dict, key: dict) -> list[int]:
+    """生徒に自分の言葉で説明してもらう行。誤答した問いが指す行だけにする。"""
+    return sorted({item["line"] for item in lined_items(attempt, key) if not item["correct"] and item["line"]})
+
+
 def create_followups(store: Store, assignment: AssignmentRecord, ai: QuizAI) -> None:
-    """締切のあと、誤答のあった生徒ごとに声かけメモ（つまずきの仮説と、授業で聞く質問）を作る。"""
+    """締切のあと、生徒ごとに記録を足し、本人の説明を聞きたい行と、教員がたずねる質問案を作る。
+
+    どの行を聞くかと根拠は、採点結果、これまでの記録、クラスの提出から機械的に決める。AIは質問の言い回しと
+    これまでの様子のまとめだけを書く。
+    """
     existing = store.followups(assignment.id)
+    submissions = store.submissions(assignment.id)
+    usage = insight.class_usage([doc["code"] for doc in submissions.values()])
+    closed_at = now()
     for student_id, attempt in store.attempts(assignment.id).items():
         if attempt.get("submitted_at") is None:
             continue
-        wrong = [item for item in attempt["graded"] if not item["correct"]]
-        if not wrong or student_id in existing:
-            continue
-        keys = store.get_answer_key(assignment.id, student_id)["questions"]
-        questions = [Question(**{k: v for k, v in keys[item["id"]].items() if k != "explanation"}) for item in wrong]
-        # 行を示せる誤答を先にする。教員が具体的に聞きやすくなる
-        questions.sort(key=lambda question: question.line is None)
-        given = {item["id"]: item["given"] for item in wrong}
-        memo = ai.memo(store.get_quiz(assignment.id, student_id)["code"], questions, given)
-        store.add_followup_question(assignment.id, student_id, memo["questions"][0], questions[0].line, memo)
+        code = store.get_quiz(assignment.id, student_id)["code"]
+        items = lined_items(attempt, store.get_answer_key(assignment.id, student_id))
+        record = store.get_student_record(assignment.class_id, student_id) or {}
+        previous = [entry for entry in record.get("entries", []) if entry["assignment_id"] != assignment.id]
+        seen = {label for entry in previous for label in entry.get("constructs", [])}
+        spots = insight.find_spots(code, items, seen, bool(previous), usage, len(submissions))
+        recurring = insight.recurring_constructs(previous, spots)
+        done = existing.get(student_id, {})
+        if spots and not done.get("review"):
+            review = ai.review(code, insight.history_for_ai(previous), spots, recurring)
+            for spot, ask in zip(spots, review["asks"]):
+                spot["question"] = ask
+            stored = {"overview": review["overview"], "spots": spots, "recurring": recurring, "by": review["by"]}
+            store.add_followup(assignment.id, student_id, spots[0]["question"], spots[0]["line"], stored)
+        elif done.get("review"):
+            spots = done["review"]["spots"]
+        store.save_student_entry(
+            assignment.class_id,
+            student_id,
+            {
+                "assignment_id": assignment.id,
+                "title": assignment.title,
+                "closed_at": closed_at,
+                "score": sum(1 for item in items if item["correct"]),
+                "total": len(items),
+                "wrong_types": sorted({item["type"] for item in items if not item["correct"]}),
+                "constructs": insight.constructs_in(code),
+                "spots": [{key: spot.get(key) for key in ("line", "code", "constructs", "new", "rare", "unexplained", "question")} for spot in spots],
+                "action": {"action": done["action"], "reason": done.get("reason", "")} if done.get("action") else None,
+            },
+        )
 
 
 def class_stats(attempts: dict[str, dict]) -> tuple[list[dict], list[dict], int]:
@@ -234,7 +277,10 @@ def followup_view(store: Store, assignment: AssignmentRecord, classroom: ClassRe
                 "total": len(attempt["graded"]),
                 "in_budget": item.student_id in in_budget,
                 "question": record.get("question"),
-                "memo": record.get("memo"),
+                "review": record.get("review"),
+                "memo": record.get("memo"),  # 以前の形の声かけメモ。新しい締切では作らない
+                # 生徒が自分の言葉で書いた説明。行番号（文字列）-> 本文
+                "explanations": attempt.get("explanations") or {},
                 # 根拠は AI ではなく採点結果からそのまま出す
                 "evidence": [
                     {"stem": g["stem"], "given": g["given"], "answer": g["answer"]} for g in attempt["graded"] if not g["correct"]
@@ -251,6 +297,13 @@ def followup_view(store: Store, assignment: AssignmentRecord, classroom: ClassRe
         "class_summary": assignment.class_summary,
         "summary_min_students": MIN_STUDENTS_FOR_SUMMARY,
     }
+
+
+def student_record_view(store: Store, classroom: ClassRecord, student_id: str) -> dict:
+    """教員が見る、生徒ごとのこれまでの記録。新しい課題から並べる。"""
+    record = store.get_student_record(classroom.id, student_id) or {}
+    entries = sorted(record.get("entries", []), key=lambda entry: entry.get("closed_at", 0), reverse=True)
+    return {"number": classroom.student_numbers[student_id], "entries": entries}
 
 
 def now() -> float:
