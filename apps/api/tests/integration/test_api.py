@@ -555,3 +555,25 @@ def test_demo_seed_brings_past_records(client, monkeypatch):
     record = client.get(f"/v1/assignments/{created['assignment_id']}/students/{by_number['2']}/record", headers=TEACHER).json()
     assert [entry["title"] for entry in record["entries"]] == ["最大値を探す（第2回）", "合計を求める（第1回）"]
     assert store.get_student_record(created["class_id"], by_number["6"]) is None
+
+
+def test_ai_client_is_built_once_and_reused(monkeypatch, store):
+    """Gemini と Model Armor のクライアントは作るたびに準備がかかるので、要求ごとに作り直さない。"""
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    built = []
+
+    def factory():
+        built.append(1)
+        return TemplateAI()
+
+    app_client = TestClient(create_app(store, LocalDevSandbox, factory))
+    created, assignment = setup_open(app_client, numbers=("1",))
+    headers, _ = login(app_client, created)
+    app_client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    app_client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers)
+    for _ in range(3):
+        assert app_client.post(f"/v1/assignments/{assignment}/attempt:chat", json={"message": "ヒント"}, headers=headers).status_code == 200
+    app_client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    assert len(built) == 1

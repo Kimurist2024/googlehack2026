@@ -27,6 +27,27 @@ let timerHandle = null;
 let lastActionAt = Date.now();
 let chatHistory = [];
 
+// --- 立ち上がりを速くする ---
+// Cloud Run は使われていないと止まり、止まったあとの最初の通信は起動に数秒かかる。
+// 画面を開いた時点で起こしておき、画面が見えている間は止まらないように数分ごとに知らせる
+const KEEP_WARM_MS = 4 * 60 * 1000;
+const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => {});
+wakeServer();
+setInterval(() => { if (document.visibilityState === "visible") wakeServer(); }, KEEP_WARM_MS);
+
+// 前回この端末で教員として確かめられたかどうか（メールアドレスは残さない）。
+// 確かめられていた端末では、ログインの確認を待たずに作業画面を先に出し、確認の結果で直す
+const LAST_TEACHER_KEY = "mushitori.teacher.v1";
+function wasTeacher() {
+  try { return localStorage.getItem(LAST_TEACHER_KEY) === "1"; } catch { return false; }
+}
+function rememberTeacher(yes) {
+  try { if (yes) localStorage.setItem(LAST_TEACHER_KEY, "1"); else localStorage.removeItem(LAST_TEACHER_KEY); } catch { /* 保存できなくても動く */ }
+}
+// 画面は先に出しても、教員の API はログインの状態がわかるまで呼ばない
+let markAuthReady;
+const authReady = new Promise((resolve) => { markAuthReady = resolve; });
+
 async function api(path, options = {}) {
   const response = await fetch(path, options);
   const body = await response.json().catch(() => ({}));
@@ -40,6 +61,7 @@ async function api(path, options = {}) {
 }
 // 教員の認証。Firebase Hosting では Google ログインの ID トークン、手元の開発では仮のヘッダーを送る
 async function teacherHeaders() {
+  await authReady;
   if (!teacherAuth) return { "X-Dev-Teacher": "demo-teacher" };
   const user = teacherAuth.currentUser;
   if (!user) throw new Error("教員としてログインしてください");
@@ -575,6 +597,8 @@ function showExplainItems(results) {
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
+    // 並べて取りに行き、入れた順に実行させる（auth は app のあとに動く必要がある）
+    script.async = false;
     script.src = trustedScriptURL(src);
     script.onload = resolve;
     script.onerror = () => reject(new Error(`${src} を読み込めませんでした`));
@@ -584,6 +608,8 @@ function loadScript(src) {
 
 // Firebase Hosting は /__/firebase/init.json に設定を置く。読めなければ手元の開発として動く
 async function setupTeacherAuth() {
+  // 前回教員として確かめられた端末では、確認を待たずに作業画面を出す。違っていたら確認のあとで戻す
+  if (wasTeacher()) showSignedIn(null);
   let config = null;
   try {
     const response = await fetch("/__/firebase/init.json");
@@ -593,10 +619,15 @@ async function setupTeacherAuth() {
   }
   if (!config) {
     $("teacher-work").hidden = false;
+    markAuthReady();
     return;
   }
-  await loadScript(`${FIREBASE_SDK}/firebase-app-compat.js`);
-  await loadScript(`${FIREBASE_SDK}/firebase-auth-compat.js`);
+  // 初めての端末では、SDK を待たずにログインの案内を出す（ボタンは準備ができてから押せる）
+  if (!wasTeacher()) {
+    showSignedOut();
+    $("signin").disabled = true;
+  }
+  await Promise.all([loadScript(`${FIREBASE_SDK}/firebase-app-compat.js`), loadScript(`${FIREBASE_SDK}/firebase-auth-compat.js`)]);
   firebase.initializeApp(config);
   teacherAuth = firebase.auth();
   $("signin").onclick = async () => {
@@ -609,20 +640,25 @@ async function setupTeacherAuth() {
       else $("signin-error").textContent = "ログインできませんでした。もう一度お試しください。";
     }
   };
+  $("signin").disabled = false;
   $("signout").onclick = () => teacherAuth.signOut();
-  // ログインの状態がわかるまでは、案内も作業の画面も出さない
   teacherAuth.onAuthStateChanged(async (user) => {
+    // ここで初めてログインの状態がわかるので、待たせていた教員の API を通す
+    markAuthReady();
     if (!user) {
+      rememberTeacher(false);
       showSignedOut();
       return;
     }
     try {
       const me = await api("/v1/me", { headers: await teacherHeaders() });
+      rememberTeacher(true);
       showSignedIn(me.email);
     } catch (error) {
       const message = error.status === 403
         ? `${user.email} は教員として登録されていません。許可されたアカウントでログインしてください。`
         : "ログインを確かめられませんでした。もう一度お試しください。";
+      rememberTeacher(false);
       await teacherAuth.signOut();
       showSignedOut(message);
     }
@@ -637,9 +673,10 @@ function showSignedOut(message) {
   if (message !== undefined) $("signin-error").textContent = message;
 }
 
+// email が null のときは、前回の記録から先に出しただけで、まだ確かめていない
 function showSignedIn(email) {
   teacherEmail = email;
-  $("who").textContent = email;
+  $("who").textContent = email ?? "ログインを確認中…";
   $("signin-error").textContent = "";
   $("signin-card").hidden = true;
   $("teacher-work").hidden = false;
@@ -647,6 +684,20 @@ function showSignedIn(email) {
 }
 
 setupTeacherAuth().catch((error) => {
+  markAuthReady();
   $("signin-card").hidden = false;
+  $("teacher-work").hidden = true;
   $("signin-error").textContent = error.message;
+});
+
+// 端末に置いた画面より新しい版を、Service Worker（sw.js）が見つけたら知らせる
+navigator.serviceWorker?.addEventListener("message", (event) => {
+  if (event.data?.type !== "shell-updated" || $("update-banner")) return;
+  const banner = make("div", undefined, "card update-banner");
+  banner.id = "update-banner";
+  banner.setAttribute("role", "status");
+  const reload = make("button", "再読み込み");
+  reload.onclick = () => location.reload();
+  banner.append(make("span", "新しい版があります。"), reload);
+  document.querySelector("main").prepend(banner);
 });

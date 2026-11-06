@@ -121,15 +121,21 @@ def verify_firebase_token(token: str) -> dict:
     FIREBASE_CHECK_REVOKED=1 のときは、ログアウトや無効化で失効したトークンも断る。
     そのときはサービスアカウントに roles/firebaseauth.viewer が要る（なければ全員が通れなくなる）。
     """
-    import firebase_admin
     from firebase_admin import auth as firebase_auth
+
+    return firebase_auth.verify_id_token(token, app=prepare_firebase(), check_revoked=os.environ.get("FIREBASE_CHECK_REVOKED") == "1")
+
+
+def prepare_firebase():
+    """firebase_admin を読み込んで初期化する。起動の直後に裏でも呼び、最初のログインの確認を待たせない。"""
+    import firebase_admin
+    from firebase_admin import auth as _  # noqa: F401  検証に使う部分も先に読み込んでおく
 
     with _firebase_lock:
         try:
-            app = firebase_admin.get_app()
+            return firebase_admin.get_app()
         except ValueError:
-            app = firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
-    return firebase_auth.verify_id_token(token, app=app, check_revoked=os.environ.get("FIREBASE_CHECK_REVOKED") == "1")
+            return firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
 
 
 def current_student(authorization: str = Header(default="")) -> dict:

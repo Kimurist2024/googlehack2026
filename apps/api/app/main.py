@@ -1,9 +1,11 @@
 """ムシトリのAPI。生徒のコードは実行せず、Geminiも直接は呼ばない。"""
 import csv
 import io
+import logging
 import os
 import re
 import secrets
+import threading
 from pathlib import Path
 from typing import Annotated, Callable, Literal
 
@@ -18,6 +20,7 @@ from qgen.sandbox import Sandbox, default_sandbox
 from . import audit, auth, classpack, demo, offline_api, security, service
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, can_begin_generation, default_store, is_expired
 
+logger = logging.getLogger(__name__)
 GRACE_SEC = 10
 # 失敗した入室だけを、接続元ごと・1分ごとに数える。保存先に数えるので、インスタンスが増えても上限は変わらない。
 # コードは31種類の文字の8桁が2つなので、この回数でも総当たりはできない
@@ -141,6 +144,24 @@ def csv_cell(value: object) -> object:
     return value
 
 
+def warm_up(shared_ai: Callable[[], QuizAI]) -> None:
+    """起動の直後に裏で呼ぶ。失敗しても、最初の要求のときにもう一度準備されるだけなので止めない。"""
+    for name, step in (("firebase", auth.prepare_firebase), ("ai", shared_ai)):
+        try:
+            step()
+        except Exception:
+            logger.warning("起動直後の準備に失敗しました step=%s", name, exc_info=True)
+
+
+class NoCacheStaticFiles(StaticFiles):
+    """手元の開発で画面を配る。本番の Firebase Hosting（firebase.json）と同じく、毎回配信元に新しい版を確かめさせる。"""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["cache-control"] = "no-cache"
+        return response
+
+
 def create_app(
     store: Store | None = None,
     sandbox_factory: Callable[[], Sandbox] = default_sandbox,
@@ -159,8 +180,21 @@ def create_app(
     app.add_middleware(security.SecurityHeaders, https_only=not local)
     store = store or default_store()
     app.state.store = store
+    # Gemini と Model Armor のクライアントは、作るたびに認証と接続の準備をするので、1つを作って使い回す
+    shared: list[QuizAI] = []
+    shared_lock = threading.Lock()
+
+    def shared_ai() -> QuizAI:
+        with shared_lock:
+            if not shared:
+                shared.append(ai_factory())
+            return shared[0]
+
     # ネットが落ちても授業を止めないための入口（授業パッケージ、校内LAN版、オフライン提出）。ここより後の経路より優先される
-    offline_api.install(app, store, ai_factory, grace_sec=GRACE_SEC, login_limit=LOGIN_FAILURES_PER_MIN)
+    offline_api.install(app, store, shared_ai, grace_sec=GRACE_SEC, login_limit=LOGIN_FAILURES_PER_MIN)
+    if not local:
+        # 起動の直後に、最初の要求で必要になる準備（Firebase、Gemini のクライアント）を裏で済ませておく
+        threading.Thread(target=warm_up, args=(shared_ai,), daemon=True).start()
 
     def owned_class(class_id: str, teacher: str) -> ClassRecord:
         classroom = store.get_class(class_id)
@@ -184,14 +218,14 @@ def create_app(
 
     def run_generation(assignment: AssignmentRecord) -> None:
         try:
-            service.generate_all(store, assignment, sandbox_factory(), ai_factory())
+            service.generate_all(store, assignment, sandbox_factory(), shared_ai())
         except Exception:
             # 「生成中」のまま止まらないようにして、やり直せる状態に戻す
             store.end_generation(assignment.id, "draft")
             raise
 
     def run_followups(assignment: AssignmentRecord) -> None:
-        ai = ai_factory()
+        ai = shared_ai()
         service.create_followups(store, assignment, ai)
         service.create_class_summary(store, assignment, ai)
 
@@ -429,7 +463,7 @@ def create_app(
         if remaining is None:
             raise HTTPException(status_code=429, detail="この課題で質問できる回数を使い切りました")
         context = service.chat_context(store, assignment_id, student_id, attempt)
-        reply = ai_factory().chat(context, [turn.model_dump() for turn in body.history], body.message)
+        reply = shared_ai().chat(context, [turn.model_dump() for turn in body.history], body.message)
         return {**reply, "remaining": remaining}
 
     @app.post("/v1/assignments/{assignment_id}/attempt:explain")
@@ -514,5 +548,5 @@ def create_app(
 
     if os.environ.get("SERVE_WEB") == "1":
         # 手元の開発だけで使う。本番の画面は Firebase Hosting が apps/web から配る
-        app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
+        app.mount("/", NoCacheStaticFiles(directory=WEB_DIR, html=True), name="web")
     return app
