@@ -9,6 +9,7 @@ assignments/{id}/quizzes/{sid}        問い（正解なし）
 assignments/{id}/answerKeys/{sid}     正解、解説、実行の記録
 assignments/{id}/attempts/{sid}       開始と提出の時刻、採点結果
 assignments/{id}/followups/{sid}      授業で聞く一問と処置
+loginFailures/{client}-{window}       接続元（鍵付きハッシュ）ごとの1分間の入室の失敗。expire_at で TTL 削除
 
 ブラウザからは読み書きさせない（firestore.rules）。サーバーの権限でAPIだけが触る。
 """
@@ -16,6 +17,7 @@ import os
 import random
 import time
 from dataclasses import asdict
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 from google.api_core.exceptions import Aborted
@@ -237,3 +239,16 @@ class FirestoreStore:
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         self._part(assignment_id, "followups").document(student_id).set(action, merge=True)
+
+    def _login_failure(self, client_key: str, window: int):
+        return self.db.collection("loginFailures").document(f"{client_key}-{window}")
+
+    def login_failures(self, client_key: str, window: int) -> int:
+        snapshot = self._login_failure(client_key, window).get()
+        return int(snapshot.get("count") or 0) if snapshot.exists else 0
+
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
+        # Increment はサーバー側で足すので、同時に失敗しても数え漏れない
+        self._login_failure(client_key, window).set(
+            {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
+        )

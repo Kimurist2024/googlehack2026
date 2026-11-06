@@ -4,30 +4,44 @@ import io
 import os
 import re
 import secrets
-import time
-from collections import defaultdict, deque
 from pathlib import Path
 from typing import Annotated, Callable
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
+from fastapi import Path as PathParam
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
-from . import auth, demo, service
+from . import audit, auth, demo, security, service
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, default_store
 
 GRACE_SEC = 10
-# 失敗した入室だけを数える。コードは31種類の文字の8桁なので、この回数でも総当たりはできない
+# 失敗した入室だけを、接続元ごと・1分ごとに数える。保存先に数えるので、インスタンスが増えても上限は変わらない。
+# コードは31種類の文字の8桁が2つなので、この回数でも総当たりはできない
 LOGIN_FAILURES_PER_MIN = 30
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
+# multipart の区切りなどの分を足した、リクエスト本文の上限
+MAX_BODY_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
+# サーバーが作るID（secrets.token_hex(8)）の形。これ以外は保存先に問い合わせる前に断る
+ID_PATTERN = r"^[0-9a-f]{16}$"
+# 授業コードが違っていたときも同じ回数だけ保存先を読み、応答時間から「どちらが違うか」を推測させない
+NO_CLASS_ID = "0" * 16
+MAX_STDIN_CHARS = 2_000
 NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
 ACTIONS = {"ask_in_class", "no_problem", "question_bad"}
 QUESTION_TYPES = {"output", "trace", "impact"}
 MAX_ANSWER_CHARS = 20_000
+MAX_ANSWERS = 10
 GENERATION_STALE_SEC = 30 * 60
+# 表計算ソフトが数式として実行してしまう先頭の文字（CSV インジェクション）
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+ResourceId = Annotated[str, StringConstraints(pattern=ID_PATTERN)]
+AssignmentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
+StudentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
 
 
 class ClassIn(BaseModel):
@@ -45,10 +59,10 @@ class ClassIn(BaseModel):
 
 
 class AssignmentIn(BaseModel):
-    class_id: str
+    class_id: ResourceId
     title: str = Field(min_length=1, max_length=120)
     learning_goal: str = Field(default="", max_length=400)
-    stdin_examples: list[str] = Field(default_factory=list, max_length=20)
+    stdin_examples: list[Annotated[str, StringConstraints(max_length=MAX_STDIN_CHARS)]] = Field(default_factory=list, max_length=20)
     time_limit_sec: int = Field(default=300, ge=60, le=1800)
     question_count: int = Field(default=3, ge=1, le=5)
     weights: dict[str, float] = Field(default_factory=lambda: {"output": 1.0, "trace": 1.0, "impact": 1.0})
@@ -69,7 +83,9 @@ class SessionIn(BaseModel):
 
 
 class SubmitIn(BaseModel):
-    answers: dict[str, Annotated[str, StringConstraints(max_length=MAX_ANSWER_CHARS)]]
+    answers: dict[Annotated[str, StringConstraints(max_length=64)], Annotated[str, StringConstraints(max_length=MAX_ANSWER_CHARS)]] = Field(
+        max_length=MAX_ANSWERS
+    )
 
 
 class ActionIn(BaseModel):
@@ -86,15 +102,31 @@ class ActionIn(BaseModel):
         return self
 
 
+def csv_cell(value: object) -> object:
+    """表計算ソフトで開いたときに数式として動かないようにする。"""
+    if isinstance(value, str) and value.startswith(CSV_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
 def create_app(
     store: Store | None = None,
     sandbox_factory: Callable[[], Sandbox] = default_sandbox,
     ai_factory: Callable[[], QuizAI] = default_ai,
 ) -> FastAPI:
-    app = FastAPI(title="ムシトリ API")
+    local = auth.is_local()
+    # API の一覧（/docs、/openapi.json）は攻撃の手がかりになるので、手元の開発のときだけ出す
+    app = FastAPI(
+        title="ムシトリ API",
+        docs_url="/docs" if local else None,
+        redoc_url=None,
+        openapi_url="/openapi.json" if local else None,
+    )
+    # 後に足したものが外側になる。413 の応答にもヘッダーが付くよう、ヘッダーを最後に足す
+    app.add_middleware(security.BodyLimit, max_bytes=MAX_BODY_BYTES)
+    app.add_middleware(security.SecurityHeaders, https_only=not local)
     store = store or default_store()
     app.state.store = store
-    failures_by_client: dict[str, deque] = defaultdict(deque)
 
     def owned_class(class_id: str, teacher: str) -> ClassRecord:
         classroom = store.get_class(class_id)
@@ -131,13 +163,14 @@ def create_app(
         return {"status": "ok"}
 
     @app.post("/v1/dev/seed", status_code=201)
-    def seed_demo(teacher: str = Depends(auth.current_teacher)) -> dict:
+    def seed_demo(request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
         """合成データのデモを作る。ローカル開発のときだけ使える。"""
         if not auth.is_local():
             raise HTTPException(status_code=404, detail="Not Found")
-        created = create_class(ClassIn(name="デモクラス", student_numbers=list(demo.PROGRAMS)), teacher)
+        created = create_class(ClassIn(name="デモクラス", student_numbers=list(demo.PROGRAMS)), request, teacher)
         assignment_id = create_assignment(
             AssignmentIn(class_id=created["class_id"], title=demo.TITLE, learning_goal=demo.LEARNING_GOAL, weights=demo.WEIGHTS),
+            request,
             teacher,
         )["assignment_id"]
         by_number = {number: sid for sid, number in store.get_class(created["class_id"]).student_numbers.items()}
@@ -145,7 +178,7 @@ def create_app(
         return {**created, "assignment_id": assignment_id}
 
     @app.post("/v1/classes", status_code=201)
-    def create_class(body: ClassIn, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def create_class(body: ClassIn, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
         class_id = secrets.token_hex(8)
         class_code = auth.new_code()
         numbers: dict[str, str] = {}
@@ -158,11 +191,12 @@ def create_app(
             credentials[auth.code_hash(code)] = student_id
             codes[number] = code
         store.create_class(ClassRecord(class_id, body.name, teacher, numbers), auth.code_hash(class_code), credentials)
+        audit.event("class.created", request, principal=teacher, class_id=class_id, count=len(numbers))
         # コードを平文で返すのはこの1回だけ
         return {"class_id": class_id, "class_code": class_code, "personal_codes": codes}
 
     @app.post("/v1/assignments", status_code=201)
-    def create_assignment(body: AssignmentIn, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def create_assignment(body: AssignmentIn, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
         owned_class(body.class_id, teacher)
         assignment_id = secrets.token_hex(8)
         store.create_assignment(
@@ -177,10 +211,13 @@ def create_app(
                 weights=body.weights,
             )
         )
+        audit.event("assignment.created", request, principal=teacher, class_id=body.class_id, assignment_id=assignment_id)
         return {"assignment_id": assignment_id}
 
     @app.post("/v1/assignments/{assignment_id}/submissions")
-    async def upload_submissions(assignment_id: str, file: UploadFile = File(...), teacher: str = Depends(auth.current_teacher)) -> dict:
+    async def upload_submissions(
+        assignment_id: AssignmentId, request: Request, file: UploadFile = File(...), teacher: str = Depends(auth.current_teacher)
+    ) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         locked = HTTPException(status_code=409, detail="受付を始めた課題には提出を追加できません")
         if not can_add_submissions(assignment):
@@ -196,56 +233,63 @@ def create_app(
             raise HTTPException(status_code=400, detail=str(error)) from None
         if not store.add_submissions(assignment_id, {by_number[number]: code for number, code in found.items()}):
             raise locked
+        audit.event("submissions.uploaded", request, principal=teacher, assignment_id=assignment_id, count=len(found), problems=len(problems))
         return {"accepted": len(found), "problems": problems}
 
     @app.post("/v1/assignments/{assignment_id}:generate", status_code=202)
-    def generate(assignment_id: str, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def generate(assignment_id: AssignmentId, request: Request, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         if not store.submission_counts(assignment_id):
             raise HTTPException(status_code=409, detail="提出がありません")
         if not store.begin_generation(assignment_id, service.now(), GENERATION_STALE_SEC):
             raise HTTPException(status_code=409, detail="今は問いを作れません")
+        audit.event("generation.started", request, principal=teacher, assignment_id=assignment_id)
         tasks.add_task(run_generation, assignment)
         return {"state": "generating"}
 
     @app.get("/v1/assignments/{assignment_id}")
-    def assignment_status(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def assignment_status(assignment_id: AssignmentId, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         return {"state": assignment.state, "title": assignment.title, "submissions": store.submission_counts(assignment_id)}
 
     @app.post("/v1/assignments/{assignment_id}:open")
-    def open_assignment(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def open_assignment(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         if assignment.state != "ready":
             raise HTTPException(status_code=409, detail="問いの生成が終わっていません")
         if not store.open_assignment(assignment_id):
             raise HTTPException(status_code=409, detail="受付中の課題がすでにあります")
+        audit.event("assignment.opened", request, principal=teacher, assignment_id=assignment_id)
         return {"state": "open"}
 
     @app.post("/v1/assignments/{assignment_id}:close")
-    def close_assignment(assignment_id: str, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def close_assignment(assignment_id: AssignmentId, request: Request, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         if not store.close_assignment(assignment_id):
             raise HTTPException(status_code=409, detail="受付中ではありません")
+        audit.event("assignment.closed", request, principal=teacher, assignment_id=assignment_id)
         tasks.add_task(run_followups, assignment)
         return {"state": "closed"}
 
     @app.post("/v1/sessions")
     def create_session(body: SessionIn, request: Request) -> dict:
-        client = request.client.host if request.client else "unknown"
-        failures = failures_by_client[client]
-        current = time.monotonic()
-        while failures and current - failures[0] > 60:
-            failures.popleft()
-        # 教室の全員が同じ接続元から入っても、正しいコードの入室では上限に近づかない
-        if len(failures) >= LOGIN_FAILURES_PER_MIN:
-            raise HTTPException(status_code=429, detail="しばらく待ってからやり直してください")
+        client = security.client_key(request)
+        current = service.now()
+        window = int(current // 60)
+        if store.login_failures(client, window) >= LOGIN_FAILURES_PER_MIN:
+            audit.event("login.rate_limited", request, severity="WARNING", client=client)
+            raise HTTPException(
+                status_code=429, detail="しばらく待ってからやり直してください", headers={"Retry-After": str(60 - int(current % 60))}
+            )
         class_id = store.class_id_for_code(auth.code_hash(body.class_code))
         classroom = store.get_class(class_id) if class_id else None
-        student_id = store.student_for_credential(class_id, auth.code_hash(body.personal_code)) if classroom else None
+        student_id = store.student_for_credential(classroom.id if classroom else NO_CLASS_ID, auth.code_hash(body.personal_code))
         if classroom is None or student_id is None:
-            failures.append(current)
+            # 教室の全員が同じ接続元から入っても、正しいコードの入室では上限に近づかない
+            store.add_login_failure(client, window, expire_at=(window + 2) * 60)
+            audit.event("login.failed", request, severity="WARNING", client=client)
             raise HTTPException(status_code=401, detail="コードが正しくありません")
+        audit.event("login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client)
         return {
             "token": auth.issue_student_token(classroom.id, student_id),
             "assignment_id": classroom.open_assignment_id,
@@ -253,7 +297,7 @@ def create_app(
         }
 
     @app.post("/v1/assignments/{assignment_id}/attempt:start")
-    def start_attempt(assignment_id: str, claims: dict = Depends(auth.current_student)) -> dict:
+    def start_attempt(assignment_id: AssignmentId, claims: dict = Depends(auth.current_student)) -> dict:
         assignment = student_assignment(assignment_id, claims)
         student_id = claims["student"]
         if assignment.state != "open":
@@ -268,7 +312,7 @@ def create_app(
         return {"questions": quiz["questions"], "code": quiz["code"], "stdin": quiz["stdin"], "remaining_sec": max(0, round(deadline - service.now()))}
 
     @app.post("/v1/assignments/{assignment_id}/attempt:submit")
-    def submit_attempt(assignment_id: str, body: SubmitIn, claims: dict = Depends(auth.current_student)) -> dict:
+    def submit_attempt(assignment_id: AssignmentId, body: SubmitIn, claims: dict = Depends(auth.current_student)) -> dict:
         assignment = student_assignment(assignment_id, claims)
         student_id = claims["student"]
         attempt = store.get_attempt(assignment_id, student_id)
@@ -294,22 +338,27 @@ def create_app(
         }
 
     @app.get("/v1/assignments/{assignment_id}/followups")
-    def followups(assignment_id: str, budget_sec: float = 90, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def followups(
+        assignment_id: AssignmentId, budget_sec: Annotated[float, Query(ge=0, le=3600)] = 90, teacher: str = Depends(auth.current_teacher)
+    ) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         return service.followup_view(store, assignment, store.get_class(assignment.class_id), budget_sec)
 
     @app.post("/v1/assignments/{assignment_id}/followups/{student_id}")
-    def record_action(assignment_id: str, student_id: str, body: ActionIn, teacher: str = Depends(auth.current_teacher)) -> dict:
+    def record_action(
+        assignment_id: AssignmentId, student_id: StudentId, body: ActionIn, request: Request, teacher: str = Depends(auth.current_teacher)
+    ) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
         if student_id not in store.get_class(assignment.class_id).student_numbers:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         store.record_action(
             assignment_id, student_id, {"action": body.action, "reason": body.reason, "duration_ms": body.duration_ms, "by": teacher}
         )
+        audit.event("followup.recorded", request, principal=teacher, assignment_id=assignment_id, student_id=student_id, action=body.action)
         return {"saved": True}
 
     @app.get("/v1/assignments/{assignment_id}/export")
-    def export(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> Response:
+    def export(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> Response:
         assignment = owned_assignment(assignment_id, teacher)
         classroom = store.get_class(assignment.class_id)
         submissions = store.submission_statuses(assignment_id)
@@ -323,18 +372,23 @@ def create_app(
             attempt = attempts.get(student_id, {})
             graded = attempt.get("graded", [])
             record = followups.get(student_id, {})
-            writer.writerow(
-                [
-                    number,
-                    submission.get("status", "not_submitted"),
-                    submission.get("reason") or "",
-                    sum(1 for item in graded if item["correct"]) if graded else "",
-                    len(graded) if graded else "",
-                    record.get("action", ""),
-                    record.get("duration_ms", ""),
-                ]
-            )
-        return Response(content=output.getvalue(), media_type="text/csv; charset=utf-8")
+            row = [
+                number,
+                submission.get("status", "not_submitted"),
+                submission.get("reason") or "",
+                sum(1 for item in graded if item["correct"]) if graded else "",
+                len(graded) if graded else "",
+                record.get("action", ""),
+                record.get("duration_ms", ""),
+            ]
+            writer.writerow([csv_cell(value) for value in row])
+        # 成績に近い情報がまとめて出ていくので、誰がいつ持ち出したかを必ず残す
+        audit.event("export.downloaded", request, principal=teacher, assignment_id=assignment_id, count=len(classroom.student_numbers))
+        return Response(
+            content=output.getvalue(),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="mushitori-{assignment_id}.csv"'},
+        )
 
     if os.environ.get("SERVE_WEB") == "1":
         app.mount("/", StaticFiles(directory=Path(__file__).parent.parent / "web", html=True), name="web")

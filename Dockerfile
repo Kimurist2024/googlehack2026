@@ -11,4 +11,5 @@ COPY web ./web
 RUN useradd --create-home --uid 10001 appuser
 USER appuser
 # Cloud Run は PORT を環境変数で渡す
-CMD ["sh", "-c", "exec uvicorn --factory app.main:create_app --host 0.0.0.0 --port ${PORT:-8080}"]
+# server ヘッダーで実装と版を明かさない
+CMD ["sh", "-c", "exec uvicorn --factory app.main:create_app --host 0.0.0.0 --port ${PORT:-8080} --no-server-header"]

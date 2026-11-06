@@ -9,6 +9,7 @@ from typing import Protocol
 
 HARNESS_SOURCE = (Path(__file__).parent / "harness.py").read_text(encoding="utf-8")
 RESULT_PREFIX = "HARNESS_RESULT:"
+HARNESS_ENV = {"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
 DEFAULT_REQUEST = {
     "run_timeout_sec": 1,
     "max_events": 200_000,
@@ -56,8 +57,11 @@ class LocalDevSandbox:
                     [sys.executable, "-I", "-c", HARNESS_SOURCE],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
                     timeout=DEFAULT_REQUEST["deadline_sec"] + 15,
                     cwd=folder,
+                    # SESSION_SECRET などの環境変数を、生徒のコードが動く側に渡さない
+                    env=HARNESS_ENV,
                 )
             except subprocess.TimeoutExpired as error:
                 raise SandboxError("実行ラッパーが時間内に終わりませんでした") from error

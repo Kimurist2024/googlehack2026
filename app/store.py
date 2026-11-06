@@ -110,6 +110,12 @@ class Store(Protocol):
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None: ...
 
+    def login_failures(self, client_key: str, window: int) -> int:
+        """その接続元の、その1分間の入室の失敗の回数。インスタンスをまたいで数える。"""
+
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
+        """入室の失敗を1回数える。expire_at を過ぎた記録は消してよい。"""
+
 
 class MemoryStore:
     """手元の開発とテスト用。再起動で消え、複数のインスタンスでは共有できない。"""
@@ -125,6 +131,7 @@ class MemoryStore:
         self._answer_keys: dict[str, dict[str, Doc]] = {}
         self._attempts: dict[str, dict[str, Doc]] = {}
         self._followups: dict[str, dict[str, Doc]] = {}
+        self._login_failures: dict[tuple[str, int], int] = {}
 
     def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
         with self._lock:
@@ -265,6 +272,17 @@ class MemoryStore:
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         with self._lock:
             self._followups[assignment_id].setdefault(student_id, {}).update(copy.deepcopy(action))
+
+    def login_failures(self, client_key: str, window: int) -> int:
+        with self._lock:
+            return self._login_failures.get((client_key, window), 0)
+
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
+        with self._lock:
+            # 古い時間帯の記録は残しておく意味がないので、ここで捨てる
+            for key in [key for key in self._login_failures if key[1] < window - 1]:
+                del self._login_failures[key]
+            self._login_failures[(client_key, window)] = self._login_failures.get((client_key, window), 0) + 1
 
 
 def default_store() -> Store:

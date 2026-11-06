@@ -4,6 +4,7 @@ FIRESTORE_EMULATOR_HOST があれば、保存先を使う試験をメモリと�
 本物の Firestore には接続しない。
 """
 import os
+import urllib.request
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,12 +18,20 @@ BACKENDS = ["memory", "firestore"] if os.environ.get("FIRESTORE_EMULATOR_HOST") 
 EMULATOR_PROJECT = "demo-mushitori"  # demo- で始まるプロジェクトはクラウドに接続しない
 
 
+def clear_emulator() -> None:
+    """エミュレータの中身を消す。入室の失敗の回数のように、試験をまたいで残ると結果が変わるものがある。"""
+    host = os.environ["FIRESTORE_EMULATOR_HOST"]
+    url = f"http://{host}/emulator/v1/projects/{EMULATOR_PROJECT}/databases/(default)/documents"
+    urllib.request.urlopen(urllib.request.Request(url, method="DELETE"), timeout=10).close()
+
+
 @pytest.fixture(params=BACKENDS)
 def store(request):
     if request.param == "memory":
         return MemoryStore()
     from app.firestore_store import FirestoreStore
 
+    clear_emulator()
     return FirestoreStore(project=EMULATOR_PROJECT)
 
 

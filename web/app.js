@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 const REASONS = {
   too_long: "実行が終わらない", timeout: "実行が終わらない", error: "実行時にエラー", syntax_error: "文法エラー",
   nondeterministic: "実行ごとに結果が変わる", unsupported_import: "対応していないライブラリ",
+  unsupported_code: "対応していない書き方（open や eval など）",
   too_much_output: "出力が多すぎる", no_questions: "問いを作れない", sandbox_error: "実行環境の失敗", not_submitted: "未提出",
 };
 const teacherHeaders = { "X-Dev-Teacher": "demo-teacher" }; // Firebase 認証に置き換えるまでのローカル専用
