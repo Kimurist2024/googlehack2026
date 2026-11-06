@@ -81,6 +81,24 @@ pre .ln::before { counter-increment: line; content: counter(line); display: inli
 .person .ask { margin: 6px 0 10px; }
 .person .done { color: var(--muted); font-size: 14px; }
 .others { font-size: 14px; color: var(--muted); }
+.memo { margin: 8px 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--code-bg); }
+.memo p { margin: 0 0 6px; }
+.memo-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ai-badge { font-size: 12px; line-height: 1.6; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.memo-label { font-size: 14px; color: var(--muted); }
+.memo-asks { margin: 0 0 6px; padding-left: 1.4em; }
+.memo-evidence summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+.memo-evidence p { font-size: 14px; margin: 4px 0 0; }
+.summary-box { margin: 4px 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
+.summary-box p { margin: 0 0 6px; }
+.summary-stats { margin: 0 0 8px; padding-left: 1.2em; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.summary-points { margin: 0; padding-left: 1.2em; }
+.chat-log { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.chat-message { margin: 0; padding: 8px 12px; border-radius: 10px; max-width: 92%; overflow-wrap: anywhere; }
+.chat-message.student { align-self: flex-end; background: var(--accent-soft); }
+.chat-message.ai { align-self: flex-start; background: var(--code-bg); }
+.chat-who { display: block; font-size: 12px; color: var(--muted); }
+.chat-form input { flex: 1 1 220px; }
 code { font-family: ui-monospace, Menlo, monospace; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
 .reason { width: 100%; }
 .reason input { flex: 1 1 220px; }

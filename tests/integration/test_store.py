@@ -216,6 +216,28 @@ def test_followup_question_and_action_are_merged(store):
     assert followups["s2"]["reason"] == "説明できた" and "question" not in followups["s2"]
 
 
+def test_class_summary_is_saved_on_the_assignment(store):
+    assignment_id = make_assignment(store, make_class(store).id)
+    assert store.get_assignment(assignment_id).class_summary is None
+    summary = {"points": ["a", "b"], "by": "template", "stats": [{"type": "trace", "answered": 3, "wrong": 1}], "students": 3}
+    store.set_class_summary(assignment_id, summary)
+    assert store.get_assignment(assignment_id).class_summary == summary
+
+
+def test_chat_turns_are_limited_per_attempt(store):
+    assignment_id = make_assignment(store, make_class(store).id, "open")
+    assert store.use_chat_turn(assignment_id, "s1", 2) is None
+    store.start_attempt(assignment_id, "s1", 100.0)
+    assert [store.use_chat_turn(assignment_id, "s1", 2) for _ in range(3)] == [1, 0, None]
+
+
+def test_chat_turns_used_at_the_same_time_do_not_exceed_the_limit(store):
+    assignment_id = make_assignment(store, make_class(store).id, "open")
+    store.start_attempt(assignment_id, "s1", 100.0)
+    results = run_together(4, lambda _: store.use_chat_turn(assignment_id, "s1", 2))
+    assert sorted(r for r in results if r is not None) == [0, 1] and results.count(None) == 2
+
+
 @pytest.mark.skipif(not os.environ.get("FIRESTORE_EMULATOR_HOST"), reason="エミュレータが必要")
 def test_rules_refuse_browser_access():
     # 認証なしの REST はブラウザと同じ扱いで、firestore.rules が適用される

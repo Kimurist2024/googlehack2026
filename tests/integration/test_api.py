@@ -74,7 +74,10 @@ def test_full_flow_from_upload_to_followups(client):
     assert client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER).status_code == 200
     view = client.get(f"/v1/assignments/{assignment}/followups?budget_sec=90", headers=TEACHER).json()
     assert view["order"][0]["number"] == "1" and view["order"][0]["in_budget"] is True
-    assert view["order"][0]["question"]
+    memo = view["order"][0]["memo"]
+    assert memo["hypothesis"] and len(memo["questions"]) == 2
+    assert view["order"][0]["question"] == memo["questions"][0]
+    assert [item["given"] for item in view["order"][0]["evidence"]] == ["0", "0", "0"]
     assert [row["number"] for row in view["not_attempted"]] == ["2"]
 
     student_id = view["order"][0]["student_id"]
@@ -405,3 +408,46 @@ def test_demo_seed_in_production_needs_the_flag_and_a_login(client, firebase_tea
     assert client.post("/v1/dev/seed", headers=TEACHER).status_code == 401
     created = client.post("/v1/dev/seed", headers=firebase_teacher("good"))
     assert created.status_code == 201 and len(created.json()["personal_codes"]) == 6
+
+
+def answer_all(client, created, assignment, numbers, answer):
+    for number in numbers:
+        headers, _ = login(client, created, number)
+        quiz = client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
+        answers = {question["id"]: answer for question in quiz["questions"]}
+        assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).status_code == 200
+
+
+def test_class_summary_needs_three_students(client):
+    created, assignment = setup_open(client, numbers=("1", "2"))
+    answer_all(client, created, assignment, ("1", "2"), "0")
+    client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    view = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()
+    assert view["class_summary"] is None and view["summary_min_students"] == 3
+
+
+def test_class_summary_counts_wrong_answers_by_question_type(client):
+    created, assignment = setup_open(client, numbers=("1", "2", "3"))
+    answer_all(client, created, assignment, ("1", "2", "3"), "0")
+    client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER)
+    summary = client.get(f"/v1/assignments/{assignment}/followups", headers=TEACHER).json()["class_summary"]
+    assert summary["students"] == 3 and summary["points"]
+    assert all(s["answered"] == 3 and s["wrong"] == 3 for s in summary["stats"])
+    assert "番号" not in str(summary)
+
+
+def test_chat_is_only_for_submitted_attempts_and_has_a_limit(client, monkeypatch):
+    created, assignment = setup_open(client, numbers=("1",))
+    headers, _ = login(client, created)
+    url = f"/v1/assignments/{assignment}/attempt:chat"
+    assert client.post(url, json={"message": "ヒントをください"}).status_code == 401
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    assert client.post(url, json={"message": "ヒントをください"}, headers=headers).status_code == 409
+    client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers)
+    monkeypatch.setattr(service, "CHAT_LIMIT", 2)
+    first = client.post(url, json={"message": "ヒントをください"}, headers=headers).json()
+    assert first["reply"] and first["remaining"] == 1
+    history = [{"role": "student", "text": "ヒントをください"}, {"role": "ai", "text": first["reply"]}]
+    assert client.post(url, json={"message": "もう少し", "history": history}, headers=headers).json()["remaining"] == 0
+    assert client.post(url, json={"message": "もう一回"}, headers=headers).status_code == 429
+    assert client.post(url, json={"message": "あ" * 301}, headers=headers).status_code == 422

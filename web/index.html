@@ -53,6 +53,7 @@
         <button id="refresh">更新</button>
         <span id="tau" class="hint"></span>
       </div>
+      <div id="class-summary" class="class-summary"></div>
       <div id="order"></div>
       <div id="others"></div>
     </div>
@@ -84,6 +85,17 @@
     <div id="result" hidden>
       <div class="card"><h2 id="score"></h2><p id="notice" class="hint"></p></div>
       <div id="result-items"></div>
+      <div class="card" id="chat-card">
+        <h2>AIと振り返る</h2>
+        <p class="hint">自分のコードについて質問できます。AIは答えではなく、考えるためのヒントを返します。名前などの個人情報は書かないでください。成績には使いません。</p>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="row chat-form">
+          <input id="chat-input" maxlength="300" autocomplete="off" placeholder="例：3行目で total はどう変わるの？" aria-label="AIへの質問">
+          <button class="primary" id="chat-send">送る</button>
+        </form>
+        <p id="chat-remaining" class="hint"></p>
+        <p id="chat-error" class="error" role="alert"></p>
+      </div>
       <details class="card"><summary>コードの実行の流れを見る</summary><pre id="trace"></pre></details>
     </div>
   </section>

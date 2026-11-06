@@ -7,7 +7,7 @@ import secrets
 import time
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Annotated, Callable
+from typing import Annotated, Callable, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.staticfiles import StaticFiles
@@ -72,6 +72,16 @@ class SubmitIn(BaseModel):
     answers: dict[str, Annotated[str, StringConstraints(max_length=MAX_ANSWER_CHARS)]]
 
 
+class ChatTurn(BaseModel):
+    role: Literal["student", "ai"]
+    text: str = Field(max_length=400)
+
+
+class ChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=300)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=8)
+
+
 class ActionIn(BaseModel):
     action: str
     reason: str = Field(default="", max_length=400)
@@ -124,7 +134,9 @@ def create_app(
             raise
 
     def run_followups(assignment: AssignmentRecord) -> None:
-        service.create_followups(store, assignment, ai_factory())
+        ai = ai_factory()
+        service.create_followups(store, assignment, ai)
+        service.create_class_summary(store, assignment, ai)
 
     # Cloud Run は末尾が z のパス（/healthz など）を予約していて、アプリまで届かない
     @app.get("/v1/health")
@@ -298,6 +310,21 @@ def create_app(
             "trace": key["trace"],
             "notice": "この結果は成績には使いません。",
         }
+
+    @app.post("/v1/assignments/{assignment_id}/attempt:chat")
+    def chat(assignment_id: str, body: ChatIn, claims: dict = Depends(auth.current_student)) -> dict:
+        """解答を送ったあとの振り返り。AI は答えを言わず、ヒントか問い返しを返す。"""
+        student_assignment(assignment_id, claims)
+        student_id = claims["student"]
+        attempt = store.get_attempt(assignment_id, student_id)
+        if attempt is None or attempt["submitted_at"] is None:
+            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+        remaining = store.use_chat_turn(assignment_id, student_id, service.CHAT_LIMIT)
+        if remaining is None:
+            raise HTTPException(status_code=429, detail="この課題で質問できる回数を使い切りました")
+        context = service.chat_context(store, assignment_id, student_id, attempt)
+        reply = ai_factory().chat(context, [turn.model_dump() for turn in body.history], body.message)
+        return {**reply, "remaining": remaining}
 
     @app.get("/v1/assignments/{assignment_id}/followups")
     def followups(assignment_id: str, budget_sec: float = 90, teacher: str = Depends(auth.current_teacher)) -> dict:

@@ -229,11 +229,28 @@ class FirestoreStore:
     def attempts(self, assignment_id: str) -> dict[str, Doc]:
         return self._all(assignment_id, "attempts")
 
+    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        reference = self._part(assignment_id, "attempts").document(student_id)
+
+        def work(transaction) -> int | None:
+            snapshot = reference.get(transaction=transaction)
+            used = (snapshot.to_dict() or {}).get("chat_used", 0) if snapshot.exists else limit
+            if used >= limit:
+                return None
+            transaction.update(reference, {"chat_used": used + 1})
+            return limit - used - 1
+
+        return self._in_transaction(work)
+
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         return self._all(assignment_id, "followups")
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None:
-        self._part(assignment_id, "followups").document(student_id).set({"question": question, "line": line}, merge=True)
+    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None:
+        reference = self._part(assignment_id, "followups").document(student_id)
+        reference.set({"question": question, "line": line, "memo": memo}, merge=True)
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         self._part(assignment_id, "followups").document(student_id).set(action, merge=True)
+
+    def set_class_summary(self, assignment_id: str, summary: Doc) -> None:
+        self._assignment(assignment_id).update({"class_summary": summary})

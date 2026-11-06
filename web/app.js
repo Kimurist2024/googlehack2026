@@ -13,6 +13,7 @@ let studentToken = null;
 let studentAssignment = null;
 let timerHandle = null;
 let lastActionAt = Date.now();
+let chatHistory = [];
 
 async function api(path, options = {}) {
   const response = await fetch(path, options);
@@ -174,17 +175,66 @@ function actionButtons(row) {
   return actions;
 }
 
+// クラス全体のつまずき。人数は集計そのもの、まとめは AI（または集計の文）
+function classSummaryBlock(summary, minStudents) {
+  const box = make("div", undefined, "summary-box");
+  const head = make("p", undefined, "memo-head");
+  head.append(make("strong", "クラス全体のつまずき"));
+  if (summary && summary.by === "gemini") head.append(make("span", "AIのまとめ", "ai-badge"));
+  box.append(head);
+  if (!summary) {
+    box.append(make("p", `解答した生徒が${minStudents}人以上になると、締切のときにまとめを作ります。`, "hint"));
+    return box;
+  }
+  const stats = make("ul", undefined, "summary-stats");
+  for (const s of summary.stats) stats.append(make("li", `${s.label}：${s.answered}人中 ${s.wrong}人が誤答`));
+  box.append(stats);
+  // 既定の文は人数の繰り返しなので、Gemini のまとめのときだけ出す
+  if (summary.by === "gemini") {
+    const points = make("ul", undefined, "summary-points");
+    for (const point of summary.points) points.append(richText("li", point));
+    box.append(points);
+  }
+  return box;
+}
+
+// 声かけメモ。仮説と質問は AI（または既定の文）、根拠は採点結果そのもの
+function memoBlock(row) {
+  const box = make("div", undefined, "memo");
+  const head = make("p", undefined, "memo-head");
+  head.append(make("strong", "考えられるつまずき"));
+  if (row.memo.by === "gemini") head.append(make("span", "AIの推測", "ai-badge"));
+  box.append(head, richText("p", row.memo.hypothesis));
+  box.append(make("p", "授業で聞いてみる", "memo-label"));
+  const asks = make("ol", undefined, "memo-asks");
+  for (const question of row.memo.questions) asks.append(richText("li", question));
+  box.append(asks);
+  if (row.evidence && row.evidence.length) {
+    const details = make("details", undefined, "memo-evidence");
+    details.append(make("summary", `根拠：誤答した問い（${row.evidence.length}問）`));
+    for (const item of row.evidence) {
+      const line = richText("p", item.stem);
+      line.append(document.createTextNode(`　答え：${item.given || "（未回答）"} ／ 正解：${item.answer}`));
+      details.append(line);
+    }
+    box.append(details);
+  }
+  return box;
+}
+
 const ACTION_LABEL = { ask_in_class: "授業で聞く", no_problem: "問題なし", question_bad: "問いが不適切" };
 
 async function loadFollowups() {
   const budget = Number($("budget").value) || 0;
   const view = await api(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`, { headers: await teacherHeaders() });
   $("tau").textContent = `1人あたり ${Math.round(view.tau_sec)}秒として計算`;
+  $("class-summary").replaceChildren(classSummaryBlock(view.class_summary, view.summary_min_students));
   $("order").replaceChildren(...view.order.map((row, index) => {
     const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
     card.append(make("h3", `${index + 1}. 番号 ${row.number}（${row.score}/${row.total} 問正解）`));
     if (!row.in_budget && !row.action) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
-    if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
+    if (row.memo) card.append(memoBlock(row));
+    else if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
     if (row.action) card.append(make("p", `処置済み：${ACTION_LABEL[row.action]}`, "done"));
     else card.append(actionButtons(row));
     return card;
@@ -196,8 +246,52 @@ async function loadFollowups() {
   if (!view.order.length) $("order").replaceChildren(make("p", "まだ解答はありません。", "hint"));
 }
 
+function resetChat() {
+  chatHistory = [];
+  $("chat-log").replaceChildren();
+  $("chat-remaining").textContent = "";
+  $("chat-error").textContent = "";
+  $("chat-input").disabled = false;
+  $("chat-send").disabled = false;
+}
+
+// who は表示する名前。Gemini の返答は「AI」、既定の文は「ヒント」と分けて見せる
+function addChatMessage(role, text, who) {
+  const item = richText("p", text, `chat-message ${role}`);
+  item.prepend(make("span", who, "chat-who"));
+  $("chat-log").append(item);
+  item.scrollIntoView({ block: "nearest" });
+}
+
+$("chat-form").onsubmit = async (event) => {
+  event.preventDefault();
+  const message = $("chat-input").value.trim();
+  if (!message) return;
+  $("chat-error").textContent = "";
+  $("chat-send").disabled = true;
+  addChatMessage("student", message, "あなた");
+  $("chat-input").value = "";
+  try {
+    const reply = await api(`/v1/assignments/${studentAssignment}/attempt:chat`, {
+      method: "POST",
+      headers: studentHeaders(),
+      body: JSON.stringify({ message, history: chatHistory.slice(-8) }),
+    });
+    addChatMessage("ai", reply.reply, reply.by === "gemini" ? "AI" : "ヒント");
+    chatHistory.push({ role: "student", text: message }, { role: "ai", text: reply.reply });
+    $("chat-remaining").textContent = `あと ${reply.remaining} 回質問できます。`;
+    const done = reply.remaining <= 0;
+    $("chat-input").disabled = done;
+    $("chat-send").disabled = done;
+  } catch (error) {
+    $("chat-error").textContent = error.message;
+    $("chat-send").disabled = false;
+  }
+};
+
 function resetStudent() {
   clearInterval(timerHandle);
+  resetChat();
   $("login").hidden = false;
   for (const id of ["ready", "quiz", "result"]) $(id).hidden = true;
   $("login-error").textContent = "";
@@ -314,6 +408,7 @@ $("quiz").onsubmit = async (event) => {
     showCode($("trace"), result.trace.join("\n"));
     $("trace").style.counterReset = "none";
     $("quiz").hidden = true;
+    resetChat();
     $("result").hidden = false;
   } catch (error) {
     $("quiz-error").textContent = error.message;

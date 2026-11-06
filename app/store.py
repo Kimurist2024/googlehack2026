@@ -35,6 +35,7 @@ class AssignmentRecord:
     weights: dict[str, float]
     state: str = "draft"  # draft, generating, ready, open, closed
     generating_since: float | None = None
+    class_summary: dict | None = None  # 締切のあとに作るクラス全体のまとめ
 
 
 def can_add_submissions(assignment: AssignmentRecord) -> bool:
@@ -104,11 +105,16 @@ class Store(Protocol):
 
     def attempts(self, assignment_id: str) -> dict[str, Doc]: ...
 
+    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        """振り返りの質問を1回分使う。残りの回数を返し、使い切っていれば None を返す。"""
+
     def followups(self, assignment_id: str) -> dict[str, Doc]: ...
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None: ...
+    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None: ...
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None: ...
+
+    def set_class_summary(self, assignment_id: str, summary: Doc) -> None: ...
 
 
 class MemoryStore:
@@ -254,17 +260,30 @@ class MemoryStore:
         with self._lock:
             return copy.deepcopy(self._attempts[assignment_id])
 
+    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        with self._lock:
+            attempt = self._attempts[assignment_id].get(student_id)
+            used = attempt.get("chat_used", 0) if attempt else limit
+            if used >= limit:
+                return None
+            attempt["chat_used"] = used + 1
+            return limit - used - 1
+
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         with self._lock:
             return copy.deepcopy(self._followups[assignment_id])
 
-    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None:
+    def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None, memo: Doc | None = None) -> None:
         with self._lock:
-            self._followups[assignment_id].setdefault(student_id, {}).update(question=question, line=line)
+            self._followups[assignment_id].setdefault(student_id, {}).update(question=question, line=line, memo=copy.deepcopy(memo))
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
         with self._lock:
             self._followups[assignment_id].setdefault(student_id, {}).update(copy.deepcopy(action))
+
+    def set_class_summary(self, assignment_id: str, summary: Doc) -> None:
+        with self._lock:
+            self._assignments[assignment_id] = replace(self._assignments[assignment_id], class_summary=copy.deepcopy(summary))
 
 
 def default_store() -> Store:
