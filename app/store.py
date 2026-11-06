@@ -35,6 +35,13 @@ class AssignmentRecord:
     weights: dict[str, float]
     state: str = "draft"  # draft, generating, ready, open, closed
     generating_since: float | None = None
+    # この時刻を過ぎたら、課題と生徒のデータ（提出、問い、正解、解答、声かけ）はないものとして扱う。
+    # Firestore では各文書に同じ時刻を書き、TTL で消す。作成時に決めて変えない
+    expire_at: float | None = None
+
+
+def is_expired(assignment: AssignmentRecord, now: float) -> bool:
+    return assignment.expire_at is not None and now >= assignment.expire_at
 
 
 def can_add_submissions(assignment: AssignmentRecord) -> bool:
@@ -115,6 +122,12 @@ class Store(Protocol):
 
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         """入室の失敗を1回数える。expire_at を過ぎた記録は消してよい。"""
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        """課題と、その生徒のデータをすべて消す。受付中なら、クラスの受付中の印も外す。"""
+
+    def delete_class(self, class_id: str) -> None:
+        """クラス、授業コードと個人コードの対応、クラスのすべての課題を消す。授業コードから先に消す。"""
 
 
 class MemoryStore:
@@ -276,6 +289,25 @@ class MemoryStore:
     def login_failures(self, client_key: str, window: int) -> int:
         with self._lock:
             return self._login_failures.get((client_key, window), 0)
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        with self._lock:
+            assignment = self._assignments.pop(assignment_id, None)
+            for table in (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups):
+                table.pop(assignment_id, None)
+            classroom = self._classes.get(assignment.class_id) if assignment else None
+            if classroom is not None and classroom.open_assignment_id == assignment_id:
+                self._classes[classroom.id] = replace(classroom, open_assignment_id=None)
+
+    def delete_class(self, class_id: str) -> None:
+        with self._lock:
+            for code_hash in [code_hash for code_hash, owner in self._class_codes.items() if owner == class_id]:
+                del self._class_codes[code_hash]
+            for key in [key for key in self._credentials if key[0] == class_id]:
+                del self._credentials[key]
+            for assignment_id in [aid for aid, assignment in self._assignments.items() if assignment.class_id == class_id]:
+                self.delete_assignment(assignment_id)
+            self._classes.pop(class_id, None)
 
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         with self._lock:

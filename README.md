@@ -74,6 +74,8 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 `SESSION_SECRET` からは用途ごとの鍵（トークンの署名、授業コードと個人コードのハッシュ、接続元のハッシュ）を導出します。変えると保存済みのコードで入室できなくなるので、本番では固定した値を Secret Manager に置きます。
 
+生徒のデータ（提出コード、解答、採点結果など）は、課題を作ってから `RETENTION_DAYS` 日（既定30日）で消えます。教員は課題やクラスをすぐに消すこともできます（`DELETE /v1/assignments/{id}`、`DELETE /v1/classes/{id}`）。
+
 `AI_BACKEND=gemini` で本番として動かすときは、`MODEL_ARMOR_TEMPLATE` が必須です。ないときは Gemini を使わずテンプレートで動きます。テンプレートの作り方は [SECURITY.md](SECURITY.md#デプロイのときに行う設定) にあります。
 
 ## まだできていないこと
@@ -82,6 +84,7 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 - **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
 - **入室の試行回数の制限：** 失敗した入室だけを、接続元ごとに毎分30回まで Firestore で数えます（インスタンスをまたいで効きます）。Cloud Run では `X-Forwarded-For` の右端を接続元とします。記録を自動で消す TTL の設定と、デプロイ後に接続元が正しく分かれるかの確認が残っています（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
 - **Model Armor：** 検査のコードと試験はありますが、テンプレートはまだ作っていません。
+- **TTL：** 期限の印は書いていますが、Firestore の TTL の設定はまだです。設定するまでは、期限後のデータは API から見えなくなるだけで、DB には残ります（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
 - **Cloud Run Jobs：** 問いの生成はAPIの中のバックグラウンド処理です。本番ではジョブに分けます。
 - **教員のログイン：** Firebase の検証コードはありますが、画面はローカル用の仮の認証のままです。
 - **デプロイ：** Dockerfile はありますが、まだビルドしていません。

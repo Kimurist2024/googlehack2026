@@ -8,6 +8,7 @@ const REASONS = {
 };
 const teacherHeaders = { "X-Dev-Teacher": "demo-teacher" }; // Firebase 認証に置き換えるまでのローカル専用
 let assignmentId = null;
+let classId = null;
 let studentToken = null;
 let studentAssignment = null;
 let timerHandle = null;
@@ -83,8 +84,25 @@ $("seed").onclick = () => guarded(async () => {
   }));
   $("codes-card").hidden = false;
   $("followups-card").hidden = true;
+  classId = created.class_id;
   setButtons({ generate: true });
-  setStatus(`${Object.keys(created.personal_codes).length}人分の提出を登録しました。`);
+  $("delete").disabled = false;
+  const expires = new Date(created.expires_at * 1000).toLocaleDateString("ja-JP");
+  setStatus(`${Object.keys(created.personal_codes).length}人分の提出を登録しました。生徒のデータは ${expires} に自動で消えます。`);
+});
+
+// クラスごと消す。提出コード、解答、採点結果、名簿、授業コードと個人コードがすべて消え、元に戻せない
+$("delete").onclick = () => guarded(async () => {
+  if (!classId || !window.confirm("このクラスの提出コード、解答、採点結果、名簿、コードをすべて消します。元に戻せません。")) return;
+  await api(`/v1/classes/${classId}`, { method: "DELETE", headers: teacherHeaders });
+  classId = null;
+  assignmentId = null;
+  setButtons({});
+  $("delete").disabled = true;
+  $("codes-card").hidden = true;
+  $("followups-card").hidden = true;
+  resetStudent();
+  setStatus("クラスのデータをすべて消しました。");
 });
 
 $("generate").onclick = () => guarded(async () => {

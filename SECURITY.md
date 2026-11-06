@@ -6,7 +6,7 @@
 
 | 守るもの | 漏れたり書き換えられたりすると |
 | --- | --- |
-| 生徒の提出コード、解答、採点結果 | 生徒の学習の記録が他人に見られる。成績に近い情報が外に出る |
+| 生徒の提出コード、解答、採点結果 | 生徒の学習の記録が他人に見られる。成績に近い情報が外に出る。必要以上に長く残ること自体も危険を増やす |
 | 授業コードと個人コード | 他人になりすまして解答できる |
 | 教員のアカウントと操作 | クラスの作成、締切、CSVの持ち出しを他人にされる |
 | サーバーの権限（Firestore、Gemini、Code Execution） | データの全件取得や、費用のかかる呼び出しをされる |
@@ -97,6 +97,9 @@ Model Armor は Gemini の呼び出しに組み込む方法もありますが、
 
 ### データの扱い
 
+- **保存期間：** 生徒のデータ（提出コード、問い、正解、解答と採点結果、声かけの記録）は、課題を作ってから `RETENTION_DAYS` 日（既定30日、1〜365日）で消します。期限は課題を作るときに決めて変えません。必要な結果は教員が CSV で持ち出せます。
+- **二重に消す：** Firestore では課題とその下の文書の1つずつに同じ `expire_at` を書き、TTL で消します（TTL は親を消しても子を消さないため）。TTL の削除は期限から遅れることがあるので、期限を過ぎた課題は API がどの入口からも 404 を返し、削除を待たずに見えなくします。
+- **教員がすぐ消せる：** `DELETE /v1/assignments/{id}` で課題とその生徒のデータを、`DELETE /v1/classes/{id}` でクラス、名簿、授業コードと個人コード、クラスのすべての課題を消します。持ち主の教員だけが消せ、消した記録は監査ログに残ります。クラスを消すときは授業コードを最初に消して、新しい入室を止めます。配布済みのトークンも、課題が見つからなくなるので使えません。
 - 実在の生徒の提出物は使いません。デモは合成データです。
 - 名簿は出席番号だけを持ち、氏名は受け付けません。Gemini にはコメントを消して渡すので、コメントに書いた氏名も届きません。
 - 接続元は鍵付きハッシュにしてから保存・記録します。入室の失敗の記録は TTL で自動的に消えます。
@@ -109,6 +112,7 @@ Model Armor は Gemini の呼び出しに組み込む方法もありますが、
 | 記録 | 内容 |
 | --- | --- |
 | `class.created`、`assignment.created`、`submissions.uploaded`、`generation.started`、`assignment.opened`、`assignment.closed`、`followup.recorded` | 教員の操作。誰が、どの課題に |
+| `assignment.deleted`、`class.deleted` | データの削除。誰が、どれを |
 | `export.downloaded` | CSV の持ち出し。誰が、いつ、何人分 |
 | `login.succeeded`、`login.failed`、`login.rate_limited` | 入室。接続元はハッシュで |
 | `teacher.auth_failed`、`teacher.not_allowed` | 教員の認証の失敗と、許可されていないアカウント |
@@ -137,10 +141,12 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 
    作ったら `MODEL_ARMOR_TEMPLATE=projects/<プロジェクト>/locations/us/templates/mushitori-guard` を設定します。日本国内での処理が必要な場合は `asia-northeast1` に作り、`MODEL_ARMOR_MULTI_LANGUAGE=0` にします（ただし日本語の文は検出されないことがあります）。
 
-4. **入室の失敗の記録に TTL を付ける。**
+4. **TTL を有効にする。** 課題、その下の生徒のデータ、入室の失敗の記録が、期限を過ぎると消えるようになります。TTL は文書の種類（コレクショングループ）ごとに設定します。
 
    ```sh
-   gcloud firestore fields ttls update expire_at --collection-group=loginFailures --enable-ttl
+   for group in assignments submissions quizzes answerKeys attempts followups loginFailures; do
+     gcloud firestore fields ttls update expire_at --collection-group="$group" --enable-ttl
+   done
    ```
 
 5. **接続元の判定を確かめる。** Cloud Run に直接つなぐ場合は何もしなくても右端の1つを信用します（`K_SERVICE` で判定）。前にロードバランサーを置く場合は、`TRUSTED_PROXY_HOPS` を実際の段数に合わせ、デプロイ後に監査ログの `client` が人ごとに変わることを確かめます。
@@ -150,12 +156,13 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 - **エッジでの防御：** Cloud Armor（WAF、IP 単位の上限、ボット対策）はロードバランサーが必要なので入れていません。アプリ側の上限は接続元ごとなので、多数の接続元からの分散した総当たりには効きにくいです。ただしコードは授業コードと個人コードの両方が必要で、それぞれ31種類の文字の8桁です。
 - **教員のログイン画面：** Firebase の検証コードはありますが、画面はまだです。画面を足すときは CSP の `script-src` と `connect-src` に Firebase の配信元を、ポップアップでログインするなら `Cross-Origin-Opener-Policy` を `same-origin-allow-popups` にします（`app/security.py`）。
 - **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
-- **本番での確認：** Model Armor と Firestore の入室の数え方は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
+- **名簿の保存期間：** クラス（出席番号の名簿、担当教員のメール、コードのハッシュ）は、教員が消すまで残ります。生徒のデータより重さは低いですが、年度の終わりに消す運用が必要です。
+- **本番での確認：** Model Armor、Firestore の入室の数え方、TTL の印は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
 
 ## 確かめ方
 
 ```sh
-.venv/bin/python -m pytest tests/unit/test_auth.py tests/unit/test_security.py tests/unit/test_guard.py tests/integration/test_security_api.py
+.venv/bin/python -m pytest tests/unit/test_auth.py tests/unit/test_security.py tests/unit/test_guard.py tests/integration/test_security_api.py tests/integration/test_retention_api.py
 ```
 
 | 試験 | 確かめること |
@@ -164,4 +171,5 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 | `tests/unit/test_security.py` | 偽の `X-Forwarded-For` で接続元を偽れない。CSV の数式が無害になる |
 | `tests/unit/test_guard.py` | Model Armor が検出した文や、検査に失敗した文が Gemini にも画面にも届かない。生徒の答えが `<data>` の外に出られない |
 | `tests/unit/test_service.py` | zip 爆弾、暗号化、重複、壊れたファイル。隔離環境が返す偽の理由を保存しない |
+| `tests/integration/test_retention_api.py` | 期限を過ぎた課題、消した課題やクラスに、教員からも生徒からも届かない。Firestore では生徒のデータの文書すべてに TTL の印がある |
 | `tests/integration/test_security_api.py` | ヘッダー、本番の設定、不正な ID や本文で 500 にならない、入室の上限がインスタンス間で共有される、隔離を破ろうとするコードが対象外になる、監査ログにコードが残らない |

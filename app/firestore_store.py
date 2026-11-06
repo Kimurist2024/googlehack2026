@@ -3,15 +3,16 @@
 classes/{id}                          クラスと名簿（出席番号）、受付中の課題
 classes/{id}/credentials/{hash}       個人コードのハッシュ -> student_id
 classCodes/{hash}                     授業コードのハッシュ -> class_id
-assignments/{id}                      課題
-assignments/{id}/submissions/{sid}    提出のコードと状態
-assignments/{id}/quizzes/{sid}        問い（正解なし）
-assignments/{id}/answerKeys/{sid}     正解、解説、実行の記録
-assignments/{id}/attempts/{sid}       開始と提出の時刻、採点結果
-assignments/{id}/followups/{sid}      授業で聞く一問と処置
+assignments/{id}                      課題                         ┐
+assignments/{id}/submissions/{sid}    提出のコードと状態           │ どれも課題と同じ expire_at を持ち、
+assignments/{id}/quizzes/{sid}        問い（正解なし）             │ Firestore の TTL で消える。
+assignments/{id}/answerKeys/{sid}     正解、解説、実行の記録       │ TTL は親を消しても子を消さないので、
+assignments/{id}/attempts/{sid}       開始と提出の時刻、採点結果   │ 1つずつに印を付ける
+assignments/{id}/followups/{sid}      授業で聞く一問と処置         ┘
 loginFailures/{client}-{window}       接続元（鍵付きハッシュ）ごとの1分間の入室の失敗。expire_at で TTL 削除
 
 ブラウザからは読み書きさせない（firestore.rules）。サーバーの権限でAPIだけが触る。
+TTL の削除は期限から遅れることがあるので、期限を過ぎた課題はアプリの側でもないものとして扱う（app/main.py）。
 """
 import os
 import random
@@ -30,8 +31,22 @@ from .store import SUBMISSION_STATUSES, AssignmentRecord, ClassRecord, Doc, can_
 MAX_TRANSACTION_ATTEMPTS = 10
 
 
+def _timestamp(seconds: float | None) -> datetime | None:
+    # TTL の対象にできるのはタイムスタンプ型の項目だけなので、数値では保存しない
+    return None if seconds is None else datetime.fromtimestamp(seconds, tz=timezone.utc)
+
+
 def _assignment_fields(assignment: AssignmentRecord) -> Doc:
-    return {key: value for key, value in asdict(assignment).items() if key != "id"}
+    fields = {key: value for key, value in asdict(assignment).items() if key != "id"}
+    fields["expire_at"] = _timestamp(assignment.expire_at)
+    return fields
+
+
+def _assignment_record(snapshot) -> AssignmentRecord:
+    data = snapshot.to_dict()
+    expire_at = data.get("expire_at")
+    data["expire_at"] = expire_at.timestamp() if isinstance(expire_at, datetime) else expire_at
+    return AssignmentRecord(id=snapshot.id, **data)
 
 
 def _class_fields(classroom: ClassRecord) -> Doc:
@@ -54,6 +69,16 @@ def _class_record(snapshot) -> ClassRecord:
 class FirestoreStore:
     def __init__(self, project: str | None = None) -> None:
         self.db = firestore.Client(project=project or os.environ.get("GOOGLE_CLOUD_PROJECT"))
+        # 課題の期限は作成時に決めて変えないので、読んだ値を覚えておいてよい
+        self._expiry_cache: dict[str, datetime | None] = {}
+
+    def _expiry(self, assignment_id: str) -> Doc:
+        """生徒のデータの文書に付ける期限。課題に期限がなければ何も付けない。"""
+        if assignment_id not in self._expiry_cache:
+            snapshot = self._assignment(assignment_id).get(["expire_at"])
+            self._expiry_cache[assignment_id] = (snapshot.to_dict() or {}).get("expire_at") if snapshot.exists else None
+        expire_at = self._expiry_cache[assignment_id]
+        return {"expire_at": expire_at} if expire_at is not None else {}
 
     def _class(self, class_id: str):
         return self.db.collection("classes").document(class_id)
@@ -77,8 +102,7 @@ class FirestoreStore:
             time.sleep(random.uniform(0, 0.1 * attempt))
 
     def _read_assignment(self, transaction, assignment_id: str) -> AssignmentRecord:
-        snapshot = self._assignment(assignment_id).get(transaction=transaction)
-        return AssignmentRecord(id=snapshot.id, **snapshot.to_dict())
+        return _assignment_record(self._assignment(assignment_id).get(transaction=transaction))
 
     def _doc(self, assignment_id: str, name: str, student_id: str) -> Doc | None:
         return self._part(assignment_id, name).document(student_id).get().to_dict()
@@ -112,15 +136,17 @@ class FirestoreStore:
 
     def get_assignment(self, assignment_id: str) -> AssignmentRecord | None:
         snapshot = self._assignment(assignment_id).get()
-        return AssignmentRecord(id=snapshot.id, **snapshot.to_dict()) if snapshot.exists else None
+        return _assignment_record(snapshot) if snapshot.exists else None
 
     def add_submissions(self, assignment_id: str, codes: dict[str, str]) -> bool:
         def work(transaction) -> bool:
-            if not can_add_submissions(self._read_assignment(transaction, assignment_id)):
+            assignment = self._read_assignment(transaction, assignment_id)
+            if not can_add_submissions(assignment):
                 return False
+            expiry = {"expire_at": _timestamp(assignment.expire_at)} if assignment.expire_at is not None else {}
             for student_id, code in codes.items():
                 reference = self._part(assignment_id, "submissions").document(student_id)
-                transaction.set(reference, {"code": code, "status": "queued", "reason": None})
+                transaction.set(reference, {"code": code, "status": "queued", "reason": None, **expiry})
             transaction.update(self._assignment(assignment_id), {"state": "draft"})
             return True
 
@@ -190,8 +216,9 @@ class FirestoreStore:
             batch.delete(quiz_reference)
             batch.delete(key_reference)
         else:
-            batch.set(quiz_reference, quiz)
-            batch.set(key_reference, answer_key)
+            expiry = self._expiry(assignment_id)
+            batch.set(quiz_reference, {**quiz, **expiry})
+            batch.set(key_reference, {**answer_key, **expiry})
         batch.commit()
 
     def get_quiz(self, assignment_id: str, student_id: str) -> Doc | None:
@@ -202,13 +229,14 @@ class FirestoreStore:
 
     def start_attempt(self, assignment_id: str, student_id: str, started_at: float) -> Doc:
         reference = self._part(assignment_id, "attempts").document(student_id)
+        expiry = self._expiry(assignment_id)
 
         def work(transaction) -> Doc:
             snapshot = reference.get(transaction=transaction)
             if snapshot.exists:
                 return snapshot.to_dict()
             attempt = {"started_at": started_at, "submitted_at": None, "graded": []}
-            transaction.create(reference, attempt)
+            transaction.create(reference, {**attempt, **expiry})
             return attempt
 
         return self._in_transaction(work)
@@ -235,10 +263,11 @@ class FirestoreStore:
         return self._all(assignment_id, "followups")
 
     def add_followup_question(self, assignment_id: str, student_id: str, question: str, line: int | None) -> None:
-        self._part(assignment_id, "followups").document(student_id).set({"question": question, "line": line}, merge=True)
+        fields = {"question": question, "line": line, **self._expiry(assignment_id)}
+        self._part(assignment_id, "followups").document(student_id).set(fields, merge=True)
 
     def record_action(self, assignment_id: str, student_id: str, action: Doc) -> None:
-        self._part(assignment_id, "followups").document(student_id).set(action, merge=True)
+        self._part(assignment_id, "followups").document(student_id).set({**action, **self._expiry(assignment_id)}, merge=True)
 
     def _login_failure(self, client_key: str, window: int):
         return self.db.collection("loginFailures").document(f"{client_key}-{window}")
@@ -252,3 +281,32 @@ class FirestoreStore:
         self._login_failure(client_key, window).set(
             {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
         )
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        reference = self._assignment(assignment_id)
+
+        def release(transaction) -> None:
+            snapshot = reference.get(transaction=transaction)
+            if not snapshot.exists:
+                return
+            class_reference = self._class(snapshot.get("class_id"))
+            classroom = class_reference.get(transaction=transaction)
+            if classroom.exists and classroom.get("open_assignment_id") == assignment_id:
+                transaction.update(class_reference, {"open_assignment_id": None})
+
+        # 先に受付中の印を外し、そのあと子の文書ごと消す
+        self._in_transaction(release)
+        self.db.recursive_delete(reference)
+        self._expiry_cache.pop(assignment_id, None)
+
+    def delete_class(self, class_id: str) -> None:
+        # 授業コードを先に消して、新しい入室を止める
+        codes = self.db.collection("classCodes").where(filter=FieldFilter("class_id", "==", class_id))
+        for snapshot in codes.stream():
+            snapshot.reference.delete()
+        assignments = self.db.collection("assignments").where(filter=FieldFilter("class_id", "==", class_id))
+        for snapshot in assignments.stream():
+            self.db.recursive_delete(snapshot.reference)
+            self._expiry_cache.pop(snapshot.id, None)
+        # 個人コードの対応（credentials）もクラスの下にあるので、まとめて消える
+        self.db.recursive_delete(self._class(class_id))

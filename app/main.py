@@ -16,7 +16,7 @@ from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
 from . import audit, auth, demo, security, service
-from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, default_store
+from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, can_begin_generation, default_store, is_expired
 
 GRACE_SEC = 10
 # 失敗した入室だけを、接続元ごと・1分ごとに数える。保存先に数えるので、インスタンスが増えても上限は変わらない。
@@ -36,11 +36,15 @@ QUESTION_TYPES = {"output", "trace", "impact"}
 MAX_ANSWER_CHARS = 20_000
 MAX_ANSWERS = 10
 GENERATION_STALE_SEC = 30 * 60
+# 生徒のデータ（提出コード、問い、正解、解答と採点結果、声かけの記録）を残す日数。課題を作った時点から数える
+DEFAULT_RETENTION_DAYS = 30
+MAX_RETENTION_DAYS = 365
 # 表計算ソフトが数式として実行してしまう先頭の文字（CSV インジェクション）
 CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 ResourceId = Annotated[str, StringConstraints(pattern=ID_PATTERN)]
 AssignmentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
+ClassId = Annotated[str, PathParam(pattern=ID_PATTERN)]
 StudentId = Annotated[str, PathParam(pattern=ID_PATTERN)]
 
 
@@ -102,6 +106,15 @@ class ActionIn(BaseModel):
         return self
 
 
+def retention_sec() -> float:
+    """RETENTION_DAYS（1〜365日）。必要以上に残さないよう、既定は30日にする。"""
+    try:
+        days = int(os.environ.get("RETENTION_DAYS", DEFAULT_RETENTION_DAYS))
+    except ValueError:
+        days = DEFAULT_RETENTION_DAYS
+    return min(max(days, 1), MAX_RETENTION_DAYS) * 24 * 60 * 60
+
+
 def csv_cell(value: object) -> object:
     """表計算ソフトで開いたときに数式として動かないようにする。"""
     if isinstance(value, str) and value.startswith(CSV_FORMULA_PREFIXES):
@@ -136,14 +149,15 @@ def create_app(
 
     def owned_assignment(assignment_id: str, teacher: str) -> AssignmentRecord:
         assignment = store.get_assignment(assignment_id)
-        if assignment is None:
+        # TTL の削除は遅れることがあるので、期限を過ぎたものはここでないものとして扱う
+        if assignment is None or is_expired(assignment, service.now()):
             raise HTTPException(status_code=404, detail="課題が見つかりません")
         owned_class(assignment.class_id, teacher)
         return assignment
 
     def student_assignment(assignment_id: str, claims: dict) -> AssignmentRecord:
         assignment = store.get_assignment(assignment_id)
-        if assignment is None or assignment.class_id != claims["class"]:
+        if assignment is None or assignment.class_id != claims["class"] or is_expired(assignment, service.now()):
             raise HTTPException(status_code=404, detail="課題が見つかりません")
         return assignment
 
@@ -175,7 +189,7 @@ def create_app(
         )["assignment_id"]
         by_number = {number: sid for sid, number in store.get_class(created["class_id"]).student_numbers.items()}
         store.add_submissions(assignment_id, {by_number[number]: code for number, code in demo.PROGRAMS.items()})
-        return {**created, "assignment_id": assignment_id}
+        return {**created, "assignment_id": assignment_id, "expires_at": store.get_assignment(assignment_id).expire_at}
 
     @app.post("/v1/classes", status_code=201)
     def create_class(body: ClassIn, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
@@ -209,6 +223,7 @@ def create_app(
                 time_limit_sec=body.time_limit_sec,
                 question_count=body.question_count,
                 weights=body.weights,
+                expire_at=service.now() + retention_sec(),
             )
         )
         audit.event("assignment.created", request, principal=teacher, class_id=body.class_id, assignment_id=assignment_id)
@@ -250,7 +265,31 @@ def create_app(
     @app.get("/v1/assignments/{assignment_id}")
     def assignment_status(assignment_id: AssignmentId, teacher: str = Depends(auth.current_teacher)) -> dict:
         assignment = owned_assignment(assignment_id, teacher)
-        return {"state": assignment.state, "title": assignment.title, "submissions": store.submission_counts(assignment_id)}
+        return {
+            "state": assignment.state,
+            "title": assignment.title,
+            "submissions": store.submission_counts(assignment_id),
+            "expires_at": assignment.expire_at,
+        }
+
+    @app.delete("/v1/assignments/{assignment_id}", status_code=204)
+    def delete_assignment(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> Response:
+        """課題と、その生徒のデータをすべて消す。期限を待たずに消したいときに使う。"""
+        assignment = owned_assignment(assignment_id, teacher)
+        # 生成の途中で消すと、裏で動いている処理と食い違うので、終わるまで待ってもらう
+        if assignment.state == "generating" and not can_begin_generation(assignment, service.now(), GENERATION_STALE_SEC):
+            raise HTTPException(status_code=409, detail="問いを作っている間は消せません")
+        store.delete_assignment(assignment_id)
+        audit.event("assignment.deleted", request, principal=teacher, assignment_id=assignment_id)
+        return Response(status_code=204)
+
+    @app.delete("/v1/classes/{class_id}", status_code=204)
+    def delete_class(class_id: ClassId, request: Request, teacher: str = Depends(auth.current_teacher)) -> Response:
+        """クラス、名簿、授業コードと個人コード、クラスのすべての課題を消す。"""
+        owned_class(class_id, teacher)
+        store.delete_class(class_id)
+        audit.event("class.deleted", request, principal=teacher, class_id=class_id)
+        return Response(status_code=204)
 
     @app.post("/v1/assignments/{assignment_id}:open")
     def open_assignment(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
