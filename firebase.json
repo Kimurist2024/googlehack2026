@@ -1,4 +1,17 @@
 {
+  "hosting": {
+    "public": "web",
+    "ignore": ["**/.*"],
+    "rewrites": [
+      {
+        "source": "/v1/**",
+        "run": {
+          "serviceId": "mushitori",
+          "region": "asia-northeast1"
+        }
+      }
+    ]
+  },
   "firestore": {
     "rules": "firestore.rules"
   },

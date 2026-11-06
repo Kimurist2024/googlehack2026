@@ -16,7 +16,17 @@
 </header>
 <main>
   <section id="teacher">
-    <div class="card">
+    <div class="card" id="signin-card" hidden>
+      <h2>教員のログイン</h2>
+      <p class="hint">許可された Google アカウントでログインしてください。生徒はログインせず、生徒のタブから授業コードで入ります。</p>
+      <div class="row">
+        <button id="signin" class="primary">Google でログイン</button>
+        <span id="who" class="hint"></span>
+        <button id="signout" hidden>ログアウト</button>
+      </div>
+      <p id="signin-error" class="error" role="alert"></p>
+    </div>
+    <div class="card" id="prepare-card">
       <h2>1. 課題を準備する</h2>
       <p class="hint">デモは合成データだけを使います。実在の生徒の提出物は入れないでください。</p>
       <div class="row">

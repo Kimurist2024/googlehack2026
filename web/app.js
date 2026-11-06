@@ -5,7 +5,8 @@ const REASONS = {
   nondeterministic: "実行ごとに結果が変わる", unsupported_import: "対応していないライブラリ",
   too_much_output: "出力が多すぎる", no_questions: "問いを作れない", sandbox_error: "実行環境の失敗", not_submitted: "未提出",
 };
-const teacherHeaders = { "X-Dev-Teacher": "demo-teacher" }; // Firebase 認証に置き換えるまでのローカル専用
+const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.14.1";
+let teacherAuth = null; // Firebase Hosting で配信したときだけ使う。手元の開発では null
 let assignmentId = null;
 let studentToken = null;
 let studentAssignment = null;
@@ -21,7 +22,15 @@ async function api(path, options = {}) {
   }
   return body;
 }
-const teacherPost = (path) => api(path, { method: "POST", headers: teacherHeaders });
+// 教員の認証。Firebase Hosting では Google ログインの ID トークン、手元の開発では仮のヘッダーを送る
+async function teacherHeaders() {
+  if (!teacherAuth) return { "X-Dev-Teacher": "demo-teacher" };
+  const user = teacherAuth.currentUser;
+  if (!user) throw new Error("教員としてログインしてください");
+  return { Authorization: `Bearer ${await user.getIdToken()}` };
+}
+
+const teacherPost = async (path) => api(path, { method: "POST", headers: await teacherHeaders() });
 const setStatus = (text) => { $("status").textContent = text; };
 
 function make(tag, text, className) {
@@ -93,7 +102,7 @@ $("generate").onclick = () => guarded(async () => {
   let state;
   do {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    state = await api(`/v1/assignments/${assignmentId}`, { headers: teacherHeaders });
+    state = await api(`/v1/assignments/${assignmentId}`, { headers: await teacherHeaders() });
   } while (state.state === "generating");
   const ready = state.submissions.ready || 0;
   const excluded = state.submissions.excluded || 0;
@@ -125,7 +134,7 @@ async function record(studentId, action, reason = "") {
   const duration = Date.now() - lastActionAt;
   await api(`/v1/assignments/${assignmentId}/followups/${studentId}`, {
     method: "POST",
-    headers: { ...teacherHeaders, "Content-Type": "application/json" },
+    headers: { ...(await teacherHeaders()), "Content-Type": "application/json" },
     body: JSON.stringify({ action, reason, duration_ms: Math.min(duration, 3600000) }),
   });
   lastActionAt = Date.now();
@@ -163,7 +172,7 @@ const ACTION_LABEL = { ask_in_class: "授業で聞く", no_problem: "問題な�
 
 async function loadFollowups() {
   const budget = Number($("budget").value) || 0;
-  const view = await api(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`, { headers: teacherHeaders });
+  const view = await api(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`, { headers: await teacherHeaders() });
   $("tau").textContent = `1人あたり ${Math.round(view.tau_sec)}秒として計算`;
   $("order").replaceChildren(...view.order.map((row, index) => {
     const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
@@ -304,3 +313,53 @@ $("quiz").onsubmit = async (event) => {
     $("quiz-error").textContent = error.message;
   }
 };
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`${src} を読み込めませんでした`));
+    document.head.append(script);
+  });
+}
+
+// Firebase Hosting は /__/firebase/init.json に設定を置く。読めなければ手元の開発として動く
+async function setupTeacherAuth() {
+  let config = null;
+  try {
+    const response = await fetch("/__/firebase/init.json");
+    if (response.ok) config = await response.json();
+  } catch {
+    config = null;
+  }
+  if (!config) return;
+  await loadScript(`${FIREBASE_SDK}/firebase-app-compat.js`);
+  await loadScript(`${FIREBASE_SDK}/firebase-auth-compat.js`);
+  firebase.initializeApp(config);
+  teacherAuth = firebase.auth();
+  $("signin-card").hidden = false;
+  $("seed").disabled = true;
+  $("signin").onclick = async () => {
+    $("signin-error").textContent = "";
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await teacherAuth.signInWithPopup(provider);
+    } catch (error) {
+      if (error.code === "auth/popup-blocked") await teacherAuth.signInWithRedirect(provider);
+      else $("signin-error").textContent = "ログインできませんでした。もう一度お試しください。";
+    }
+  };
+  $("signout").onclick = () => teacherAuth.signOut();
+  teacherAuth.onAuthStateChanged((user) => {
+    $("who").textContent = user ? `${user.email} でログイン中` : "";
+    $("signin").hidden = Boolean(user);
+    $("signout").hidden = !user;
+    $("seed").disabled = !user;
+  });
+}
+
+setupTeacherAuth().catch((error) => {
+  $("signin-card").hidden = false;
+  $("signin-error").textContent = error.message;
+});

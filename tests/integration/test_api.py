@@ -2,9 +2,10 @@
 import io
 import zipfile
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app import service
+from app import auth, service
 from app.main import LOGIN_FAILURES_PER_MIN, create_app
 from qgen.ai import TemplateAI
 from qgen.sandbox import LocalDevSandbox
@@ -357,3 +358,44 @@ def test_answer_too_long_for_storage_is_rejected(client):
     quiz = client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
     answers = {quiz["questions"][0]["id"]: "あ" * 20_001}
     assert client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers}, headers=headers).status_code == 422
+
+
+def test_health_is_reachable_on_cloud_run_paths(client):
+    assert client.get("/v1/health").json() == {"status": "ok"}
+
+
+@pytest.fixture
+def firebase_teacher(monkeypatch):
+    """本番の設定で、Firebase のトークン検証だけを偽物にする。"""
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("TEACHER_EMAILS", "teacher@example.com")
+    tokens = {
+        "good": {"email": "teacher@example.com", "email_verified": True},
+        "other": {"email": "someone@example.com", "email_verified": True},
+        "unverified": {"email": "teacher@example.com", "email_verified": False},
+    }
+
+    def verify(token):
+        if token not in tokens:
+            raise ValueError("bad token")
+        return tokens[token]
+
+    monkeypatch.setattr(auth, "verify_firebase_token", verify)
+    return lambda token: {"Authorization": f"Bearer {token}"}
+
+
+def test_only_allowed_verified_teachers_pass(client, firebase_teacher):
+    body = {"name": "1-A", "student_numbers": ["1"]}
+    assert client.post("/v1/classes", json=body, headers=firebase_teacher("good")).status_code == 201
+    assert client.post("/v1/classes", json=body, headers=firebase_teacher("other")).status_code == 403
+    assert client.post("/v1/classes", json=body, headers=firebase_teacher("unverified")).status_code == 403
+    assert client.post("/v1/classes", json=body, headers=firebase_teacher("forged")).status_code == 401
+
+
+def test_demo_seed_in_production_needs_the_flag_and_a_login(client, firebase_teacher, monkeypatch):
+    assert client.post("/v1/dev/seed", headers=firebase_teacher("good")).status_code == 404
+    monkeypatch.setenv("ALLOW_DEMO_SEED", "1")
+    assert client.post("/v1/dev/seed").status_code == 401
+    assert client.post("/v1/dev/seed", headers=TEACHER).status_code == 401
+    created = client.post("/v1/dev/seed", headers=firebase_teacher("good"))
+    assert created.status_code == 201 and len(created.json()["personal_codes"]) == 6

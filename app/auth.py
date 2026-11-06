@@ -5,11 +5,13 @@ import hmac
 import json
 import os
 import secrets
+import threading
 import time
 
 from fastapi import Header, HTTPException
 
 SESSION_LIFETIME_SEC = 2 * 60 * 60
+_firebase_lock = threading.Lock()
 
 
 def is_local() -> bool:
@@ -54,6 +56,24 @@ def read_student_token(token: str) -> dict:
     return claims
 
 
+def demo_seed_enabled() -> bool:
+    """合成データのデモクラスを作れるか。本番では ALLOW_DEMO_SEED=1 のときだけ、ログインした教員に許す。"""
+    return is_local() or os.environ.get("ALLOW_DEMO_SEED") == "1"
+
+
+def verify_firebase_token(token: str) -> dict:
+    """Firebase Auth の ID トークンを検証する。署名の公開鍵だけを使うので、サービスアカウントの鍵はいらない。"""
+    import firebase_admin
+    from firebase_admin import auth as firebase_auth
+
+    with _firebase_lock:
+        try:
+            app = firebase_admin.get_app()
+        except ValueError:
+            app = firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
+    return firebase_auth.verify_id_token(token, app=app)
+
+
 def current_student(authorization: str = Header(default="")) -> dict:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="認証が必要です")
@@ -67,9 +87,7 @@ def current_teacher(authorization: str = Header(default=""), x_dev_teacher: str 
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="教員の認証が必要です")
     try:
-        from firebase_admin import auth as firebase_auth
-
-        decoded = firebase_auth.verify_id_token(authorization[len("Bearer "):])
+        decoded = verify_firebase_token(authorization[len("Bearer "):])
     except Exception:
         raise HTTPException(status_code=401, detail="教員の認証に失敗しました") from None
     allowed = {item.strip().lower() for item in os.environ.get("TEACHER_EMAILS", "").split(",") if item.strip()}

@@ -143,6 +143,9 @@ class GeminiAI:
         return chosen or default_selection(candidates, count, seed)
 
     def explain(self, question: Question) -> str:
+        if not question.trace:
+            # 実行の記録がない問い（出力の予測など）は根拠を渡せず、Gemini が事実と違う説明を書いたので使わない
+            return template_explanation(question)
         prompt = (
             "高校生向けに、次の問いの解説を200字以内で書いてください。答えを言う前に、どの行で値が変わるかをたどらせてください。"
             "生徒を評価する言葉は使わず、与えた記録にない数値も書かないでください。行番号は「関係する行」だけを書いてください。\n"

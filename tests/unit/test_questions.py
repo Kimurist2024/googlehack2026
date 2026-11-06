@@ -175,3 +175,11 @@ def test_gemini_prompt_excludes_comments():
     client = FixedClient('{"ids": ["output-1"]}')
     GeminiAI("p", client=client).select("目標", "x = 1  # 秘密の氏名\n", candidates(), 1, "s")
     assert "秘密の氏名" not in client.prompts[0]
+
+
+def test_gemini_is_not_asked_to_explain_without_a_trace():
+    """出力の予測の問いでは記録を渡せず、Gemini が事実と違う説明を書いたので使わない。"""
+    client = FixedClient('{"text": "実行の記録がないので、最後に表示する内容はありません。"}')
+    question = q(id="output-1", type=OUTPUT, stem="最後に表示する内容は何ですか。", answer="16", trace=[], line=None)
+    assert GeminiAI("p", client=client).explain(question) == TemplateAI().explain(question)
+    assert client.prompts == []
