@@ -244,14 +244,14 @@ class FirestoreStore:
     def get_attempt(self, assignment_id: str, student_id: str) -> Doc | None:
         return self._doc(assignment_id, "attempts", student_id)
 
-    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float, extra: Doc | None = None) -> bool:
         reference = self._part(assignment_id, "attempts").document(student_id)
 
         def work(transaction) -> bool:
             snapshot = reference.get(transaction=transaction)
             if not snapshot.exists or snapshot.get("submitted_at") is not None:
                 return False
-            transaction.update(reference, {"graded": graded, "submitted_at": submitted_at})
+            transaction.update(reference, {**(extra or {}), "graded": graded, "submitted_at": submitted_at})
             return True
 
         return self._in_transaction(work)
@@ -281,6 +281,14 @@ class FirestoreStore:
         self._login_failure(client_key, window).set(
             {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
         )
+
+    def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
+        # クラスの下に置くので、クラスを消すとまとめて消える
+        self._class(class_id).collection("offline").document("verifiers").set(verifiers)
+
+    def offline_verifiers(self, class_id: str) -> Doc | None:
+        snapshot = self._class(class_id).collection("offline").document("verifiers").get()
+        return snapshot.to_dict() if snapshot.exists else None
 
     def delete_assignment(self, assignment_id: str) -> None:
         reference = self._assignment(assignment_id)

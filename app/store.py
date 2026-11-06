@@ -106,8 +106,8 @@ class Store(Protocol):
 
     def get_attempt(self, assignment_id: str, student_id: str) -> Doc | None: ...
 
-    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
-        """採点結果を書く。同時に呼ばれても True を返すのは1回だけ。"""
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float, extra: Doc | None = None) -> bool:
+        """採点結果を書く。同時に呼ばれても True を返すのは1回だけ。extra はオフライン提出などの印。"""
 
     def attempts(self, assignment_id: str) -> dict[str, Doc]: ...
 
@@ -122,6 +122,11 @@ class Store(Protocol):
 
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         """入室の失敗を1回数える。expire_at を過ぎた記録は消してよい。"""
+
+    def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
+        """授業パッケージに入れる、コードの照合値（scrypt）を保存する。app/classpack.py を参照。"""
+
+    def offline_verifiers(self, class_id: str) -> Doc | None: ...
 
     def delete_assignment(self, assignment_id: str) -> None:
         """課題と、その生徒のデータをすべて消す。受付中なら、クラスの受付中の印も外す。"""
@@ -145,6 +150,7 @@ class MemoryStore:
         self._attempts: dict[str, dict[str, Doc]] = {}
         self._followups: dict[str, dict[str, Doc]] = {}
         self._login_failures: dict[tuple[str, int], int] = {}
+        self._offline_verifiers: dict[str, Doc] = {}
 
     def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
         with self._lock:
@@ -262,12 +268,12 @@ class MemoryStore:
         with self._lock:
             return copy.deepcopy(self._attempts[assignment_id].get(student_id))
 
-    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float, extra: Doc | None = None) -> bool:
         with self._lock:
             attempt = self._attempts[assignment_id].get(student_id)
             if attempt is None or attempt["submitted_at"] is not None:
                 return False
-            attempt.update(graded=copy.deepcopy(graded), submitted_at=submitted_at)
+            attempt.update(copy.deepcopy(extra or {}), graded=copy.deepcopy(graded), submitted_at=submitted_at)
             return True
 
     def attempts(self, assignment_id: str) -> dict[str, Doc]:
@@ -299,8 +305,17 @@ class MemoryStore:
             if classroom is not None and classroom.open_assignment_id == assignment_id:
                 self._classes[classroom.id] = replace(classroom, open_assignment_id=None)
 
+    def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
+        with self._lock:
+            self._offline_verifiers[class_id] = copy.deepcopy(verifiers)
+
+    def offline_verifiers(self, class_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._offline_verifiers.get(class_id))
+
     def delete_class(self, class_id: str) -> None:
         with self._lock:
+            self._offline_verifiers.pop(class_id, None)
             for code_hash in [code_hash for code_hash, owner in self._class_codes.items() if owner == class_id]:
                 del self._class_codes[code_hash]
             for key in [key for key in self._credentials if key[0] == class_id]:
@@ -319,6 +334,11 @@ class MemoryStore:
 
 def default_store() -> Store:
     """環境変数から選ぶ。指定がなければ本番用の Firestore を使う。"""
+    if os.environ.get("DEPLOY_MODE") == "lan":
+        # 校内LAN版は外とつながらないので、教員PCの暗号化したファイルに置く
+        from .lan_store import LanStore
+
+        return LanStore.open_default()
     if os.environ.get("STORE_BACKEND", "firestore") == "memory":
         return MemoryStore()
     from .firestore_store import FirestoreStore

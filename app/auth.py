@@ -84,8 +84,11 @@ def issue_student_token(class_id: str, student_id: str) -> str:
     return f"{body}.{_sign(body)}"
 
 
-def read_student_token(token: str) -> dict:
-    """署名、形、期限をすべて確かめる。どこかが違えば理由を区別せず 401 にする。"""
+def read_student_token(token: str, leeway_sec: float = 0) -> dict:
+    """署名、形、期限をすべて確かめる。どこかが違えば理由を区別せず 401 にする。
+
+    leeway_sec は、端末にためておいた解答を後から送る経路（app/offline_api.py）だけが使う。
+    """
     rejected = HTTPException(status_code=401, detail="認証が必要です")
     if len(token) > MAX_TOKEN_CHARS or not token.isascii():
         raise rejected
@@ -102,7 +105,7 @@ def read_student_token(token: str) -> dict:
     if not isinstance(claims.get("class"), str) or not isinstance(claims.get("student"), str):
         raise rejected
     expires = claims.get("exp")
-    if not isinstance(expires, int) or isinstance(expires, bool) or expires < time.time():
+    if not isinstance(expires, int) or isinstance(expires, bool) or expires + leeway_sec < time.time():
         raise HTTPException(status_code=401, detail="入室の期限が切れました")
     return claims
 

@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator, model
 from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
-from . import audit, auth, demo, security, service
+from . import audit, auth, classpack, demo, offline_api, security, service
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, can_begin_generation, default_store, is_expired
 
 GRACE_SEC = 10
@@ -140,6 +140,8 @@ def create_app(
     app.add_middleware(security.SecurityHeaders, https_only=not local)
     store = store or default_store()
     app.state.store = store
+    # ネットが落ちても授業を止めないための入口（授業パッケージ、校内LAN版、オフライン提出）。ここより後の経路より優先される
+    offline_api.install(app, store, ai_factory, grace_sec=GRACE_SEC, login_limit=LOGIN_FAILURES_PER_MIN)
 
     def owned_class(class_id: str, teacher: str) -> ClassRecord:
         classroom = store.get_class(class_id)
@@ -204,13 +206,17 @@ def create_app(
         numbers: dict[str, str] = {}
         credentials: dict[str, str] = {}
         codes: dict[str, str] = {}
+        by_student: dict[str, str] = {}
         for number in body.student_numbers:
             student_id = secrets.token_hex(8)
             code = auth.new_code()
             numbers[student_id] = number
             credentials[auth.code_hash(code)] = student_id
             codes[number] = code
+            by_student[student_id] = code
         store.create_class(ClassRecord(class_id, body.name, teacher, numbers), auth.code_hash(class_code), credentials)
+        # 授業パッケージ用の照合値。コードの平文があるのはこの時だけなので、ここで作る
+        store.save_offline_verifiers(class_id, classpack.make_verifiers(class_code, by_student))
         audit.event("class.created", request, principal=teacher, class_id=class_id, count=len(numbers))
         # コードを平文で返すのはこの1回だけ
         return {"class_id": class_id, "class_code": class_code, "personal_codes": codes}
