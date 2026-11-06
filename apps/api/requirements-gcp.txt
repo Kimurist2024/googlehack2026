@@ -1,5 +1,10 @@
 -r requirements.txt
 google-cloud-agentplatform==2.7.0
 google-genai==2.34.0
+google-cloud-modelarmor==0.7.5
+# 授業パッケージに Cloud KMS の鍵で署名する
+google-cloud-kms==3.18.0
+# 授業パッケージの署名で、Cloud KMS とのやりとりが壊れていないかを確かめる（app/classpack.py が直接使う）
+google-crc32c==1.7.1
 firebase-admin>=7,<8
 google-cloud-firestore==2.34.1

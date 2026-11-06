@@ -3,12 +3,23 @@ const $ = (id) => document.getElementById(id);
 const REASONS = {
   too_long: "実行が終わらない", timeout: "実行が終わらない", error: "実行時にエラー", syntax_error: "文法エラー",
   nondeterministic: "実行ごとに結果が変わる", unsupported_import: "対応していないライブラリ",
+  unsupported_code: "対応していない書き方（open や eval など）",
   too_much_output: "出力が多すぎる", no_questions: "問いを作れない", sandbox_error: "実行環境の失敗", not_submitted: "未提出",
 };
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.14.1";
+// CSP で Trusted Types を必須にしているので、読み込むスクリプトの URL はこのポリシーだけを通す。
+// 許すのは Firebase の SDK と Service Worker（offline.js）だけ。CSP が許すポリシー名は mushitori の1つなので、ここで1回だけ作る
+const scriptPolicy = window.trustedTypes?.createPolicy("mushitori", {
+  createScriptURL: (url) => {
+    if (url === "/sw.js" || url.startsWith(`${FIREBASE_SDK}/`)) return url;
+    throw new TypeError("許可していないスクリプトです");
+  },
+}) ?? null;
+const trustedScriptURL = (url) => (scriptPolicy ? scriptPolicy.createScriptURL(url) : url);
 let teacherAuth = null; // Firebase Hosting で配信したときだけ使う。手元の開発では null
 let teacherEmail = null; // 教員として確かめられたアカウント
 let assignmentId = null;
+let classId = null;
 let studentToken = null;
 let studentAssignment = null;
 let studentCode = "";
@@ -99,8 +110,25 @@ $("seed").onclick = () => guarded(async () => {
   }));
   $("codes-card").hidden = false;
   $("followups-card").hidden = true;
+  classId = created.class_id;
   setButtons({ generate: true });
-  setStatus(`${Object.keys(created.personal_codes).length}人分の提出を登録しました。`);
+  $("delete").disabled = false;
+  const expires = new Date(created.expires_at * 1000).toLocaleDateString("ja-JP");
+  setStatus(`${Object.keys(created.personal_codes).length}人分の提出を登録しました。生徒のデータは ${expires} に自動で消えます。`);
+});
+
+// クラスごと消す。提出コード、解答、採点結果、名簿、授業コードと個人コードがすべて消え、元に戻せない
+$("delete").onclick = () => guarded(async () => {
+  if (!classId || !window.confirm("このクラスの提出コード、解答、採点結果、名簿、コードをすべて消します。元に戻せません。")) return;
+  await api(`/v1/classes/${classId}`, { method: "DELETE", headers: await teacherHeaders() });
+  classId = null;
+  assignmentId = null;
+  setButtons({});
+  $("delete").disabled = true;
+  $("codes-card").hidden = true;
+  $("followups-card").hidden = true;
+  resetStudent();
+  setStatus("クラスのデータをすべて消しました。");
 });
 
 $("generate").onclick = () => guarded(async () => {
@@ -498,6 +526,8 @@ $("quiz").onsubmit = async (event) => {
     resetChat();
     $("result").hidden = false;
   } catch (error) {
+    // 通信が切れていたら、解答を端末にためて、つながってから送る（offline.js）
+    if (typeof queueOfflineAnswers === "function" && queueOfflineAnswers(error, studentAssignment, studentToken, answers)) return;
     $("quiz-error").textContent = error.message;
   }
 };
@@ -545,7 +575,7 @@ function showExplainItems(results) {
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = trustedScriptURL(src);
     script.onload = resolve;
     script.onerror = () => reject(new Error(`${src} を読み込めませんでした`));
     document.head.append(script);

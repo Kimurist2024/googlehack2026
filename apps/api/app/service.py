@@ -5,6 +5,7 @@ import logging
 import re
 import time
 import zipfile
+import zlib
 
 from qgen.ai import QuizAI
 from qgen.questions import IMPACT, OUTPUT, TRACE, build_candidates, seeded_random
@@ -25,6 +26,24 @@ MIN_STUDENTS_FOR_SUMMARY = 3
 TYPE_LABELS = {OUTPUT: "出力の予測", TRACE: "変数の追跡", IMPACT: "変更の影響"}
 # 振り返りの質問は1人1課題あたりこの回数まで。Gemini の費用を抑える
 CHAT_LIMIT = 10
+# 隔離環境が返す理由のうち、保存して画面やCSVに出してよいもの。隔離環境の出力は信用しない
+EXCLUSION_REASONS = {
+    "syntax_error",
+    "unsupported_import",
+    "unsupported_code",
+    "timeout",
+    "too_long",
+    "error",
+    "too_much_output",
+    "nondeterministic",
+}
+
+
+def _read_entry(archive: zipfile.ZipFile, entry: zipfile.ZipInfo) -> bytes | None:
+    """1つのファイルを上限まで読む。ヘッダーの大きさは偽れるので、実際に読んだ量で確かめる（zip爆弾対策）。"""
+    with archive.open(entry) as handle:
+        data = handle.read(MAX_FILE_BYTES + 1)
+    return None if len(data) > MAX_FILE_BYTES else data
 
 
 def read_submissions(data: bytes, known_numbers: set[str]) -> tuple[dict[str, str], list[str]]:
@@ -33,7 +52,7 @@ def read_submissions(data: bytes, known_numbers: set[str]) -> tuple[dict[str, st
     problems: list[str] = []
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
-    except zipfile.BadZipFile:
+    except (zipfile.BadZipFile, ValueError, EOFError):
         raise ValueError("zipファイルとして読めません") from None
     entries = [entry for entry in archive.infolist() if not entry.is_dir()]
     if len(entries) > MAX_FILES:
@@ -51,14 +70,28 @@ def read_submissions(data: bytes, known_numbers: set[str]) -> tuple[dict[str, st
         if number not in known_numbers:
             problems.append(f"{name}: 名簿にない番号です")
             continue
+        if number in found:
+            problems.append(f"{name}: 同じ番号のファイルが複数あります。最初のものを使います")
+            continue
+        if entry.flag_bits & 0x1:
+            problems.append(f"{name}: パスワード付きのファイルは読めません")
+            continue
         if entry.file_size > MAX_FILE_BYTES:
             problems.append(f"{name}: 大きすぎます")
             continue
-        total += entry.file_size
+        try:
+            content = _read_entry(archive, entry)
+        except (zipfile.BadZipFile, zlib.error, EOFError, NotImplementedError, RuntimeError, ValueError):
+            problems.append(f"{name}: 壊れているため読めません")
+            continue
+        if content is None:
+            problems.append(f"{name}: 大きすぎます")
+            continue
+        total += len(content)
         if total > MAX_TOTAL_BYTES:
             raise ValueError("合計サイズが大きすぎます")
         try:
-            found[number] = archive.read(entry).decode("utf-8")
+            found[number] = content.decode("utf-8")
         except UnicodeDecodeError:
             problems.append(f"{name}: UTF-8 で読めません")
     return found, problems
@@ -84,7 +117,8 @@ def generate_one(assignment: AssignmentRecord, student_id: str, code: str, sandb
         logger.exception("実行環境の失敗 student=%s", student_id)
         return {"status": "failed", "reason": "sandbox_error"}
     if result.get("status") != "ok":
-        return {"status": "excluded", "reason": result.get("status")}
+        reason = result.get("status")
+        return {"status": "excluded", "reason": reason if reason in EXCLUSION_REASONS else "error"}
     candidates = build_candidates(result, stdin, seed)
     count = min(assignment.question_count, len(candidates))
     if count == 0:
@@ -184,6 +218,8 @@ def create_followups(store: Store, assignment: AssignmentRecord, ai: QuizAI) -> 
                 "assignment_id": assignment.id,
                 "title": assignment.title,
                 "closed_at": closed_at,
+                # 元の課題と同じ期限で、記録からも消える（生徒のデータの保存期間をそろえる）
+                "expire_at": assignment.expire_at,
                 "score": sum(1 for item in items if item["correct"]),
                 "total": len(items),
                 "wrong_types": sorted({item["type"] for item in items if not item["correct"]}),

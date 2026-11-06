@@ -125,3 +125,13 @@ def test_only_one_line_without_a_question_is_raised():
     spots = find_spots(code, [item(3)], set(), True, usage, 6)
     # 1行目（def）と2行目（return、内包表記）はどちらも問いで確かめていないので、先に来る1行目だけを挙げる
     assert [spot["line"] for spot in spots] == [3, 1]
+
+
+def test_record_deadline_follows_the_last_entry():
+    from app.store import live_entries, merged_entries, record_expire_at
+
+    entries = [{"assignment_id": "a", "closed_at": 1, "expire_at": 100.0}, {"assignment_id": "b", "closed_at": 2, "expire_at": 200.0}]
+    assert record_expire_at(entries) == 200.0 and record_expire_at([]) is None
+    assert record_expire_at(entries + [{"assignment_id": "c", "expire_at": None}]) is None  # 期限のない記録があれば文書ごとは消さない
+    assert [entry["assignment_id"] for entry in live_entries(entries, 150.0)] == ["b"]
+    assert [entry["assignment_id"] for entry in merged_entries(entries, {"assignment_id": "c", "closed_at": 3, "expire_at": 300.0}, now=150.0)] == ["b", "c"]

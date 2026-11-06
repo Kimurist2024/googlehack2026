@@ -15,7 +15,7 @@
 | 声をかける | 持ち時間の中で声をかける順を出し、教員の記録を残す | 使わない |
 | 振り返り | 生徒が行の説明を送る。答えを言わない対話でヒントを返す | 対話の返答だけ Gemini |
 
-Gemini の出力は、文字数、評価の言葉、存在しない行番号、入力にない数値、AIの使用に触れた文を機械的に検査し、通らなければ既定の文に戻します。
+Gemini の出力は、文字数、評価の言葉、存在しない行番号、入力にない数値、URL、AIの使用に触れた文を機械的に検査し、通らなければ既定の文に戻します。Gemini に渡す生徒由来の文と返答は、Model Armor でも検査します。セキュリティの全体は [`SECURITY.md`](../../SECURITY.md) を参照してください。
 
 ## 構成
 
@@ -25,7 +25,12 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | [`app/service.py`](./app/service.py) | 提出の読み込み、採点、締切のあとの処理の流れ |
 | [`app/insight.py`](./app/insight.py) | 生徒ごとの記録から、本人の説明を聞きたい行を選ぶ（AIなし） |
 | [`app/ordering.py`](./app/ordering.py) | 声をかける順の計算（AIなし） |
-| [`app/auth.py`](./app/auth.py) | 教員の Google ログインの検証と、生徒のトークン |
+| [`app/auth.py`](./app/auth.py) | 教員の Google ログインの検証、生徒の署名付きトークン、用途ごとの鍵 |
+| [`app/security.py`](./app/security.py) | セキュリティヘッダー、本文の大きさの上限、接続元の判定 |
+| [`app/audit.py`](./app/audit.py) | 監査ログ（Cloud Logging の形式）。コード、トークン、生のIPアドレスは残さない |
+| [`app/offline_api.py`](./app/offline_api.py) | 授業パッケージ、校内LAN版、端末にためた解答の受け付け |
+| [`app/classpack.py`](./app/classpack.py) | 授業パッケージの署名（Cloud KMS）、暗号化、コードの照合値 |
+| [`app/lan_store.py`](./app/lan_store.py) | 校内LAN版の保存先（暗号化したファイル） |
 | [`app/store.py`](./app/store.py) | 保存先の共通の操作と、手元用のメモリ版 |
 | [`app/firestore_store.py`](./app/firestore_store.py) | 本番用の Firestore 版 |
 | [`app/demo.py`](./app/demo.py) | デモの合成データ（提出6人分と、過去2回分の記録） |
@@ -33,10 +38,12 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | [`qgen/sandbox.py`](./qgen/sandbox.py) | 実行環境の切り替え（本番は Code Execution） |
 | [`qgen/questions.py`](./qgen/questions.py) | 実行結果から問いと正解を作る |
 | [`qgen/ai.py`](./qgen/ai.py) | Gemini の呼び出しと出力の検査。失敗時はテンプレートに戻す |
-| [`tests/unit/`](./tests/unit/) | 単体テスト（59件） |
-| [`tests/integration/`](./tests/integration/) | 結合テスト（82件） |
+| [`qgen/guard.py`](./qgen/guard.py) | Gemini に渡す文と返答を Model Armor で検査する。検査できなければ通さない |
+| [`tests/unit/`](./tests/unit/) | 単体テスト（135件） |
+| [`tests/integration/`](./tests/integration/) | 結合テスト（147件。攻撃の入力、保存期間、校内LAN版を含む） |
 | [`scripts/dev.sh`](./scripts/dev.sh) | 手元の開発サーバー（合成データ専用） |
 | [`scripts/record_demo.py`](./scripts/record_demo.py) | デモ動画の自動収録 |
+| [`scripts/lan.py`](./scripts/lan.py) | 校内LAN版を教員PCで起動する（[`docs/offline.md`](../../docs/offline.md)） |
 
 ## 主な API
 
@@ -52,3 +59,7 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | `POST /v1/assignments/{id}/attempt:start`・`:submit` | 生徒 | 解答の開始と提出 |
 | `POST /v1/assignments/{id}/attempt:explain` | 生徒 | まちがえた問いが指す行を、自分の言葉で説明して送る |
 | `POST /v1/assignments/{id}/attempt:chat` | 生徒 | 答えを言わない振り返りの対話（1課題10回まで） |
+| `DELETE /v1/assignments/{id}`・`DELETE /v1/classes/{id}` | 教員 | 課題、またはクラスとそのすべてのデータを、期限を待たずに消す |
+| `POST /v1/assignments/{id}/package` | 教員 | 授業パッケージ（署名・暗号化）を作る。解除コードは1回だけ返す |
+| `POST /v1/assignments/{id}/attempt:submit-offline` | 生徒 | 通信が切れている間に端末にためた解答を送る |
+| `POST /v1/assignments/{id}/edge-results` | 教員 | 校内LAN版の結果を取り込み、クラウドの正解で採点し直す |

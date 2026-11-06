@@ -16,10 +16,12 @@
 | [`index.html`](./index.html) | 教員と生徒の画面の骨組み |
 | [`app.js`](./app.js) | API の呼び出しと画面の組み立て。教員のログインは Firebase Hosting の `/__/firebase/init.json` を読んで Firebase Auth を使う。読めなければ手元の開発として動く |
 | [`style.css`](./style.css) | 見た目。明るい表示と暗い表示の両方に対応 |
+| [`offline.js`](./offline.js) | 通信が切れたときに解答を端末にためて後で送る。授業パッケージの保存と、校内LAN版の画面 |
+| [`sw.js`](./sw.js) | Service Worker。画面の部品だけを置き、ネットが切れても画面を開けるようにする。問いや結果は置かない |
 
 ## 決めごと
 
-- 生徒のコードと文章は、すべて `textContent` で入れます。HTML としては解釈させません。
+- 生徒のコードと文章は、すべて `textContent` で入れます。HTML としては解釈させません。本番の画面は CSP と Trusted Types（`require-trusted-types-for 'script'`）で、`innerHTML` などへの文字列の代入そのものをブラウザが拒否します。
 - コードの表示では合字を切ります（`font-variant-ligatures: none`）。`>=` が1文字に見えると、問いの読み違いにつながるためです。
 - AI が書いた文には「質問案とまとめはAI」「AI」などの印を付け、既定の文（テンプレート）と見分けられるようにします。
 - 説明を聞きたい行には「AIを使ったかどうかの判定ではありません」と添えます。

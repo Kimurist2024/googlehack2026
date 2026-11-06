@@ -14,4 +14,4 @@ export AI_BACKEND=template
 export STORE_BACKEND=memory
 SESSION_SECRET="${SESSION_SECRET:-$(python3 -c 'import secrets; print(secrets.token_hex(32))')}"
 export SESSION_SECRET
-exec "$VENV/bin/uvicorn" --factory app.main:create_app --host 127.0.0.1 --port "${PORT:-8000}"
+exec "$VENV/bin/uvicorn" --factory app.main:create_app --host 127.0.0.1 --port "${PORT:-8000}" --no-server-header

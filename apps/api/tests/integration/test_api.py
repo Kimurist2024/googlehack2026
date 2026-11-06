@@ -525,7 +525,8 @@ def test_student_record_is_only_for_the_owning_teacher(client):
     url = f"/v1/assignments/{assignment}/students/{row['student_id']}/record"
     assert client.get(url).status_code == 401
     assert client.get(url, headers={"X-Dev-Teacher": "teacher-b"}).status_code == 404
-    assert client.get(f"/v1/assignments/{assignment}/students/nobody/record", headers=TEACHER).status_code == 404
+    assert client.get(f"/v1/assignments/{assignment}/students/{'0' * 16}/record", headers=TEACHER).status_code == 404
+    assert client.get(f"/v1/assignments/{assignment}/students/nobody/record", headers=TEACHER).status_code == 422  # IDの形が違う
 
 
 def test_students_explain_missed_lines_in_their_own_words(client):

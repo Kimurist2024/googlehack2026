@@ -3,6 +3,9 @@
 Code Execution は渡したコードを ``exec`` で動かすので、``__file__`` には頼らない。
 作業フォルダに ``student.py`` と ``request.json`` がある前提で、結果を JSON 1行で標準出力に書く。
 生徒のコードは別プロセスで動かし、作業は一時フォルダで行って最後に消す。
+
+隔離そのものは Code Execution が担う。ここでの検査と制限は、その内側に重ねる多層防御で、
+使える組み込み関数と属性を絞り、子プロセスには環境変数を渡さず、メモリやファイルの大きさにも上限を設ける。
 """
 import ast
 import copy
@@ -16,6 +19,14 @@ import time
 
 RESULT_PREFIX = "HARNESS_RESULT:"
 ALLOWED_IMPORTS = {"math", "statistics", "string", "collections", "itertools", "functools", "fractions", "decimal"}
+# 授業の課題では使わず、隔離を破る手がかりになる組み込み関数と名前
+BLOCKED_NAMES = {
+    "open", "exec", "eval", "compile", "__import__", "globals", "locals", "vars",
+    "getattr", "setattr", "delattr", "breakpoint", "memoryview", "help",
+    "__builtins__", "__loader__", "__spec__",
+}
+# 子プロセスに渡す環境変数。親の環境（認証情報など）は引き継がない
+CHILD_ENV = {"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
 SWAP = {
     ast.Lt: (ast.LtE, "<", "<="),
     ast.LtE: (ast.Lt, "<=", "<"),
@@ -25,9 +36,22 @@ SWAP = {
     ast.NotEq: (ast.Eq, "!=", "=="),
 }
 
+# 生徒のコードを読む前に、子プロセス自身に資源の上限をかける（メモリ512MB、ファイル8MB、CPU時間）。
+# 下げた上限は戻せず、resource も import できないので、生徒のコードからは外せない。
+# preexec_fn はスレッドのある親では安全でないので使わない
 TRACER = r'''
 import json, sys
-path, out, max_events = sys.argv[1], sys.argv[2], int(sys.argv[3])
+path, out, max_events, cpu_sec = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+try:
+    import resource
+    for kind, value in ((resource.RLIMIT_AS, 512 * 1024 * 1024), (resource.RLIMIT_FSIZE, 8 * 1024 * 1024),
+                        (resource.RLIMIT_CORE, 0), (resource.RLIMIT_CPU, cpu_sec)):
+        try:
+            resource.setrlimit(kind, (value, value))
+        except (ValueError, OSError):
+            pass
+except ImportError:
+    pass
 code = compile(open(path, encoding="utf-8").read(), path, "exec")
 history, last, previous, count = [], {}, {}, [0]
 SIMPLE = (int, float, str, bool)
@@ -75,6 +99,19 @@ def imports_of(tree):
     return names
 
 
+def blocked_of(tree):
+    """使えない名前と、__class__ のような特殊な属性の参照を集める。"""
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id in BLOCKED_NAMES:
+            names.add(node.id)
+        elif isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            names.add("." + node.attr)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name in BLOCKED_NAMES:
+            names.add(node.name)
+    return names
+
+
 def mutants_of(tree, limit):
     """比較演算子、+ と -、整数定数を1か所ずつ変えたコードを作る。"""
     found = []
@@ -111,14 +148,18 @@ def run_program(folder, source, stdin, request):
         handle.write(source)
     if os.path.exists(trace_path):
         os.remove(trace_path)
+    cpu_sec = int(request["run_timeout_sec"]) + 1
     try:
         done = subprocess.run(
-            [sys.executable, "-I", os.path.join(folder, "tracer.py"), path, trace_path, str(request["max_events"])],
+            [sys.executable, "-I", os.path.join(folder, "tracer.py"), path, trace_path, str(request["max_events"]), str(cpu_sec)],
             input=stdin,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=request["run_timeout_sec"],
             cwd=folder,
+            env=CHILD_ENV,
         )
     except subprocess.TimeoutExpired:
         return {"status": "timeout", "stdout": "", "history": []}
@@ -145,6 +186,9 @@ def analyze(source, request):
     blocked = sorted(name for name in imports_of(tree) if name not in ALLOWED_IMPORTS)
     if blocked:
         return {"status": "unsupported_import", "detail": ",".join(blocked)}
+    unsafe = sorted(blocked_of(tree))
+    if unsafe:
+        return {"status": "unsupported_code", "detail": ",".join(unsafe)}
 
     deadline = time.monotonic() + request["deadline_sec"]
     folder = tempfile.mkdtemp(prefix="run-")

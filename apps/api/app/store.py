@@ -5,6 +5,7 @@
 import copy
 import os
 import threading
+import time
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
@@ -38,13 +39,32 @@ class AssignmentRecord:
     state: str = "draft"  # draft, generating, ready, open, closed
     generating_since: float | None = None
     class_summary: dict | None = None  # 締切のあとに作るクラス全体のまとめ
+    # この時刻を過ぎたら、課題と生徒のデータ（提出、問い、正解、解答、声かけ）はないものとして扱う。
+    # Firestore では各文書に同じ時刻を書き、TTL で消す。作成時に決めて変えない
+    expire_at: float | None = None
 
 
-def merged_entries(entries: list[Doc], entry: Doc) -> list[Doc]:
-    """同じ課題の記録は置き換える。締切の順に並べ、古いものから消して MAX_ENTRIES 件に収める。"""
+def is_expired(assignment: AssignmentRecord, now: float) -> bool:
+    return assignment.expire_at is not None and now >= assignment.expire_at
+
+
+def live_entries(entries: list[Doc], now: float) -> list[Doc]:
+    """生徒ごとの記録のうち、元の課題の保存期間が過ぎていないもの。"""
+    return [entry for entry in entries if entry.get("expire_at") is None or now < entry["expire_at"]]
+
+
+def merged_entries(entries: list[Doc], entry: Doc, now: float | None = None) -> list[Doc]:
+    """同じ課題の記録は置き換える。締切の順に並べ、保存期間が過ぎたものと、古いものから消して MAX_ENTRIES 件に収める。"""
     kept = [old for old in entries if old["assignment_id"] != entry["assignment_id"]] + [entry]
+    kept = live_entries(kept, time.time() if now is None else now)
     kept.sort(key=lambda item: item.get("closed_at", 0))
     return kept[-MAX_ENTRIES:]
+
+
+def record_expire_at(entries: list[Doc]) -> float | None:
+    """記録の文書ごと消してよい時刻。最後まで残る課題の期限に合わせる（TTL は文書単位でしか消せないため）。"""
+    deadlines = [entry.get("expire_at") for entry in entries]
+    return None if not deadlines or None in deadlines else max(deadlines)
 
 
 def can_add_submissions(assignment: AssignmentRecord) -> bool:
@@ -109,8 +129,8 @@ class Store(Protocol):
 
     def get_attempt(self, assignment_id: str, student_id: str) -> Doc | None: ...
 
-    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
-        """採点結果を書く。同時に呼ばれても True を返すのは1回だけ。"""
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float, extra: Doc | None = None) -> bool:
+        """採点結果を書く。同時に呼ばれても True を返すのは1回だけ。extra はオフライン提出などの印。"""
 
     def attempts(self, assignment_id: str) -> dict[str, Doc]: ...
 
@@ -130,13 +150,33 @@ class Store(Protocol):
     def set_class_summary(self, assignment_id: str, summary: Doc) -> None: ...
 
     def get_student_record(self, class_id: str, student_id: str) -> Doc | None:
-        """生徒ごとの記録。{"entries": [課題ごとの記録, ...]} の形で、古い順に並ぶ。"""
+        """生徒ごとの記録。{"entries": [課題ごとの記録, ...]} の形で、古い順に並ぶ。保存期間を過ぎた課題の記録は含めない。"""
 
     def save_student_entry(self, class_id: str, student_id: str, entry: Doc) -> None:
         """課題ごとの記録を足す。同じ課題の記録があれば置き換え、古いものから MAX_ENTRIES 件に収める。"""
 
     def set_entry_action(self, class_id: str, student_id: str, assignment_id: str, action: Doc) -> None:
         """教員の処置を、その課題の記録に書き足す。記録がなければ何もしない。"""
+
+    def remove_entries(self, class_id: str, assignment_id: str) -> None:
+        """課題を消したときに、クラスの生徒ごとの記録からその課題の分を取り除く。"""
+
+    def login_failures(self, client_key: str, window: int) -> int:
+        """その接続元の、その1分間の入室の失敗の回数。インスタンスをまたいで数える。"""
+
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
+        """入室の失敗を1回数える。expire_at を過ぎた記録は消してよい。"""
+
+    def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
+        """授業パッケージに入れる、コードの照合値（scrypt）を保存する。app/classpack.py を参照。"""
+
+    def offline_verifiers(self, class_id: str) -> Doc | None: ...
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        """課題と、その生徒のデータをすべて消す。受付中なら、クラスの受付中の印も外す。生徒ごとの記録からも取り除く。"""
+
+    def delete_class(self, class_id: str) -> None:
+        """クラス、授業コードと個人コードの対応、クラスのすべての課題と生徒ごとの記録を消す。授業コードから先に消す。"""
 
 
 class MemoryStore:
@@ -154,6 +194,8 @@ class MemoryStore:
         self._attempts: dict[str, dict[str, Doc]] = {}
         self._followups: dict[str, dict[str, Doc]] = {}
         self._records: dict[tuple[str, str], Doc] = {}
+        self._login_failures: dict[tuple[str, int], int] = {}
+        self._offline_verifiers: dict[str, Doc] = {}
 
     def create_class(self, classroom: ClassRecord, class_code_hash: str, credentials: dict[str, str]) -> None:
         with self._lock:
@@ -271,12 +313,12 @@ class MemoryStore:
         with self._lock:
             return copy.deepcopy(self._attempts[assignment_id].get(student_id))
 
-    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float) -> bool:
+    def finish_attempt(self, assignment_id: str, student_id: str, graded: list[Doc], submitted_at: float, extra: Doc | None = None) -> bool:
         with self._lock:
             attempt = self._attempts[assignment_id].get(student_id)
             if attempt is None or attempt["submitted_at"] is not None:
                 return False
-            attempt.update(graded=copy.deepcopy(graded), submitted_at=submitted_at)
+            attempt.update(copy.deepcopy(extra or {}), graded=copy.deepcopy(graded), submitted_at=submitted_at)
             return True
 
     def attempts(self, assignment_id: str) -> dict[str, Doc]:
@@ -318,7 +360,10 @@ class MemoryStore:
 
     def get_student_record(self, class_id: str, student_id: str) -> Doc | None:
         with self._lock:
-            return copy.deepcopy(self._records.get((class_id, student_id)))
+            record = self._records.get((class_id, student_id))
+            if record is None:
+                return None
+            return {"entries": copy.deepcopy(live_entries(record["entries"], time.time()))}
 
     def save_student_entry(self, class_id: str, student_id: str, entry: Doc) -> None:
         with self._lock:
@@ -332,9 +377,63 @@ class MemoryStore:
                 if entry["assignment_id"] == assignment_id:
                     entry["action"] = copy.deepcopy(action)
 
+    def remove_entries(self, class_id: str, assignment_id: str) -> None:
+        with self._lock:
+            for (owner, _), record in self._records.items():
+                if owner == class_id:
+                    record["entries"] = [entry for entry in record["entries"] if entry["assignment_id"] != assignment_id]
+
+    def login_failures(self, client_key: str, window: int) -> int:
+        with self._lock:
+            return self._login_failures.get((client_key, window), 0)
+
+    def delete_assignment(self, assignment_id: str) -> None:
+        with self._lock:
+            assignment = self._assignments.pop(assignment_id, None)
+            for table in (self._submissions, self._quizzes, self._answer_keys, self._attempts, self._followups):
+                table.pop(assignment_id, None)
+            if assignment is not None:
+                self.remove_entries(assignment.class_id, assignment_id)
+            classroom = self._classes.get(assignment.class_id) if assignment else None
+            if classroom is not None and classroom.open_assignment_id == assignment_id:
+                self._classes[classroom.id] = replace(classroom, open_assignment_id=None)
+
+    def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
+        with self._lock:
+            self._offline_verifiers[class_id] = copy.deepcopy(verifiers)
+
+    def offline_verifiers(self, class_id: str) -> Doc | None:
+        with self._lock:
+            return copy.deepcopy(self._offline_verifiers.get(class_id))
+
+    def delete_class(self, class_id: str) -> None:
+        with self._lock:
+            self._offline_verifiers.pop(class_id, None)
+            for code_hash in [code_hash for code_hash, owner in self._class_codes.items() if owner == class_id]:
+                del self._class_codes[code_hash]
+            for key in [key for key in self._credentials if key[0] == class_id]:
+                del self._credentials[key]
+            for assignment_id in [aid for aid, assignment in self._assignments.items() if assignment.class_id == class_id]:
+                self.delete_assignment(assignment_id)
+            for key in [key for key in self._records if key[0] == class_id]:
+                del self._records[key]
+            self._classes.pop(class_id, None)
+
+    def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
+        with self._lock:
+            # 古い時間帯の記録は残しておく意味がないので、ここで捨てる
+            for key in [key for key in self._login_failures if key[1] < window - 1]:
+                del self._login_failures[key]
+            self._login_failures[(client_key, window)] = self._login_failures.get((client_key, window), 0) + 1
+
 
 def default_store() -> Store:
     """環境変数から選ぶ。指定がなければ本番用の Firestore を使う。"""
+    if os.environ.get("DEPLOY_MODE") == "lan":
+        # 校内LAN版は外とつながらないので、教員PCの暗号化したファイルに置く
+        from .lan_store import LanStore
+
+        return LanStore.open_default()
     if os.environ.get("STORE_BACKEND", "firestore") == "memory":
         return MemoryStore()
     from .firestore_store import FirestoreStore
