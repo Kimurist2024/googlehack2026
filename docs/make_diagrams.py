@@ -314,7 +314,7 @@ def ai_guard() -> None:
         x += width + gap
     s.add(f'<rect x="{x}" y="256" width="{1538 - x}" height="80" rx="12" fill="#e2f1ea" stroke="#1fae8f" stroke-width="2"/>')
     s.note((x + 1538) / 2, 304, "画面へ", size=20, anchor="middle", bold=True)
-    s.add(f'<rect x="62" y="500" width="1476" height="96" rx="12" fill="#fde8e8" stroke="#d9534f" stroke-width="2"/>')
+    s.add('<rect x="62" y="500" width="1476" height="96" rx="12" fill="#fde8e8" stroke="#d9534f" stroke-width="2"/>')
     s.note(800, 540, "検出した・検査に失敗した・API が落ちた → Gemini を使わず、テンプレートの文に戻す（fail closed）", size=20, anchor="middle", bold=True)
     s.note(800, 574, "授業は止まらない。どのフィルタが反応したかは監査ログに残す", size=17, anchor="middle", color=MUTED)
     s.group(40, 680, 1520, 180, "AI に任せないこと", "slate", icon="check")
