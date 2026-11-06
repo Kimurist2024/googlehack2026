@@ -1,0 +1,167 @@
+# セキュリティ設計
+
+ムシトリは、高校生が書いたコードを実行し、その結果を Gemini に渡し、採点結果を教員に返します。生徒のコードもAIへの入力も「信用できないデータ」として扱うことを出発点に、Google が公開している考え方（[SAIF](https://saif.google/secure-ai-framework)、Strict CSP と Trusted Types、鍵の用途分離、最小権限）に沿って、層を重ねて守ります。
+
+## 守るもの
+
+| 守るもの | 漏れたり書き換えられたりすると |
+| --- | --- |
+| 生徒の提出コード、解答、採点結果 | 生徒の学習の記録が他人に見られる。成績に近い情報が外に出る |
+| 授業コードと個人コード | 他人になりすまして解答できる |
+| 教員のアカウントと操作 | クラスの作成、締切、CSVの持ち出しを他人にされる |
+| サーバーの権限（Firestore、Gemini、Code Execution） | データの全件取得や、費用のかかる呼び出しをされる |
+| 教員画面に出る文面 | 生徒が AI を操って、教員の判断を誤らせる |
+
+## 想定する攻撃
+
+| 誰が | 何をしようとするか |
+| --- | --- |
+| 生徒 | 他の生徒の問いや結果を見る。正解を先に知る。持ち時間を延ばす。提出コードで隔離を破る。コードや答えに指示を書いて Gemini を操り、教員画面に「確認不要」などと出させる |
+| 外部 | コードの総当たり。教室全体を締め出す大量の失敗。XSS やクリックジャッキング。大きな本文や zip 爆弾でサーバーを止める |
+| 内部の誤り | 秘密をログやリポジトリに残す。本番で開発用の設定のまま動かす |
+
+## 信頼の境界
+
+```
+ 生徒・教員のブラウザ ──HTTPS──▶ API（Cloud Run）──▶ Firestore（ブラウザからは全拒否）
+   CSP + Trusted Types              │  鍵付きハッシュ、署名付きトークン、監査ログ
+                                    ├──▶ Code Execution（生徒のコードを隔離して実行）
+                                    │      └ 実行ラッパー：使える部品を絞り、環境変数なし、メモリ上限
+                                    └──▶ Model Armor ──▶ Gemini ──▶ Model Armor ──▶ 機械的な検査
+```
+
+境界をまたぐ値は、受け取った側でもう一度確かめます。隔離環境の出力、Gemini の返答、ブラウザからの入力は、どれも信用しません。
+
+## 対策
+
+### 認証と認可
+
+| 対策 | 場所 |
+| --- | --- |
+| 教員は Firebase の ID トークンで確かめる。署名、発行元、期限に加えて、失効と無効化も確かめる（`check_revoked`）。メールの確認済みと許可リスト（`TEACHER_EMAILS`）の両方が必要 | `app/auth.py` |
+| 生徒のトークンは HMAC-SHA256 で署名し、版（`v`）、種類（`typ`）、期限を必ず確かめる。署名を確かめる前に中身を読まない。形が違うものはすべて理由を区別せず 401 | `app/auth.py` |
+| 鍵は `SESSION_SECRET` から HKDF で用途ごとに導出する（トークンの署名、コードのハッシュ、接続元のハッシュ）。1つの用途の値が漏れても、他の用途の鍵にならない | `app/auth.py` |
+| 授業コードと個人コードは鍵付きハッシュだけを保存する。平文で返すのはクラスを作った1回だけ | `app/main.py` |
+| 教員はクラスごとに持ち主を確かめ、生徒はトークンのクラスに属する課題しか触れない。見つからないときも、他人のものだったときも同じ 404 | `app/main.py` |
+| 入室の失敗は、接続元ごと・1分ごとに Firestore で数える。インスタンスが増えても上限は変わらない。正しいコードの入室は数えないので、教室全員が同じ回線でも締め出されない | `app/main.py`、`app/store.py` |
+| 授業コードが違うときも個人コードの照合と同じだけ読み、応答時間からどちらが違ったかを推測させない | `app/main.py` |
+| Cloud Run では `X-Forwarded-For` の右端（Cloud Run が足した値）だけを信用する。左側は送り手が偽れる。IPv6 は /64 単位で数える | `app/security.py` |
+
+### 生徒のコードの実行（多層防御）
+
+隔離は Code Execution が担います。その内側で、実行ラッパーがさらに次の制限をかけます。
+
+| 対策 | 場所 |
+| --- | --- |
+| `import` は計算用の標準ライブラリだけ | `qgen/harness.py` |
+| `__import__`、`open`、`eval`、`exec`、`getattr` などの組み込み関数と、`__class__` のような特殊な属性を使うコードは実行せず「対応していない書き方」として先生に知らせる | `qgen/harness.py` |
+| 生徒のコードを動かす子プロセスには環境変数を渡さない。手元の開発でも `SESSION_SECRET` は届かない | `qgen/harness.py`、`qgen/sandbox.py` |
+| メモリ（512MB）、書き込むファイルの大きさ、CPU 時間に上限をかける。メモリを食いつぶすコードは「実行時にエラー」で止まる | `qgen/harness.py` |
+| 隔離環境が返した結果は形を確かめてから使う。対象外の理由は決めた値だけを保存し、それ以外は `error` にする | `qgen/sandbox.py`、`app/service.py` |
+
+### AI（SAIF のリスクとの対応）
+
+| SAIF のリスク | 対策 |
+| --- | --- |
+| Prompt Injection | 生徒由来の文（コード、実行の記録、生徒の答え）は `<data>` で囲み、指示ではないと明示する。閉じタグを中に書いても外に出られない。生徒の答えは先頭200字だけを渡す。Gemini に渡す前に Model Armor のプロンプトインジェクション・ジェイルブレイク検出にかける |
+| Insecure Model Output | 返答は JSON スキーマで受け取り、形、長さ、評価する言葉、記録にない数値、行番号、URL を機械的に確かめる。さらに Model Armor の有害表現（RAI）と悪意のある URL の検出にかけてから人に見せる |
+| Sensitive Data Disclosure | Gemini にはコメントを消したコードと、出席番号を含まない値だけを渡す。Model Armor の Sensitive Data Protection（基本設定）で機密データを検出する |
+| Rogue Actions | Gemini には何の操作もさせない。正解、採点、声をかける順はすべてコードの実行結果と計算で決まり、Gemini の返答は問いの選定と文面だけに使う |
+| Denial of ML Service | Gemini と Model Armor のどちらかが失敗したら、テンプレートに戻す。授業は止まらない |
+
+Model Armor が使えないときは「通さない」に倒します（fail closed）。検査の失敗、一部のフィルタの失敗（`PARTIAL`）も通しません。本番で `AI_BACKEND=gemini` なのに `MODEL_ARMOR_TEMPLATE` がないときは、Gemini を使わずテンプレートで動きます（`qgen/ai.py` の `default_ai`）。
+
+Model Armor は Gemini の呼び出しに組み込む方法もありますが、その方法は Model Armor に届かないときに検査なしで通ってしまうことがあるため、API を直接呼んで結果を自分で判定しています。
+
+### ブラウザ
+
+| 対策 | 内容 |
+| --- | --- |
+| Content Security Policy | `default-src 'none'` から始めて、自分の配信元のスクリプト、スタイル、通信だけを許す。インラインのスクリプトは置かない |
+| Trusted Types | `require-trusted-types-for 'script'` と `trusted-types 'none'`。`innerHTML` などに文字列を入れる書き方そのものをブラウザが拒否する。画面の文字はすべて `textContent` で入れている |
+| クリックジャッキング | `frame-ancestors 'none'` と `X-Frame-Options: DENY` |
+| その他のヘッダー | `X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`、`Cross-Origin-Opener-Policy`、`Cross-Origin-Resource-Policy`、`Permissions-Policy` |
+| HTTPS | 本番では HSTS（2年、サブドメインを含む） |
+| キャッシュ | API の応答は `Cache-Control: no-store`。トークン、コード、結果を共有の端末やプロキシに残さない |
+| 実装を明かさない | 本番では `/docs` と `/openapi.json` を出さない。`server` ヘッダーを送らない |
+
+### 入力と資源
+
+| 対策 | 内容 |
+| --- | --- |
+| 本文の大きさ | ハンドラーが読む前に 16MB 余りで断る。`Content-Length` がない送り方でも、受け取りながら数えて断る |
+| ID | サーバーが作る形（16桁の16進数）以外は、保存先に問い合わせる前に断る |
+| 文字数と件数 | 標準入力の例は1件2000字まで、解答は10問まで、持ち時間の計算は0〜3600秒 |
+| zip | 展開せずに読む。ヘッダーの大きさは偽れるので、実際に読んだ量で1ファイル64KB、合計8MBを確かめる（zip 爆弾対策）。暗号化、重複、壊れたファイルは1件ずつ知らせ、全体は止めない |
+| CSV | `=`、`+`、`-`、`@` などで始まる値は先頭に `'` を付け、表計算ソフトで数式として動かないようにする。添付ファイルとして返す |
+
+### データの扱い
+
+- 実在の生徒の提出物は使いません。デモは合成データです。
+- 名簿は出席番号だけを持ち、氏名は受け付けません。Gemini にはコメントを消して渡すので、コメントに書いた氏名も届きません。
+- 接続元は鍵付きハッシュにしてから保存・記録します。入室の失敗の記録は TTL で自動的に消えます。
+- Firestore はブラウザからの読み書きをすべて拒否し、サーバーだけが触ります（`firestore.rules`）。
+
+### 監査と検知
+
+`app/audit.py` が Cloud Logging の形式（JSON 1行、`severity` 付き、リクエストのトレースと結びつけ）で次を記録します。
+
+| 記録 | 内容 |
+| --- | --- |
+| `class.created`、`assignment.created`、`submissions.uploaded`、`generation.started`、`assignment.opened`、`assignment.closed`、`followup.recorded` | 教員の操作。誰が、どの課題に |
+| `export.downloaded` | CSV の持ち出し。誰が、いつ、何人分 |
+| `login.succeeded`、`login.failed`、`login.rate_limited` | 入室。接続元はハッシュで |
+| `teacher.auth_failed`、`teacher.not_allowed` | 教員の認証の失敗と、許可されていないアカウント |
+
+記録に入れてよい項目は決めてあり、それ以外の名前を渡すと記録する前に例外になります。コード、トークン、生徒のコード、生の IP アドレスは記録しません。試験でもこれを確かめています。
+
+Model Armor が検出したときは、どのフィルタが反応したかを警告として記録します。
+
+## デプロイのときに行う設定
+
+アプリのコードは上の対策を備えています。次の設定は Google Cloud 側で、デプロイのときにチームが行います。
+
+1. **秘密を Secret Manager に置く。** `SESSION_SECRET` は環境変数に直接書かず、Secret Manager から渡します（`gcloud run deploy --set-secrets SESSION_SECRET=session-secret:latest`）。値を変えると、保存済みのコードで入室できなくなります。
+2. **専用のサービスアカウントで動かす。** 既定の Compute Engine のアカウントは使わず、必要なロールだけを付けます。`roles/datastore.user`（Firestore）、`roles/aiplatform.user`（Gemini と Code Execution）、`roles/modelarmor.user`（Model Armor）、`roles/firebaseauth.viewer`（トークンの失効の確認）、`roles/secretmanager.secretAccessor`（その秘密だけに付ける）。
+3. **Model Armor のテンプレートを作る。** 日本語の検出には多言語の検出が必要で、`asia-northeast1` は対応していないため、`us` に作ります。Gemini はすでに `global` で呼んでいるので、データの所在の条件は変わりません。
+
+   ```sh
+   gcloud model-armor templates create mushitori-guard --location=us \
+     --pi-and-jailbreak-filter-settings-enforcement=enabled \
+     --pi-and-jailbreak-filter-settings-confidence-level=low-and-above \
+     --rai-settings-filters='[{"filterType":"HATE_SPEECH","confidenceLevel":"MEDIUM_AND_ABOVE"},{"filterType":"HARASSMENT","confidenceLevel":"MEDIUM_AND_ABOVE"},{"filterType":"SEXUALLY_EXPLICIT","confidenceLevel":"MEDIUM_AND_ABOVE"},{"filterType":"DANGEROUS","confidenceLevel":"MEDIUM_AND_ABOVE"}]' \
+     --malicious-uri-filter-settings-enforcement=enabled \
+     --basic-config-filter-enforcement=enabled \
+     --template-metadata-log-sanitize-operations
+   ```
+
+   作ったら `MODEL_ARMOR_TEMPLATE=projects/<プロジェクト>/locations/us/templates/mushitori-guard` を設定します。日本国内での処理が必要な場合は `asia-northeast1` に作り、`MODEL_ARMOR_MULTI_LANGUAGE=0` にします（ただし日本語の文は検出されないことがあります）。
+
+4. **入室の失敗の記録に TTL を付ける。**
+
+   ```sh
+   gcloud firestore fields ttls update expire_at --collection-group=loginFailures --enable-ttl
+   ```
+
+5. **接続元の判定を確かめる。** Cloud Run に直接つなぐ場合は何もしなくても右端の1つを信用します（`K_SERVICE` で判定）。前にロードバランサーを置く場合は、`TRUSTED_PROXY_HOPS` を実際の段数に合わせ、デプロイ後に監査ログの `client` が人ごとに変わることを確かめます。
+
+## まだできていないこと
+
+- **エッジでの防御：** Cloud Armor（WAF、IP 単位の上限、ボット対策）はロードバランサーが必要なので入れていません。アプリ側の上限は接続元ごとなので、多数の接続元からの分散した総当たりには効きにくいです。ただしコードは授業コードと個人コードの両方が必要で、それぞれ31種類の文字の8桁です。
+- **教員のログイン画面：** Firebase の検証コードはありますが、画面はまだです。画面を足すときは CSP の `script-src` と `connect-src` に Firebase の配信元を、ポップアップでログインするなら `Cross-Origin-Opener-Policy` を `same-origin-allow-popups` にします（`app/security.py`）。
+- **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
+- **本番での確認：** Model Armor と Firestore の入室の数え方は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
+
+## 確かめ方
+
+```sh
+.venv/bin/python -m pytest tests/unit/test_auth.py tests/unit/test_security.py tests/unit/test_guard.py tests/integration/test_security_api.py
+```
+
+| 試験 | 確かめること |
+| --- | --- |
+| `tests/unit/test_auth.py` | 壊れた、偽造した、形の違う、期限切れのトークンがすべて 401 になる。鍵が用途ごとに違う |
+| `tests/unit/test_security.py` | 偽の `X-Forwarded-For` で接続元を偽れない。CSV の数式が無害になる |
+| `tests/unit/test_guard.py` | Model Armor が検出した文や、検査に失敗した文が Gemini にも画面にも届かない。生徒の答えが `<data>` の外に出られない |
+| `tests/unit/test_service.py` | zip 爆弾、暗号化、重複、壊れたファイル。隔離環境が返す偽の理由を保存しない |
+| `tests/integration/test_security_api.py` | ヘッダー、本番の設定、不正な ID や本文で 500 にならない、入室の上限がインスタンス間で共有される、隔離を破ろうとするコードが対象外になる、監査ログにコードが残らない |
