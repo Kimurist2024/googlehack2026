@@ -74,7 +74,7 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 | 部品 | 設定 |
 | --- | --- |
-| Firebase Hosting | `web/` を配信し、`/v1/**` を Cloud Run の `mushitori`（`asia-northeast1`）へ転送する（`firebase.json`） |
+| Firebase Hosting | `web/` を配信し、`/v1/**` を Cloud Run の `mushitori`（`asia-northeast1`）へ転送する（`firebase.json`）。画面の HTML・JS・CSS は `Cache-Control: no-cache` で配り、デプロイした直後から新しい画面が出るようにする |
 | Firebase Auth | Google ログイン。教員は `TEACHER_EMAILS` のアカウントだけを通す |
 | Cloud Run | 誰でも呼べる設定。サービスアカウント `mushitori-run` には Firestore と Agent Platform の利用権限だけを付ける |
 | Secret Manager | `mushitori-session-secret` を `SESSION_SECRET` として渡す |
