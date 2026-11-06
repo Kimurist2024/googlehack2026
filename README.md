@@ -78,16 +78,41 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 `AI_BACKEND=gemini` で本番として動かすときは、`MODEL_ARMOR_TEMPLATE` が必須です。ないときは Gemini を使わずテンプレートで動きます。テンプレートの作り方は [SECURITY.md](SECURITY.md#デプロイのときに行う設定) にあります。
 
+## 本番の構成
+
+公開URLは https://mushitori-hackathon.web.app です（2026年11月6日にデプロイ）。画面は Firebase Hosting から配信し、Cloud Run のURLには画面を置いていません。
+
+| 部品 | 設定 |
+| --- | --- |
+| Firebase Hosting | `web/` を配信し、`/v1/**` を Cloud Run の `mushitori`（`asia-northeast1`）へ転送する（`firebase.json`） |
+| Firebase Auth | Google ログイン。教員は `TEACHER_EMAILS` のアカウントだけを通す |
+| Cloud Run | 誰でも呼べる設定。サービスアカウント `mushitori-run` には Firestore と Agent Platform の利用権限だけを付ける |
+| Secret Manager | `mushitori-session-secret` を `SESSION_SECRET` として渡す |
+| Code Execution | 実行環境を1つ作り、`SANDBOX_RUNTIME_NAME` で渡す。指定しないと問いを作るたびに新しく作られる |
+
+Cloud Run の環境変数は `APP_ENV=production`、`STORE_BACKEND=firestore`、`AI_BACKEND=gemini`、`SANDBOX_BACKEND=code_execution`、`TEACHER_EMAILS`、`ALLOW_DEMO_SEED=1`、`SERVE_WEB=0` などです。
+
+再デプロイは、このリポジトリを置いた Cloud Shell で行います。`gcloud run deploy` は、指定しない設定（環境変数、サービスアカウント、公開範囲）をそのまま引き継ぎます。
+
+```sh
+gcloud run deploy mushitori --source . --region asia-northeast1 --project mushitori-hackathon --quiet
+firebase deploy --only hosting,firestore:rules --project mushitori-hackathon
+```
+
+教員を増やすときは、`TEACHER_EMAILS` をカンマ区切りで書き換えます。値にカンマを含むので、区切り文字を `^:^` で変えます。
+
+```sh
+gcloud run services update mushitori --region asia-northeast1 --project mushitori-hackathon --update-env-vars '^:^TEACHER_EMAILS=a@example.com,b@example.com'
+```
+
 ## まだできていないこと
 
-- **Firestore への接続：** データベースは 2026年11月6日に `asia-northeast1` で作成しました（Standard、ネイティブモード、ブラウザからの読み書きはすべて拒否）。アプリからの読み書きはまだ試していません。Cloud Run にデプロイするときに、サービスアカウントへ `roles/datastore.user` を付けます。
 - **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
 - **入室の試行回数の制限：** 失敗した入室だけを、接続元ごとに毎分30回まで Firestore で数えます（インスタンスをまたいで効きます）。Cloud Run では `X-Forwarded-For` の右端を接続元とします。記録を自動で消す TTL の設定と、デプロイ後に接続元が正しく分かれるかの確認が残っています（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
 - **Model Armor：** 検査のコードと試験はありますが、テンプレートはまだ作っていません。
 - **TTL：** 期限の印は書いていますが、Firestore の TTL の設定はまだです。設定するまでは、期限後のデータは API から見えなくなるだけで、DB には残ります（[SECURITY.md](SECURITY.md#デプロイのときに行う設定)）。
 - **Cloud Run Jobs：** 問いの生成はAPIの中のバックグラウンド処理です。本番ではジョブに分けます。
-- **教員のログイン：** Firebase の検証コードはありますが、画面はローカル用の仮の認証のままです。
-- **デプロイ：** Dockerfile はありますが、まだビルドしていません。
+- **Cloud Shell へのコードの持ち込み：** GitHub との連携を設定していないので、今は手作業で送っています。
 - **Classroom 連携、`.ipynb` 対応：** 未着手です。
 
 ## データの扱い

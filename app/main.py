@@ -172,14 +172,20 @@ def create_app(
     def run_followups(assignment: AssignmentRecord) -> None:
         service.create_followups(store, assignment, ai_factory())
 
-    @app.get("/healthz")
-    def healthz() -> dict:
+    # Cloud Run は末尾が z のパス（/healthz など）を予約していて、アプリまで届かない
+    @app.get("/v1/health")
+    def health() -> dict:
         return {"status": "ok"}
+
+    @app.get("/v1/me")
+    def me(teacher: str = Depends(auth.current_teacher)) -> dict:
+        """ログインしたアカウントが教員として通るかを、画面が確かめるのに使う。"""
+        return {"email": teacher}
 
     @app.post("/v1/dev/seed", status_code=201)
     def seed_demo(request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
-        """合成データのデモを作る。ローカル開発のときだけ使える。"""
-        if not auth.is_local():
+        """合成データのデモを作る。手元の開発か、ALLOW_DEMO_SEED=1 の本番で、ログインした教員だけが使える。"""
+        if not auth.demo_seed_enabled():
             raise HTTPException(status_code=404, detail="Not Found")
         created = create_class(ClassIn(name="デモクラス", student_numbers=list(demo.PROGRAMS)), request, teacher)
         assignment_id = create_assignment(
@@ -316,7 +322,7 @@ def create_app(
         current = service.now()
         window = int(current // 60)
         if store.login_failures(client, window) >= LOGIN_FAILURES_PER_MIN:
-            audit.event("login.rate_limited", request, severity="WARNING", client=client)
+            audit.event("login.rate_limited", request, severity="WARNING", client=client, forwarded=security.forwarded_count(request))
             raise HTTPException(
                 status_code=429, detail="しばらく待ってからやり直してください", headers={"Retry-After": str(60 - int(current % 60))}
             )
@@ -326,9 +332,11 @@ def create_app(
         if classroom is None or student_id is None:
             # 教室の全員が同じ接続元から入っても、正しいコードの入室では上限に近づかない
             store.add_login_failure(client, window, expire_at=(window + 2) * 60)
-            audit.event("login.failed", request, severity="WARNING", client=client)
+            audit.event("login.failed", request, severity="WARNING", client=client, forwarded=security.forwarded_count(request))
             raise HTTPException(status_code=401, detail="コードが正しくありません")
-        audit.event("login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client)
+        audit.event(
+            "login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client, forwarded=security.forwarded_count(request)
+        )
         return {
             "token": auth.issue_student_token(classroom.id, student_id),
             "assignment_id": classroom.open_assignment_id,

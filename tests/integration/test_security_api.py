@@ -32,7 +32,7 @@ def production_client(monkeypatch, store) -> TestClient:
 
 
 def test_api_responses_carry_security_headers(client):
-    response = client.get("/healthz")
+    response = client.get("/v1/health")
     assert "default-src 'none'" in response.headers["content-security-policy"]
     assert "require-trusted-types-for 'script'" in response.headers["content-security-policy"]
     assert response.headers["x-content-type-options"] == "nosniff"
@@ -62,7 +62,7 @@ def test_production_hides_api_docs_and_sends_hsts(monkeypatch, store):
     production = production_client(monkeypatch, store)
     assert production.get("/docs").status_code == 404
     assert production.get("/openapi.json").status_code == 404
-    assert production.get("/healthz").headers["strict-transport-security"].startswith("max-age=")
+    assert production.get("/v1/health").headers["strict-transport-security"].startswith("max-age=")
 
 
 def test_local_keeps_api_docs(client):

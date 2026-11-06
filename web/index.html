@@ -9,14 +9,28 @@
 <body>
 <header>
   <h1>ムシトリ<small>（仮称）</small></h1>
-  <nav role="tablist">
-    <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
-    <button role="tab" id="tab-student" aria-selected="false">生徒</button>
-  </nav>
+  <div class="header-right">
+    <div id="account" class="account" hidden>
+      <span id="who"></span>
+      <button id="signout" class="link">ログアウト</button>
+    </div>
+    <nav role="tablist">
+      <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
+      <button role="tab" id="tab-student" aria-selected="false">生徒</button>
+    </nav>
+  </div>
 </header>
 <main>
   <section id="teacher">
-    <div class="card">
+    <div class="card signin" id="signin-card" hidden>
+      <h2>教員としてログイン</h2>
+      <p>授業の準備や、声をかける順の確認には、許可された Google アカウントでのログインが必要です。</p>
+      <button id="signin" class="primary">Google でログイン</button>
+      <p id="signin-error" class="error" role="alert"></p>
+      <p class="hint signin-student">生徒の方はログインは不要です。<button id="to-student" class="link">生徒の画面へ</button></p>
+    </div>
+    <div id="teacher-work" hidden>
+    <div class="card" id="prepare-card">
       <h2>1. 課題を準備する</h2>
       <p class="hint">デモは合成データだけを使います。実在の生徒の提出物は入れないでください。</p>
       <div class="row">
@@ -42,6 +56,7 @@
       </div>
       <div id="order"></div>
       <div id="others"></div>
+    </div>
     </div>
   </section>
 

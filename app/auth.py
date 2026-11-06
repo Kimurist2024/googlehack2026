@@ -107,29 +107,32 @@ def read_student_token(token: str) -> dict:
     return claims
 
 
+def demo_seed_enabled() -> bool:
+    """合成データのデモクラスを作れるか。本番では ALLOW_DEMO_SEED=1 のときだけ、ログインした教員に許す。"""
+    return is_local() or os.environ.get("ALLOW_DEMO_SEED") == "1"
+
+
+def verify_firebase_token(token: str) -> dict:
+    """Firebase Auth の ID トークンを検証する。署名の公開鍵だけを使うので、サービスアカウントの鍵はいらない。
+
+    FIREBASE_CHECK_REVOKED=1 のときは、ログアウトや無効化で失効したトークンも断る。
+    そのときはサービスアカウントに roles/firebaseauth.viewer が要る（なければ全員が通れなくなる）。
+    """
+    import firebase_admin
+    from firebase_admin import auth as firebase_auth
+
+    with _firebase_lock:
+        try:
+            app = firebase_admin.get_app()
+        except ValueError:
+            app = firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
+    return firebase_auth.verify_id_token(token, app=app, check_revoked=os.environ.get("FIREBASE_CHECK_REVOKED") == "1")
+
+
 def current_student(authorization: str = Header(default="")) -> dict:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="認証が必要です")
     return read_student_token(authorization[len("Bearer "):])
-
-
-def _firebase_app():
-    """Firebase Admin は1回だけ初期化する。ID トークンの検証にはプロジェクトIDが必要になる。"""
-    import firebase_admin
-
-    with _firebase_lock:
-        try:
-            return firebase_admin.get_app()
-        except ValueError:
-            project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-            return firebase_admin.initialize_app(options={"projectId": project} if project else None)
-
-
-def verify_firebase_token(token: str) -> dict:
-    """署名、発行元、期限に加え、失効と無効化も確かめる（check_revoked）。"""
-    from firebase_admin import auth as firebase_auth
-
-    return firebase_auth.verify_id_token(token, app=_firebase_app(), check_revoked=True)
 
 
 def current_teacher(request: Request, authorization: str = Header(default=""), x_dev_teacher: str = Header(default="")) -> str:

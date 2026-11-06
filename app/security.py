@@ -7,9 +7,10 @@ from fastapi import Request
 
 from . import auth
 
+# この API が画面も配る手元の開発用。本番の画面は Firebase Hosting が配り、そのヘッダーは firebase.json にある。
 # 文字はすべて textContent で入れ、外部のスクリプトも読まないので、最も厳しい形にできる。
 # Trusted Types を必須にして、innerHTML などに文字列を渡す書き方そのものをブラウザに拒否させる。
-# Firebase Authentication の画面を足すときは、script-src と connect-src に Google の配信元を加える。
+# 許すポリシーは mushitori だけで、Service Worker の登録（web/offline.js）にだけ使う。
 CONTENT_SECURITY_POLICY = "; ".join(
     [
         "default-src 'none'",
@@ -22,7 +23,7 @@ CONTENT_SECURITY_POLICY = "; ".join(
         "frame-ancestors 'none'",
         "object-src 'none'",
         "require-trusted-types-for 'script'",
-        "trusted-types 'none'",
+        "trusted-types mushitori",
     ]
 )
 
@@ -31,8 +32,8 @@ BASE_HEADERS = {
     "x-content-type-options": "nosniff",
     "x-frame-options": "DENY",
     "referrer-policy": "no-referrer",
-    # Firebase のポップアップでログインする場合は same-origin-allow-popups に変える
-    "cross-origin-opener-policy": "same-origin",
+    # Google ログインのポップアップが、開いた側に結果を返せるようにする
+    "cross-origin-opener-policy": "same-origin-allow-popups",
     "cross-origin-resource-policy": "same-origin",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
 }
@@ -161,6 +162,14 @@ def client_address(request: Request) -> str:
         return str(parsed.ipv4_mapped)
     # IPv6 は1つの回線に /64 がまるごと割り当てられるので、/64 単位で数える
     return str(ipaddress.ip_network(f"{parsed}/64", strict=False))
+
+
+def forwarded_count(request: Request) -> int:
+    """X-Forwarded-For の項目数。アドレスは残さず、何段の中継を通ったかだけを監査ログに出す。
+
+    Firebase Hosting を通すと項目が増える見込みで、TRUSTED_PROXY_HOPS を決める手がかりにする。
+    """
+    return sum(len([part for part in value.split(",") if part.strip()]) for value in request.headers.getlist("x-forwarded-for"))
 
 
 def client_key(request: Request) -> str:

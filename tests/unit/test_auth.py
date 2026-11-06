@@ -95,3 +95,18 @@ def test_short_secret_fails_closed(monkeypatch):
     with pytest.raises(HTTPException) as caught:
         auth.issue_student_token("c", "s")
     assert caught.value.status_code == 503
+
+
+@pytest.mark.parametrize(("flag", "expected"), [(None, False), ("1", True)])
+def test_revocation_check_is_opt_in(monkeypatch, flag, expected):
+    """失効の確認には追加の権限が要るので、FIREBASE_CHECK_REVOKED=1 のときだけ行う。"""
+    firebase_auth = pytest.importorskip("firebase_admin.auth")
+    seen = {}
+    monkeypatch.setattr(firebase_auth, "verify_id_token", lambda token, app, check_revoked: seen.update(check=check_revoked) or {})
+    monkeypatch.setattr("firebase_admin.get_app", lambda: object())
+    if flag is None:
+        monkeypatch.delenv("FIREBASE_CHECK_REVOKED", raising=False)
+    else:
+        monkeypatch.setenv("FIREBASE_CHECK_REVOKED", flag)
+    auth.verify_firebase_token("token")
+    assert seen["check"] is expected
