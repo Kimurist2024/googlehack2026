@@ -26,6 +26,7 @@ from .fields import (
     MAX_DURATION_MS,
     REASON_CHARS,
     AnswerKey,
+    Action,
     AnswerText,
     AssignmentId,
     ResourceId,
@@ -143,7 +144,8 @@ class EdgeAttempt(BaseModel):
 
 
 class EdgeFollowup(BaseModel):
-    action: Literal["ask_in_class", "no_problem", "question_bad"]
+    # 校内LANの画面で選べる処置をすべて受け付ける。一つでも外れるとファイル全体が取り込めなくなる
+    action: Action
     reason: str = Field(default="", max_length=REASON_CHARS)
     duration_ms: int = Field(default=0, ge=0, le=MAX_DURATION_MS)
 

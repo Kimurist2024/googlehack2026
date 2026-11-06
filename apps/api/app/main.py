@@ -18,6 +18,7 @@ from . import audit, auth, classpack, demo, offline_api, security, service
 from .access import student_assignment
 from .csv_export import build_csv, csv_cell  # noqa: F401  csv_cell はテストが app.main から読む
 from .fields import (
+    ACTIONS,
     GENERATION_STALE_SEC,
     MAX_ANSWERS,
     MAX_DURATION_MS,
@@ -43,8 +44,6 @@ MAX_BODY_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
 NO_CLASS_ID = "0" * 16
 MAX_STDIN_CHARS = 2_000
 NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
-# explained と not_explained は、質問案で聞いた結果。生徒の記録に残り、次の課題の材料になる
-ACTIONS = {"explained", "not_explained", "ask_in_class", "no_problem", "question_bad"}
 EXPLANATION_CHARS = 300
 QUESTION_TYPES = {"output", "trace", "impact"}
 # 画面のファイル。リポジトリでは apps/api/app/main.py から見て ../../web にある

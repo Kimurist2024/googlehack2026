@@ -152,6 +152,32 @@ def test_cloud_regrades_lan_results_with_its_own_answer_key(client, store, monke
     assert client.post(f"/v1/assignments/{assignment}/edge-results", json=results, headers=TEACHER).json()["imported"] == 0
 
 
+def test_every_lan_action_is_imported_into_the_cloud_and_the_student_record(client, store):
+    _, assignment = setup_open(client)
+    class_id = store.get_assignment(assignment).class_id
+    students = [sid for sid in store.get_class(class_id).student_numbers if store.get_answer_key(assignment, sid)]
+    # 以前はこの2つがあるとファイル全体が 422 で弾かれた（ask_in_class は上のテストで確かめている）
+    actions = ["explained", "not_explained"]
+    assert len(students) >= len(actions)
+    assert client.post(f"/v1/assignments/{assignment}:close", headers=TEACHER).status_code == 200
+    now = time.time()
+    results = {
+        "format": "mushitori-results-v1",
+        "assignment_id": assignment,
+        # 校内LANで解答し、教員がその場で処置まで記録した結果
+        "attempts": {sid: {"started_at": now - 60, "submitted_at": now, "answers": {}} for sid in students[: len(actions)]},
+        "followups": {sid: {"action": action} for sid, action in zip(students, actions)},
+    }
+    response = client.post(f"/v1/assignments/{assignment}/edge-results", json=results, headers=TEACHER)
+    assert response.status_code == 200 and response.json()["imported"] == len(actions)
+    followups = store.followups(assignment)
+    for sid, action in zip(students, actions):
+        assert followups[sid]["action"] == action and followups[sid]["via"] == "lan"
+        # 締切のあとの取り込みなので、生徒ごとの記録にも処置が残る（次の課題の材料になる）
+        entry = store.get_student_record(class_id, sid)["entries"][-1]
+        assert entry["assignment_id"] == assignment and entry["action"]["action"] == action
+
+
 def test_classroom_devices_cannot_act_as_the_teacher(client, monkeypatch, lan):
     _, assignment = setup_open(client)
     package = make_package(client, assignment)
