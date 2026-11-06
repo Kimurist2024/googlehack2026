@@ -1,0 +1,40 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "1から15までfor文で回した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "15の倍数を先にチェック",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "3と5の倍数はそのあとでやった",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          7
+        ]
+      ]
+    }
+  ]
+}

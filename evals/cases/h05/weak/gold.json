@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "2からn-1までで割り切れるか調べた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "割り切れるのがあっても最後まで調べる",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "1以下は素数じゃないことにした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    }
+  ]
+}

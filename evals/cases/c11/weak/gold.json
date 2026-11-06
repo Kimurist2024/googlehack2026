@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "点数で評価を返す関数を作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "80点ぴったりだとBになるはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "60点より下はC",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

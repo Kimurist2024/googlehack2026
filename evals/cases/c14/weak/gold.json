@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "最初の数を最小にも最大にも入れておいた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "1回のループで最小と最大を両方こうしんした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          8
+        ]
+      ]
+    }
+  ]
+}

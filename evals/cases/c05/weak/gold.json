@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "2でわったあまりが0のやつを数えた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "数を表示した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

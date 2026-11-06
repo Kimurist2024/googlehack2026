@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "内包表記で10以上だけ集めた",
+      "label": "alternative",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "集めたのを出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    }
+  ]
+}

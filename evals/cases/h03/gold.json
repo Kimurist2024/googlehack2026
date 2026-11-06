@@ -1,0 +1,25 @@
+{
+  "split": "heldout",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "1からnまでをループで掛け合わせた",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "0のときは1を返すようにした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    }
+  ]
+}

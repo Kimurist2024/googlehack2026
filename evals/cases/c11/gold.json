@@ -1,0 +1,37 @@
+{
+  "split": "dev",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "点数に応じて評価の文字を返す関数を作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "80点ちょうどはBになる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "60点未満はCを返す",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

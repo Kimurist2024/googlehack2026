@@ -1,0 +1,40 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "点数のリストをfor文で1こずつ見ていった",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "60以上だったら合計にたす",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "さいごに合計を出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

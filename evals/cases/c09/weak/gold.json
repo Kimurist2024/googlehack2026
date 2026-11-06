@@ -1,0 +1,40 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "まん中の数を見て、ほしい数より小さかったら右のほうを探す",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          10,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "大きかったら左",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          12,
+          13
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "見つかったら場所を出して終わり",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          9
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t05-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "このコードは、点数を受けて「A」または「B」か「C」を返す関数gradeを実装しています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "点数が80点以上の場合、関数gradeは'A'を返します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "点数が60点以上の場合、関数gradeは'B'を返します",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "49点を指定した場合、結果は'C'になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          6,
+          7
+        ],
+        [
+          10,
+          13
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "となりと比べて大きいほうを後ろにやった",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "1回全体を見れば並べかえは終わり",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "並べかえたリストを出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          7
+        ]
+      ]
+    }
+  ]
+}

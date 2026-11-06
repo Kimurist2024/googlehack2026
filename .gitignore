@@ -15,3 +15,5 @@ data/
 *-debug.log
 # 生成した動画は Git で管理しない
 demo/
+# 指示文の自動改善の記録（python -m rsi run）
+rsi_runs/

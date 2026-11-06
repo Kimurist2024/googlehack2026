@@ -1,0 +1,51 @@
+{
+  "split": "heldout",
+  "goal": "割り算と余りの使い方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t12-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "digit_sum 関数は整数の各桁の数字の合計を計算します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "数字 456 の各位の数字の合計は 15 です",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ],
+        [
+          11,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "数字 12345 の各位の数字の合計は 15 です",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ],
+        [
+          11,
+          12
+        ]
+      ]
+    }
+  ]
+}

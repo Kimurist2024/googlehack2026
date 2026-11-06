@@ -1,0 +1,45 @@
+{
+  "split": "heldout",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t20-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "最高気温と最低気温をそれぞれ計算し、それらの差を返します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          14
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "もし温度リストが空である場合、「温度がありません」という文字列を返します",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "[23, 25, 21, 19, 8]が渡されたときは15を返します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g4",
+      "text": "[10, 10, 10, 10]が渡されたときは10を返します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

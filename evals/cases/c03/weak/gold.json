@@ -1,0 +1,39 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "名前を前から順番にくらべてく",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "見つかったらそこでループ終わる",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "なかったら-1を出す",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ],
+        [
+          7,
+          7
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "1からnまでループでかけていった",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "0なら1を返す",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    }
+  ]
+}

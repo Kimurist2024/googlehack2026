@@ -1,0 +1,43 @@
+{
+  "split": "heldout",
+  "goal": "条件で値を選ぶ流れを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t16-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "元のリストから偶数だけ取り出した新しいリストを作成して表示する",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "新しいリストをprintする",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          12,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "偶数だけを取り出したリストは[2, 4, 6, 8, 10]になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          2,
+          9
+        ]
+      ]
+    }
+  ]
+}

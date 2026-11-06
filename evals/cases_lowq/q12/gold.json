@@ -1,0 +1,55 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t13-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "開始時に空のリスト cumulative_sums を用意します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "総額を計算し、累積和を追加するループを回します",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "累積和の値は cumulative_sums リストに追加されます",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "最後に、累積和のリストを表示します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          10,
+          10
+        ]
+      ]
+    }
+  ]
+}

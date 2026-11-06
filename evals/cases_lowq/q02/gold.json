@@ -1,0 +1,54 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を更新する流れを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t02-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "このプログラムは、与えられた整数数列から最大値を計算し、それを出力します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ],
+        [
+          14,
+          14
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "max関数を使って最大値を探しているわけではなく、手順的に最も大きい数を見つけています",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "より大きな数を見つけた場合は、その数をmax_numと更新しています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "numbersという変数に整数の配列を作り、数値を追加しています",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    }
+  ]
+}

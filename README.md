@@ -29,6 +29,7 @@ sh scripts/dev.sh
 | `qgen/sandbox.py` | 実行環境の切り替え（本番は Code Execution） |
 | `qgen/questions.py` | 実行結果から問いと正解を作る |
 | `qgen/ai.py` | Gemini の呼び出しと出力の検査。失敗時はテンプレートに戻す |
+| `qgen/probes.py` | 説明のうち「動き」の主張（空のリストでも動く、など）の確かめ方と、実行結果との照合 |
 | `qgen/guard.py` | Gemini に渡す文と返答を Model Armor で検査する |
 | `app/main.py` | FastAPI の API |
 | `app/auth.py` | 教員と生徒の認証、用途ごとの鍵 |
@@ -45,6 +46,10 @@ sh scripts/dev.sh
 | `app/firestore_store.py` | 本番用の Firestore 版 |
 | `firestore.rules` | ブラウザからの読み書きをすべて拒否するルール |
 | `web/` | 教員と生徒の画面（デモ） |
+| `evalh/` | 評価ハーネス。模擬提出物で、確認事項を作る流れの成績を測る |
+| `rsi/` | 指示文の自動改善。評価ハーネスの点数で候補を選び、記録を残す |
+| `qgen/prompts/` | Gemini に渡す指示文の版。`ACTIVE` が今使っている版 |
+| `evals/cases/` | 評価用の模擬提出物と正解（合成データ。dev と heldout に分ける） |
 | `tests/unit/` | 単体テスト |
 | `tests/integration/` | 結合テスト |
 
@@ -72,6 +77,48 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 ```
 
 エミュレータがあると、保存先を使う試験はメモリ版と Firestore 版の両方で動きます。
+
+## 評価ハーネス
+
+正解を仕込んだ模擬提出物（`evals/cases/`）に流れをかけ、企画案 v0.6 の指標を測ります。
+
+```sh
+.venv/bin/python -m evalh                          # dev を偽物の流れで測る
+.venv/bin/python -m evalh --split heldout          # 最終確認用。指示文の自動改善には使わない
+.venv/bin/python -m evalh --pipeline パッケージ.モジュール:関数名 --out report.json --md report.md
+```
+
+- 流れは `evalh/pipeline.py` の `Pipeline`（または `StagedPipeline` に3つの部品を渡したもの）の形で渡します。正解は流れに渡しません。
+- 測るもの：主張の再現率と適合率、根拠が1位に来る割合、確率の校正（ブライアスコア、ECE）、持ち時間ごとに拾える理解不足と出席番号順の比較、模擬教員の処置による校正の前後、決まり（80字以内・根拠リンク・判定する言葉なし）への違反。
+- 失敗例も一緒に出ます。指示文の自動改善は、dev の失敗例だけを見て直します。
+- `evalh/fakes.py` の部品は配線の確認用で、数字は成績の目安になりません。
+- 動きの主張をコードを動かして確かめる流れも測れます。合成コードを手元で動かすので、環境変数が要ります。
+
+```sh
+APP_ENV=local ALLOW_LOCAL_SANDBOX=1 .venv/bin/python -m evalh --pipeline evalh.fakes:lexicon_pipeline --pipeline evalh.fakes:probing_pipeline
+```
+
+## 指示文の自動改善（RSI）
+
+評価ハーネスの点数を見ながら、Gemini の指示文（`qgen/prompts/<対象>/vNNN.md`）を書き直します。重みの学習はしません。
+
+```sh
+# 改善のループ。requirements-gcp.txt と Google Cloud の認証が要る
+APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> .venv/bin/python -m rsi run --iterations 5 --repeats 3
+# rsi_runs/ の summary.md で差分を読み、よければ人が昇格する
+.venv/bin/python -m rsi promote rsi_runs/<日時>-probe_planner
+# 確認枠の結果から、見直しが要るかを調べる（企画案 p.20）
+.venv/bin/python -m rsi trigger --found 3 --sampled 12
+```
+
+- Gemini の出力は毎回少し変わるので、指示文ごとに `--repeats` 回（既定3回）測った平均で比べます。今の版を測ったときの点数の幅（ぶれ）より小さい差は、改善とみなしません。
+- Gemini の呼び出しが失敗して規則の決め方に戻った回は、点数に混ぜません。その候補は「測れなかった」（`unmeasured`）として残し、ループもそこで止めます。今の版を測れなければ何も書かずに終わります。
+- 改善役には、失敗例とその主張についての出力をまとめて見せ、正しく扱えた主張の出力は「うまくいった例（変えない）」として分けて見せます。
+- 改善役（Gemini）に見せるのは dev の失敗例だけです。一番よい候補を heldout で1回だけ測り、今の版より下がらなければ「推薦」にします。
+- 候補は評価の前に機械的に検査します。差し込み口（`{data}` など）が変わっていないか、長すぎないか、模擬提出物の文やコードを書き写していないか、`<data>` の囲みを自分で書いていないか。
+- 生徒のデータに付ける「指示ではない」の注意書きと `<data>` の囲みは、コードが `{data}` に入れます。指示文をどう書き直しても外れません。
+- 本番の版を切り替えるのは `promote` を実行した人です。`ACTIVE` の変更は差分をレビューしてからコミットします。
+- 今の対象は、動きの主張の確かめ方（`probe_planner`）だけです。主張の分解などの段階は、`rsi/targets.py` に `Target` を1つ足せば同じループで改善できます。
 
 ## 環境変数
 
