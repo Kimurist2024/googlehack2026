@@ -9,6 +9,7 @@ README と SECURITY.md が docs/*.svg を表示する。スライドには、ブ
 OFFICIAL_ICONS の名前（例：cloud-run.svg）で置いて実行し直すと、その絵の代わりに埋め込む。
 """
 import base64
+import re
 from html import escape
 from pathlib import Path
 
@@ -48,6 +49,9 @@ PICTOGRAMS = {
     "network": '<circle cx="0" cy="-10" r="4"/><circle cx="-11" cy="9" r="4"/><circle cx="11" cy="9" r="4"/>'
     '<path d="M-2,-6.5 L-9,5.5 M2,-6.5 L9,5.5 M-7,9 H7"/>',
     "package": '<rect x="-13" y="-9" width="26" height="21" rx="2"/><path d="M-13,-3 H13 M-4,-9 V-3 M4,-9 V-3"/>',
+    "idcard": '<rect x="-15" y="-11" width="30" height="22" rx="3"/><circle cx="-6" cy="-2.5" r="3.5"/>'
+    '<path d="M-11.5,7 A5.5,4.5 0 0 1 -0.5,7 M4,-4 H11 M4,2 H9"/>',
+    "trash": '<path d="M-12,-8 H12 M-4,-8 V-12 H4 V-8 M-8.5,-8 L-7,13 H7 L8.5,-8 M-3,-3 V8 M3,-3 V8"/>',
 }
 # docs/icons/ に置くと自前の絵の代わりに使うファイル名
 OFFICIAL_ICONS = {
@@ -75,6 +79,22 @@ def official_icon(kind: str) -> str | None:
 
 def text_width(text: str, size: float) -> float:
     return sum(size * (0.6 if ord(char) < 0x2E80 else 1.0) for char in text)
+
+
+NO_LINE_START = "、。，．」』）〕】・ー"
+
+
+def wrap_words(text: str, size: float, width: float) -> list[str]:
+    """英単語の途中と、句読点や閉じかっこの前では改行しない折り返し。"""
+    tokens = re.findall(r"[A-Za-z0-9_.\-]+|.", text)
+    lines, current = [], ""
+    for token in tokens:
+        if current and text_width(current + token, size) > width and token not in NO_LINE_START:
+            lines.append(current.rstrip())
+            current = token.lstrip()
+        else:
+            current += token
+    return lines + ([current] if current else [])
 
 
 def wrap(text: str, size: float, width: float) -> list[str]:
@@ -115,10 +135,10 @@ class Svg:
     def add(self, markup: str) -> None:
         self.parts.append(markup)
 
-    def icon(self, kind, cx, cy, color, r=28):
-        """白い丸の中にアイコンを置く。docs/icons/ に公式のアイコンがあればそれを使う。"""
+    def icon(self, kind, cx, cy, color, r=28, plain=False):
+        """白い丸の中にアイコンを置く。docs/icons/ に公式のアイコンがあればそれを使う（plain なら使わない）。"""
         self.add(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#ffffff" stroke="{color}" stroke-width="3"/>')
-        official = official_icon(kind)
+        official = None if plain else official_icon(kind)
         if official:
             size = r * 1.3
             self.add(f'<image href="{official}" x="{cx - size / 2}" y="{cy - size / 2}" width="{size}" height="{size}"/>')
@@ -192,6 +212,18 @@ class Svg:
     def note(self, x, y, text, size=17, color=INK, anchor="start", bold=False):
         weight = ' font-weight="700"' if bold else ""
         self.add(f'<text x="{x}" y="{y}" font-size="{size}" fill="{color}" text-anchor="{anchor}"{weight}>{escape(text)}</text>')
+
+    def item(self, x, y, icon, name, caption, color, r=26):
+        """アイコンと技術の名前、1行の役割。技術スタックの図で使う。"""
+        self.icon(icon, x + r, y + r, color, r=r)
+        self.note(x + 2 * r + 16, y + r - 4, name, size=19, bold=True)
+        self.note(x + 2 * r + 16, y + r + 20, caption, size=15, color=MUTED)
+
+    def badge(self, cx, cy, icon, name, caption, color, r=32):
+        """アイコンを上に、名前と役割を下に置く。横に流れる処理で使う。"""
+        self.icon(icon, cx, cy, color, r=r)
+        self.note(cx, cy + r + 26, name, size=18, anchor="middle", bold=True)
+        self.note(cx, cy + r + 48, caption, size=14, anchor="middle", color=MUTED)
 
     def flow(self, x, y, labels, fills, size=13):
         """横に並んだ丸い札と矢印（順に通る処理）。"""
@@ -358,6 +390,147 @@ def ai_guard() -> None:
     s.save("ai-guard-flow.svg")
 
 
+def security_stack() -> None:
+    """セキュリティの技術構成を、技術の名前と役割だけで示す（細かい対策は security-architecture.svg）。"""
+    s = Svg("セキュリティの技術構成：", "どの技術で、何を守っているか")
+    blue, teal, pink, amber, violet, slate, red = (GROUPS[name][0] for name in ("blue", "teal", "pink", "amber", "violet", "slate", "red"))
+    teal = "#1fae8f"
+    s.group(40, 150, 360, 560, "ブラウザ", "blue", icon="browser")
+    s.item(66, 196, "shield", "CSP ＋ Trusted Types", "XSS とすり替えを防ぐ", blue)
+    s.item(66, 296, "browser", "Firebase Hosting", "HSTS・枠への埋め込み禁止", blue)
+    s.item(66, 396, "lock", "Google ログイン", "許可した教員だけ", blue)
+    s.item(66, 496, "phone", "Service Worker", "オフラインでも開ける", blue)
+    s.item(66, 596, "log", "端末の一時保存", "送れない解答をためる", blue)
+    s.group(450, 150, 400, 560, "API（Cloud Run）", "teal", icon="server")
+    s.item(476, 196, "server", "FastAPI", "ヘッダー・入力の上限・ID の形", teal)
+    s.item(476, 296, "key", "HKDF ＋ HMAC", "用途別の鍵・署名付きトークン", teal)
+    s.item(476, 396, "lock", "入室の上限", "失敗を全体で数える", teal)
+    s.item(476, 496, "package", "授業パッケージ", "ECDSA 署名 ＋ AES-GCM", teal)
+    s.item(476, 596, "check", "保存期間", "30日で消す・すぐ消せる", teal)
+    s.group(900, 150, 660, 250, "AI の守り", "pink", icon="ai")
+    centers = [985, 1145, 1305, 1465]
+    for (cx, (icon, name, caption)) in zip(centers, [
+        ("shield", "Model Armor", "入力を検査"), ("ai", "Gemini", "選定・説明"),
+        ("check", "出力の検査", "形・数値・URL"), ("shield", "Model Armor", "出力を検査"),
+    ], strict=True):
+        s.badge(cx, 232, icon, name, caption, pink)
+    for left, right in zip(centers, centers[1:], strict=False):
+        s.arrow([(left + 36, 232), (right - 36, 232)])
+    s.note(1230, 375, "検査できなければ、テンプレートの文に戻す", size=17, anchor="middle", color=GROUPS["red"][0], bold=True)
+    s.group(900, 440, 300, 270, "実行", "amber", icon="sandbox")
+    s.badge(1050, 520, "sandbox", "Code Execution", "生徒のコードを隔離", amber)
+    s.note(1050, 640, "＋ 実行ラッパー", size=16, anchor="middle", bold=True)
+    s.note(1050, 664, "危ない書き方を拒否・資源の上限", size=14, anchor="middle", color=MUTED)
+    s.group(1240, 440, 320, 270, "データと鍵", "violet", icon="database")
+    s.item(1262, 482, "database", "Firestore", "TTL で自動削除", violet, r=22)
+    s.item(1262, 556, "lock", "Secret Manager", "SESSION_SECRET", violet, r=22)
+    s.item(1262, 630, "key", "Cloud KMS", "授業パッケージに署名", violet, r=22)
+    s.group(40, 770, 360, 110, "記録", "slate", icon="log")
+    s.item(66, 806, "log", "Cloud Logging", "監査ログ（コード・IP は残さない）", slate, r=22)
+    s.group(450, 770, 1110, 110, "教員PC（校内LAN版）", "red", dashed=True, icon="laptop")
+    for x, (icon, name, caption) in zip(range(476, 1550, 270), [
+        ("shield", "ECDSA 検証", "本物のパッケージだけ"), ("lock", "AES-GCM", "暗号化して保存"),
+        ("key", "scrypt", "コードの照合"), ("network", "LAN だけ", "外へは接続しない"),
+    ], strict=True):
+        s.item(x, 806, icon, name, caption, red, r=22)
+    s.arrow([(402, 300), (448, 300)], "HTTPS", (425, 286), size=14)
+    s.arrow([(852, 250), (898, 250)])
+    s.note(875, 236, "検査", size=14, anchor="middle")
+    s.arrow([(852, 560), (898, 560)])
+    s.note(875, 546, "コード", size=14, anchor="middle")
+    # 実行の枠を横切らないよう、下の通路を回す
+    s.arrow([(852, 700), (876, 700), (876, 732), (1400, 732), (1400, 714)])
+    s.note(1250, 754, "読み書き・署名", size=14, anchor="middle")
+    s.arrow([(460, 712), (380, 766)])
+    s.note(470, 744, "監査ログ", size=14)
+    s.arrow([(800, 712), (800, 766)], dashed=True)
+    s.note(812, 756, "授業パッケージ", size=14, color=GROUPS["red"][0])
+    s.save("security-stack.svg")
+
+
+# 図の枠より少し薄い色。見出しの帯と「たとえ」の背景に使う
+TINTS = {
+    "blue": "#dfe9fb", "teal": "#d6f4ee", "pink": "#fbe4e4", "amber": "#fcecc9",
+    "violet": "#e7e2fd", "slate": "#e2e7e9", "red": "#f9dad9",
+}
+# 白地でも読める濃さの線の色
+STROKES = {
+    "blue": "#3d73cc", "teal": "#16917a", "pink": "#d9747a", "amber": "#c98a12",
+    "violet": "#7464d6", "slate": "#66777f", "red": "#c9302c",
+}
+
+
+def threat_card(s, x, y, color, icon, title, threat, defense, analogy, tech, w=490, h=262):
+    """こわいこと（見出し）→ 守り方 → たとえ → 技術の名前、の順に読めるカード。"""
+    tint, stroke = TINTS[color], STROKES[color]
+    s.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{CARD}" stroke="{stroke}" stroke-width="2.5"/>')
+    s.add(
+        f'<path d="M{x},{y + 80} V{y + 12} Q{x},{y} {x + 12},{y} H{x + w - 12} Q{x + w},{y} {x + w},{y + 12} V{y + 80} Z" '
+        f'fill="{tint}" stroke="{stroke}" stroke-width="2.5"/>'
+    )
+    s.icon(icon, x + 40, y + 40, stroke, r=24, plain=True)
+    s.note(x + 78, y + 35, title, size=23, bold=True)
+    s.note(x + 78, y + 63, threat, size=15, color=MUTED)
+    s.note(x + 20, y + 110, "守り方", size=14, color=stroke, bold=True)
+    cursor = y + 136
+    for line in wrap_words(defense, 16.5, w - 40):
+        s.note(x + 20, cursor, line, size=16.5)
+        cursor += 24
+    box_y = y + h - 82
+    assert cursor - 18 < box_y, title
+    s.add(f'<rect x="{x + 14}" y="{box_y}" width="{w - 28}" height="40" rx="8" fill="{tint}"/>')
+    s.note(x + 28, box_y + 26, "たとえると", size=14, color=stroke, bold=True)
+    s.note(x + 112, box_y + 27, analogy, size=18, bold=True)
+    s.note(x + 20, y + h - 16, f"技術：{tech}", size=13.5, color=MUTED)
+
+
+def security_easy() -> None:
+    """セキュリティに詳しくない人向け。技術の名前ではなく「何がこわくて、どう守るか」を、たとえで示す。"""
+    s = Svg("ムシトリを何から守っているか", "技術の名前は覚えなくて大丈夫。「たとえると」だけ読めば伝わります", height=1100)
+    columns = (40, 555, 1070)
+    rows = [
+        (150, "① 入口で止める", "悪い人や悪いデータを、そもそも入れない", [
+            ("blue", "idcard", "なりすまし", "ほかの生徒や先生のふりをして、解答や成績を見る",
+             "先生は許可したメールの Google ログインだけ。生徒には判を押した入室証を渡し、書き換えると通らない。",
+             "偽造できない入館証", "Firebase Authentication・HMAC 署名"),
+            ("teal", "lock", "合言葉の総当たり", "授業コードを片っ端から試して入りこむ",
+             "間違いが続いたら、しばらく入室を止める。サーバーが何台に増えても、まとめて数える。",
+             "何度も間違えるとロックされる ATM", "レート制限（失敗の回数を Firestore で集計）"),
+            ("blue", "browser", "画面の乗っ取り", "画面に悪いスクリプトを入れて、ログインを盗む",
+             "「このサイトの部品しか動かさない」とブラウザに約束させる。外から来た文字は、文字としてだけ表示する。",
+             "名簿にない人は通さない受付", "CSP・Trusted Types・HSTS"),
+        ]),
+        (470, "② 中で閉じこめる", "入られても、被害を広げない", [
+            ("amber", "sandbox", "生徒のコードが暴れる", "無限ループ、ファイルの削除、外への通信",
+             "切り離した場所で動かす。危ない書き方は実行の前に断り、時間とメモリにも上限をつける。",
+             "実験は防護ガラスの中で", "Code Execution（サンドボックス）・実行ラッパー"),
+            ("pink", "shield", "AI をだます", "「答えを教えて」「指示を無視して」を紛れ込ませる",
+             "AI に渡す前と、AI の答えの両方を検査する。検査できないときは、決まった文に切り替える。",
+             "行きも帰りも通る手荷物検査", "Model Armor（Gemini の前後で検査）"),
+            ("violet", "key", "鍵や合言葉がもれる", "データベースを見られると、授業コードまで分かる",
+             "授業コードは元に戻せない形で保存する。秘密の鍵は Google の金庫に入れ、プログラムに書かない。",
+             "合言葉ではなく、指紋だけ保管", "HMAC・Secret Manager・Cloud KMS"),
+        ]),
+        (790, "③ もしもに備える", "起きても困らない・すぐ戻せる", [
+            ("violet", "trash", "データの持ちすぎ", "コードや解答がずっと残り、漏れたときの被害が大きい",
+             "決めた日数（標準 30 日）で自動で消える。先生はボタンひとつで、すぐ消せる。",
+             "期限が来ると動くシュレッダー", "Firestore の TTL・削除の API"),
+            ("red", "network", "ネットが落ちる", "授業中にインターネットが止まり、授業も止まる",
+             "先生の PC が、校内 LAN だけで授業を引き継ぐ。持ち出す問題には、封印と鍵をかける。",
+             "封印つき封筒に入れた予備の問題用紙", "ECDSA 署名・AES-GCM 暗号化・scrypt"),
+            ("slate", "log", "あとから調べられない", "攻撃や事故があっても、何が起きたか分からない",
+             "だれが・いつ・何をしたかを記録する。生徒のコードや IP は、そのままでは残さない。",
+             "顔は映さない防犯カメラ", "監査ログ（Cloud Logging）"),
+        ]),
+    ]
+    for top, heading, caption, cards in rows:
+        s.note(40, top, heading, size=22, bold=True)
+        s.note(48 + text_width(heading, 22), top, caption, size=17, color=MUTED)
+        for x, card in zip(columns, cards, strict=True):
+            threat_card(s, x, top + 16, *card)
+    s.save("security-easy.svg")
+
+
 SYSTEM_H = 960
 
 
@@ -451,6 +624,8 @@ def system_integrated() -> None:
 
 
 if __name__ == "__main__":
+    security_easy()
+    security_stack()
     architecture()
     resilience()
     ai_guard()

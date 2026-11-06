@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" width="1600" height="1100" font-family="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#44545c"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker></defs>
+<rect width="1600" height="1100" fill="#efefef"/>
+<text x="40" y="78" font-size="46" font-weight="700" fill="#1f2a30">ムシトリを何から守っているか</text>
+<text x="692.0" y="76" font-size="20" fill="#55626a">技術の名前は覚えなくて大丈夫。「たとえると」だけ読めば伝わります</text>
+<rect x="0" y="100" width="1600" height="4" fill="#d4d4d4"/>
+<text x="40" y="150" font-size="22" fill="#1f2a30" text-anchor="start" font-weight="700">① 入口で止める</text>
+<text x="206.4" y="150" font-size="17" fill="#55626a" text-anchor="start">悪い人や悪いデータを、そもそも入れない</text>
+<rect x="40" y="166" width="490" height="262" rx="12" fill="#ffffff" stroke="#3d73cc" stroke-width="2.5"/>
+<path d="M40,246 V178 Q40,166 52,166 H518 Q530,166 530,178 V246 Z" fill="#dfe9fb" stroke="#3d73cc" stroke-width="2.5"/>
+<circle cx="80" cy="206" r="24" fill="#ffffff" stroke="#3d73cc" stroke-width="3"/>
+<g transform="translate(80,206) scale(0.9230769230769231)" fill="none" stroke="#3d73cc" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-11" width="30" height="22" rx="3"/><circle cx="-6" cy="-2.5" r="3.5"/><path d="M-11.5,7 A5.5,4.5 0 0 1 -0.5,7 M4,-4 H11 M4,2 H9"/></g>
+<text x="118" y="201" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">なりすまし</text>
+<text x="118" y="229" font-size="15" fill="#55626a" text-anchor="start">ほかの生徒や先生のふりをして、解答や成績を見る</text>
+<text x="60" y="276" font-size="14" fill="#3d73cc" text-anchor="start" font-weight="700">守り方</text>
+<text x="60" y="302" font-size="16.5" fill="#1f2a30" text-anchor="start">先生は許可したメールの Google ログインだけ。生徒には</text>
+<text x="60" y="326" font-size="16.5" fill="#1f2a30" text-anchor="start">判を押した入室証を渡し、書き換えると通らない。</text>
+<rect x="54" y="346" width="462" height="40" rx="8" fill="#dfe9fb"/>
+<text x="68" y="372" font-size="14" fill="#3d73cc" text-anchor="start" font-weight="700">たとえると</text>
+<text x="152" y="373" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">偽造できない入館証</text>
+<text x="60" y="412" font-size="13.5" fill="#55626a" text-anchor="start">技術：Firebase Authentication・HMAC 署名</text>
+<rect x="555" y="166" width="490" height="262" rx="12" fill="#ffffff" stroke="#16917a" stroke-width="2.5"/>
+<path d="M555,246 V178 Q555,166 567,166 H1033 Q1045,166 1045,178 V246 Z" fill="#d6f4ee" stroke="#16917a" stroke-width="2.5"/>
+<circle cx="595" cy="206" r="24" fill="#ffffff" stroke="#16917a" stroke-width="3"/>
+<g transform="translate(595,206) scale(0.9230769230769231)" fill="none" stroke="#16917a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#16917a"/></g>
+<text x="633" y="201" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">合言葉の総当たり</text>
+<text x="633" y="229" font-size="15" fill="#55626a" text-anchor="start">授業コードを片っ端から試して入りこむ</text>
+<text x="575" y="276" font-size="14" fill="#16917a" text-anchor="start" font-weight="700">守り方</text>
+<text x="575" y="302" font-size="16.5" fill="#1f2a30" text-anchor="start">間違いが続いたら、しばらく入室を止める。サーバーが何台</text>
+<text x="575" y="326" font-size="16.5" fill="#1f2a30" text-anchor="start">に増えても、まとめて数える。</text>
+<rect x="569" y="346" width="462" height="40" rx="8" fill="#d6f4ee"/>
+<text x="583" y="372" font-size="14" fill="#16917a" text-anchor="start" font-weight="700">たとえると</text>
+<text x="667" y="373" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">何度も間違えるとロックされる ATM</text>
+<text x="575" y="412" font-size="13.5" fill="#55626a" text-anchor="start">技術：レート制限（失敗の回数を Firestore で集計）</text>
+<rect x="1070" y="166" width="490" height="262" rx="12" fill="#ffffff" stroke="#3d73cc" stroke-width="2.5"/>
+<path d="M1070,246 V178 Q1070,166 1082,166 H1548 Q1560,166 1560,178 V246 Z" fill="#dfe9fb" stroke="#3d73cc" stroke-width="2.5"/>
+<circle cx="1110" cy="206" r="24" fill="#ffffff" stroke="#3d73cc" stroke-width="3"/>
+<g transform="translate(1110,206) scale(0.9230769230769231)" fill="none" stroke="#3d73cc" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-12" width="30" height="24" rx="4"/><path d="M-15,-5 H15"/><circle cx="-10" cy="-8.5" r="1.4" fill="#3d73cc"/><circle cx="-6" cy="-8.5" r="1.4" fill="#3d73cc"/><circle cx="-2" cy="-8.5" r="1.4" fill="#3d73cc"/></g>
+<text x="1148" y="201" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">画面の乗っ取り</text>
+<text x="1148" y="229" font-size="15" fill="#55626a" text-anchor="start">画面に悪いスクリプトを入れて、ログインを盗む</text>
+<text x="1090" y="276" font-size="14" fill="#3d73cc" text-anchor="start" font-weight="700">守り方</text>
+<text x="1090" y="302" font-size="16.5" fill="#1f2a30" text-anchor="start">「このサイトの部品しか動かさない」とブラウザに約束させ</text>
+<text x="1090" y="326" font-size="16.5" fill="#1f2a30" text-anchor="start">る。外から来た文字は、文字としてだけ表示する。</text>
+<rect x="1084" y="346" width="462" height="40" rx="8" fill="#dfe9fb"/>
+<text x="1098" y="372" font-size="14" fill="#3d73cc" text-anchor="start" font-weight="700">たとえると</text>
+<text x="1182" y="373" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">名簿にない人は通さない受付</text>
+<text x="1090" y="412" font-size="13.5" fill="#55626a" text-anchor="start">技術：CSP・Trusted Types・HSTS</text>
+<text x="40" y="470" font-size="22" fill="#1f2a30" text-anchor="start" font-weight="700">② 中で閉じこめる</text>
+<text x="228.4" y="470" font-size="17" fill="#55626a" text-anchor="start">入られても、被害を広げない</text>
+<rect x="40" y="486" width="490" height="262" rx="12" fill="#ffffff" stroke="#c98a12" stroke-width="2.5"/>
+<path d="M40,566 V498 Q40,486 52,486 H518 Q530,486 530,498 V566 Z" fill="#fcecc9" stroke="#c98a12" stroke-width="2.5"/>
+<circle cx="80" cy="526" r="24" fill="#ffffff" stroke="#c98a12" stroke-width="3"/>
+<g transform="translate(80,526) scale(0.9230769230769231)" fill="none" stroke="#c98a12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L13,-7 V7 L0,14 L-13,7 V-7 Z M-13,-7 L0,0 L13,-7 M0,0 V14"/></g>
+<text x="118" y="521" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">生徒のコードが暴れる</text>
+<text x="118" y="549" font-size="15" fill="#55626a" text-anchor="start">無限ループ、ファイルの削除、外への通信</text>
+<text x="60" y="596" font-size="14" fill="#c98a12" text-anchor="start" font-weight="700">守り方</text>
+<text x="60" y="622" font-size="16.5" fill="#1f2a30" text-anchor="start">切り離した場所で動かす。危ない書き方は実行の前に断り、</text>
+<text x="60" y="646" font-size="16.5" fill="#1f2a30" text-anchor="start">時間とメモリにも上限をつける。</text>
+<rect x="54" y="666" width="462" height="40" rx="8" fill="#fcecc9"/>
+<text x="68" y="692" font-size="14" fill="#c98a12" text-anchor="start" font-weight="700">たとえると</text>
+<text x="152" y="693" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">実験は防護ガラスの中で</text>
+<text x="60" y="732" font-size="13.5" fill="#55626a" text-anchor="start">技術：Code Execution（サンドボックス）・実行ラッパー</text>
+<rect x="555" y="486" width="490" height="262" rx="12" fill="#ffffff" stroke="#d9747a" stroke-width="2.5"/>
+<path d="M555,566 V498 Q555,486 567,486 H1033 Q1045,486 1045,498 V566 Z" fill="#fbe4e4" stroke="#d9747a" stroke-width="2.5"/>
+<circle cx="595" cy="526" r="24" fill="#ffffff" stroke="#d9747a" stroke-width="3"/>
+<g transform="translate(595,526) scale(0.9230769230769231)" fill="none" stroke="#d9747a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="633" y="521" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">AI をだます</text>
+<text x="633" y="549" font-size="15" fill="#55626a" text-anchor="start">「答えを教えて」「指示を無視して」を紛れ込ませる</text>
+<text x="575" y="596" font-size="14" fill="#d9747a" text-anchor="start" font-weight="700">守り方</text>
+<text x="575" y="622" font-size="16.5" fill="#1f2a30" text-anchor="start">AI に渡す前と、AI の答えの両方を検査する。検査できな</text>
+<text x="575" y="646" font-size="16.5" fill="#1f2a30" text-anchor="start">いときは、決まった文に切り替える。</text>
+<rect x="569" y="666" width="462" height="40" rx="8" fill="#fbe4e4"/>
+<text x="583" y="692" font-size="14" fill="#d9747a" text-anchor="start" font-weight="700">たとえると</text>
+<text x="667" y="693" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">行きも帰りも通る手荷物検査</text>
+<text x="575" y="732" font-size="13.5" fill="#55626a" text-anchor="start">技術：Model Armor（Gemini の前後で検査）</text>
+<rect x="1070" y="486" width="490" height="262" rx="12" fill="#ffffff" stroke="#7464d6" stroke-width="2.5"/>
+<path d="M1070,566 V498 Q1070,486 1082,486 H1548 Q1560,486 1560,498 V566 Z" fill="#e7e2fd" stroke="#7464d6" stroke-width="2.5"/>
+<circle cx="1110" cy="526" r="24" fill="#ffffff" stroke="#7464d6" stroke-width="3"/>
+<g transform="translate(1110,526) scale(0.9230769230769231)" fill="none" stroke="#7464d6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<text x="1148" y="521" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">鍵や合言葉がもれる</text>
+<text x="1148" y="549" font-size="15" fill="#55626a" text-anchor="start">データベースを見られると、授業コードまで分かる</text>
+<text x="1090" y="596" font-size="14" fill="#7464d6" text-anchor="start" font-weight="700">守り方</text>
+<text x="1090" y="622" font-size="16.5" fill="#1f2a30" text-anchor="start">授業コードは元に戻せない形で保存する。秘密の鍵は</text>
+<text x="1090" y="646" font-size="16.5" fill="#1f2a30" text-anchor="start">Google の金庫に入れ、プログラムに書かない。</text>
+<rect x="1084" y="666" width="462" height="40" rx="8" fill="#e7e2fd"/>
+<text x="1098" y="692" font-size="14" fill="#7464d6" text-anchor="start" font-weight="700">たとえると</text>
+<text x="1182" y="693" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">合言葉ではなく、指紋だけ保管</text>
+<text x="1090" y="732" font-size="13.5" fill="#55626a" text-anchor="start">技術：HMAC・Secret Manager・Cloud KMS</text>
+<text x="40" y="790" font-size="22" fill="#1f2a30" text-anchor="start" font-weight="700">③ もしもに備える</text>
+<text x="228.4" y="790" font-size="17" fill="#55626a" text-anchor="start">起きても困らない・すぐ戻せる</text>
+<rect x="40" y="806" width="490" height="262" rx="12" fill="#ffffff" stroke="#7464d6" stroke-width="2.5"/>
+<path d="M40,886 V818 Q40,806 52,806 H518 Q530,806 530,818 V886 Z" fill="#e7e2fd" stroke="#7464d6" stroke-width="2.5"/>
+<circle cx="80" cy="846" r="24" fill="#ffffff" stroke="#7464d6" stroke-width="3"/>
+<g transform="translate(80,846) scale(0.9230769230769231)" fill="none" stroke="#7464d6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-12,-8 H12 M-4,-8 V-12 H4 V-8 M-8.5,-8 L-7,13 H7 L8.5,-8 M-3,-3 V8 M3,-3 V8"/></g>
+<text x="118" y="841" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">データの持ちすぎ</text>
+<text x="118" y="869" font-size="15" fill="#55626a" text-anchor="start">コードや解答がずっと残り、漏れたときの被害が大きい</text>
+<text x="60" y="916" font-size="14" fill="#7464d6" text-anchor="start" font-weight="700">守り方</text>
+<text x="60" y="942" font-size="16.5" fill="#1f2a30" text-anchor="start">決めた日数（標準 30 日）で自動で消える。先生はボタン</text>
+<text x="60" y="966" font-size="16.5" fill="#1f2a30" text-anchor="start">ひとつで、すぐ消せる。</text>
+<rect x="54" y="986" width="462" height="40" rx="8" fill="#e7e2fd"/>
+<text x="68" y="1012" font-size="14" fill="#7464d6" text-anchor="start" font-weight="700">たとえると</text>
+<text x="152" y="1013" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">期限が来ると動くシュレッダー</text>
+<text x="60" y="1052" font-size="13.5" fill="#55626a" text-anchor="start">技術：Firestore の TTL・削除の API</text>
+<rect x="555" y="806" width="490" height="262" rx="12" fill="#ffffff" stroke="#c9302c" stroke-width="2.5"/>
+<path d="M555,886 V818 Q555,806 567,806 H1033 Q1045,806 1045,818 V886 Z" fill="#f9dad9" stroke="#c9302c" stroke-width="2.5"/>
+<circle cx="595" cy="846" r="24" fill="#ffffff" stroke="#c9302c" stroke-width="3"/>
+<g transform="translate(595,846) scale(0.9230769230769231)" fill="none" stroke="#c9302c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="0" cy="-10" r="4"/><circle cx="-11" cy="9" r="4"/><circle cx="11" cy="9" r="4"/><path d="M-2,-6.5 L-9,5.5 M2,-6.5 L9,5.5 M-7,9 H7"/></g>
+<text x="633" y="841" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">ネットが落ちる</text>
+<text x="633" y="869" font-size="15" fill="#55626a" text-anchor="start">授業中にインターネットが止まり、授業も止まる</text>
+<text x="575" y="916" font-size="14" fill="#c9302c" text-anchor="start" font-weight="700">守り方</text>
+<text x="575" y="942" font-size="16.5" fill="#1f2a30" text-anchor="start">先生の PC が、校内 LAN だけで授業を引き継ぐ。持ち出</text>
+<text x="575" y="966" font-size="16.5" fill="#1f2a30" text-anchor="start">す問題には、封印と鍵をかける。</text>
+<rect x="569" y="986" width="462" height="40" rx="8" fill="#f9dad9"/>
+<text x="583" y="1012" font-size="14" fill="#c9302c" text-anchor="start" font-weight="700">たとえると</text>
+<text x="667" y="1013" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">封印つき封筒に入れた予備の問題用紙</text>
+<text x="575" y="1052" font-size="13.5" fill="#55626a" text-anchor="start">技術：ECDSA 署名・AES-GCM 暗号化・scrypt</text>
+<rect x="1070" y="806" width="490" height="262" rx="12" fill="#ffffff" stroke="#66777f" stroke-width="2.5"/>
+<path d="M1070,886 V818 Q1070,806 1082,806 H1548 Q1560,806 1560,818 V886 Z" fill="#e2e7e9" stroke="#66777f" stroke-width="2.5"/>
+<circle cx="1110" cy="846" r="24" fill="#ffffff" stroke="#66777f" stroke-width="3"/>
+<g transform="translate(1110,846) scale(0.9230769230769231)" fill="none" stroke="#66777f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<text x="1148" y="841" font-size="23" fill="#1f2a30" text-anchor="start" font-weight="700">あとから調べられない</text>
+<text x="1148" y="869" font-size="15" fill="#55626a" text-anchor="start">攻撃や事故があっても、何が起きたか分からない</text>
+<text x="1090" y="916" font-size="14" fill="#66777f" text-anchor="start" font-weight="700">守り方</text>
+<text x="1090" y="942" font-size="16.5" fill="#1f2a30" text-anchor="start">だれが・いつ・何をしたかを記録する。生徒のコードや IP</text>
+<text x="1090" y="966" font-size="16.5" fill="#1f2a30" text-anchor="start">は、そのままでは残さない。</text>
+<rect x="1084" y="986" width="462" height="40" rx="8" fill="#e2e7e9"/>
+<text x="1098" y="1012" font-size="14" fill="#66777f" text-anchor="start" font-weight="700">たとえると</text>
+<text x="1182" y="1013" font-size="18" fill="#1f2a30" text-anchor="start" font-weight="700">顔は映さない防犯カメラ</text>
+<text x="1090" y="1052" font-size="13.5" fill="#55626a" text-anchor="start">技術：監査ログ（Cloud Logging）</text>
+</svg>

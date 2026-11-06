@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#44545c"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker></defs>
+<rect width="1600" height="900" fill="#efefef"/>
+<text x="40" y="78" font-size="46" font-weight="700" fill="#1f2a30">セキュリティの技術構成：</text>
+<text x="600.0" y="76" font-size="20" fill="#55626a">どの技術で、何を守っているか</text>
+<rect x="0" y="100" width="1600" height="4" fill="#d4d4d4"/>
+<rect x="40" y="150" width="360" height="560" fill="none" stroke="#4a86e8" stroke-width="4"/>
+<rect x="62" y="128" width="120.0" height="42" fill="#1fae8f"/>
+<text x="78" y="157" font-size="22" font-weight="700" fill="#ffffff">ブラウザ</text>
+<circle cx="354" cy="150" r="28" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(354,150) scale(1.0769230769230769)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-12" width="30" height="24" rx="4"/><path d="M-15,-5 H15"/><circle cx="-10" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-6" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-2" cy="-8.5" r="1.4" fill="#4a86e8"/></g>
+<circle cx="92" cy="222" r="26" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(92,222) scale(1.0)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="134" y="218" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">CSP ＋ Trusted Types</text>
+<text x="134" y="242" font-size="15" fill="#55626a" text-anchor="start">XSS とすり替えを防ぐ</text>
+<circle cx="92" cy="322" r="26" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(92,322) scale(1.0)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-12" width="30" height="24" rx="4"/><path d="M-15,-5 H15"/><circle cx="-10" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-6" cy="-8.5" r="1.4" fill="#4a86e8"/><circle cx="-2" cy="-8.5" r="1.4" fill="#4a86e8"/></g>
+<text x="134" y="318" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Firebase Hosting</text>
+<text x="134" y="342" font-size="15" fill="#55626a" text-anchor="start">HSTS・枠への埋め込み禁止</text>
+<circle cx="92" cy="422" r="26" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(92,422) scale(1.0)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#4a86e8"/></g>
+<text x="134" y="418" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Google ログイン</text>
+<text x="134" y="442" font-size="15" fill="#55626a" text-anchor="start">許可した教員だけ</text>
+<circle cx="92" cy="522" r="26" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(92,522) scale(1.0)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-8" y="-14" width="16" height="28" rx="3.5"/><path d="M-3,9 H3"/></g>
+<text x="134" y="518" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Service Worker</text>
+<text x="134" y="542" font-size="15" fill="#55626a" text-anchor="start">オフラインでも開ける</text>
+<circle cx="92" cy="622" r="26" fill="#ffffff" stroke="#4a86e8" stroke-width="3"/>
+<g transform="translate(92,622) scale(1.0)" fill="none" stroke="#4a86e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<text x="134" y="618" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">端末の一時保存</text>
+<text x="134" y="642" font-size="15" fill="#55626a" text-anchor="start">送れない解答をためる</text>
+<rect x="450" y="150" width="400" height="560" fill="none" stroke="#6fe0cf" stroke-width="4"/>
+<rect x="472" y="128" width="234.39999999999998" height="42" fill="#6fe0cf"/>
+<text x="488" y="157" font-size="22" font-weight="700" fill="#1f2a30">API（Cloud Run）</text>
+<circle cx="804" cy="150" r="28" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(804,150) scale(1.0769230769230769)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-13" width="28" height="11" rx="2.5"/><rect x="-14" y="2" width="28" height="11" rx="2.5"/><circle cx="9" cy="-7.5" r="1.6" fill="#1fae8f"/><circle cx="9" cy="7.5" r="1.6" fill="#1fae8f"/><path d="M-9,-7.5 H2 M-9,7.5 H2"/></g>
+<circle cx="502" cy="222" r="26" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(502,222) scale(1.0)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-13" width="28" height="11" rx="2.5"/><rect x="-14" y="2" width="28" height="11" rx="2.5"/><circle cx="9" cy="-7.5" r="1.6" fill="#1fae8f"/><circle cx="9" cy="7.5" r="1.6" fill="#1fae8f"/><path d="M-9,-7.5 H2 M-9,7.5 H2"/></g>
+<text x="544" y="218" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">FastAPI</text>
+<text x="544" y="242" font-size="15" fill="#55626a" text-anchor="start">ヘッダー・入力の上限・ID の形</text>
+<circle cx="502" cy="322" r="26" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(502,322) scale(1.0)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<text x="544" y="318" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">HKDF ＋ HMAC</text>
+<text x="544" y="342" font-size="15" fill="#55626a" text-anchor="start">用途別の鍵・署名付きトークン</text>
+<circle cx="502" cy="422" r="26" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(502,422) scale(1.0)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#1fae8f"/></g>
+<text x="544" y="418" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">入室の上限</text>
+<text x="544" y="442" font-size="15" fill="#55626a" text-anchor="start">失敗を全体で数える</text>
+<circle cx="502" cy="522" r="26" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(502,522) scale(1.0)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-13" y="-9" width="26" height="21" rx="2"/><path d="M-13,-3 H13 M-4,-9 V-3 M4,-9 V-3"/></g>
+<text x="544" y="518" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">授業パッケージ</text>
+<text x="544" y="542" font-size="15" fill="#55626a" text-anchor="start">ECDSA 署名 ＋ AES-GCM</text>
+<circle cx="502" cy="622" r="26" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(502,622) scale(1.0)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-11" width="22" height="25" rx="3"/><path d="M-5,-11 V-14 H5 V-11"/><path d="M-5,2 L-1,6 L6,-2"/></g>
+<text x="544" y="618" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">保存期間</text>
+<text x="544" y="642" font-size="15" fill="#55626a" text-anchor="start">30日で消す・すぐ消せる</text>
+<rect x="900" y="150" width="660" height="250" fill="none" stroke="#f2a7a7" stroke-width="4"/>
+<rect x="922" y="128" width="137.6" height="42" fill="#f6c9c9"/>
+<text x="938" y="157" font-size="22" font-weight="700" fill="#1f2a30">AI の守り</text>
+<circle cx="1514" cy="150" r="28" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1514,150) scale(1.0769230769230769)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-12" width="28" height="19" rx="6"/><path d="M-6,7 L-10,13 L1,7"/><circle cx="-6" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="0" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="6" cy="-2.5" r="1.6" fill="#f2a7a7"/></g>
+<circle cx="985" cy="232" r="32" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(985,232) scale(1.2307692307692308)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="985" y="290" font-size="18" fill="#1f2a30" text-anchor="middle" font-weight="700">Model Armor</text>
+<text x="985" y="312" font-size="14" fill="#55626a" text-anchor="middle">入力を検査</text>
+<circle cx="1145" cy="232" r="32" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1145,232) scale(1.2307692307692308)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-12" width="28" height="19" rx="6"/><path d="M-6,7 L-10,13 L1,7"/><circle cx="-6" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="0" cy="-2.5" r="1.6" fill="#f2a7a7"/><circle cx="6" cy="-2.5" r="1.6" fill="#f2a7a7"/></g>
+<text x="1145" y="290" font-size="18" fill="#1f2a30" text-anchor="middle" font-weight="700">Gemini</text>
+<text x="1145" y="312" font-size="14" fill="#55626a" text-anchor="middle">選定・説明</text>
+<circle cx="1305" cy="232" r="32" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1305,232) scale(1.2307692307692308)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-11" width="22" height="25" rx="3"/><path d="M-5,-11 V-14 H5 V-11"/><path d="M-5,2 L-1,6 L6,-2"/></g>
+<text x="1305" y="290" font-size="18" fill="#1f2a30" text-anchor="middle" font-weight="700">出力の検査</text>
+<text x="1305" y="312" font-size="14" fill="#55626a" text-anchor="middle">形・数値・URL</text>
+<circle cx="1465" cy="232" r="32" fill="#ffffff" stroke="#f2a7a7" stroke-width="3"/>
+<g transform="translate(1465,232) scale(1.2307692307692308)" fill="none" stroke="#f2a7a7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="1465" y="290" font-size="18" fill="#1f2a30" text-anchor="middle" font-weight="700">Model Armor</text>
+<text x="1465" y="312" font-size="14" fill="#55626a" text-anchor="middle">出力を検査</text>
+<path d="M1021,232 L1109,232" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M1181,232 L1269,232" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<path d="M1341,232 L1429,232" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="1230" y="375" font-size="17" fill="#d9534f" text-anchor="middle" font-weight="700">検査できなければ、テンプレートの文に戻す</text>
+<rect x="900" y="440" width="300" height="270" fill="none" stroke="#f0b44c" stroke-width="4"/>
+<rect x="922" y="418" width="76.0" height="42" fill="#f7d48f"/>
+<text x="938" y="447" font-size="22" font-weight="700" fill="#1f2a30">実行</text>
+<circle cx="1154" cy="440" r="28" fill="#ffffff" stroke="#f0b44c" stroke-width="3"/>
+<g transform="translate(1154,440) scale(1.0769230769230769)" fill="none" stroke="#f0b44c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L13,-7 V7 L0,14 L-13,7 V-7 Z M-13,-7 L0,0 L13,-7 M0,0 V14"/></g>
+<circle cx="1050" cy="520" r="32" fill="#ffffff" stroke="#f0b44c" stroke-width="3"/>
+<g transform="translate(1050,520) scale(1.2307692307692308)" fill="none" stroke="#f0b44c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L13,-7 V7 L0,14 L-13,7 V-7 Z M-13,-7 L0,0 L13,-7 M0,0 V14"/></g>
+<text x="1050" y="578" font-size="18" fill="#1f2a30" text-anchor="middle" font-weight="700">Code Execution</text>
+<text x="1050" y="600" font-size="14" fill="#55626a" text-anchor="middle">生徒のコードを隔離</text>
+<text x="1050" y="640" font-size="16" fill="#1f2a30" text-anchor="middle" font-weight="700">＋ 実行ラッパー</text>
+<text x="1050" y="664" font-size="14" fill="#55626a" text-anchor="middle">危ない書き方を拒否・資源の上限</text>
+<rect x="1240" y="440" width="320" height="270" fill="none" stroke="#9b8cf2" stroke-width="4"/>
+<rect x="1262" y="418" width="142.0" height="42" fill="#cfc6fb"/>
+<text x="1278" y="447" font-size="22" font-weight="700" fill="#1f2a30">データと鍵</text>
+<circle cx="1514" cy="440" r="28" fill="#ffffff" stroke="#9b8cf2" stroke-width="3"/>
+<g transform="translate(1514,440) scale(1.0769230769230769)" fill="none" stroke="#9b8cf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="0" cy="-9" rx="12" ry="4.5"/><path d="M-12,-9 V9 A12,4.5 0 0 0 12,9 V-9 M-12,0 A12,4.5 0 0 0 12,0"/></g>
+<circle cx="1284" cy="504" r="22" fill="#ffffff" stroke="#9b8cf2" stroke-width="3"/>
+<g transform="translate(1284,504) scale(0.8461538461538461)" fill="none" stroke="#9b8cf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="0" cy="-9" rx="12" ry="4.5"/><path d="M-12,-9 V9 A12,4.5 0 0 0 12,9 V-9 M-12,0 A12,4.5 0 0 0 12,0"/></g>
+<text x="1322" y="500" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Firestore</text>
+<text x="1322" y="524" font-size="15" fill="#55626a" text-anchor="start">TTL で自動削除</text>
+<circle cx="1284" cy="578" r="22" fill="#ffffff" stroke="#9b8cf2" stroke-width="3"/>
+<g transform="translate(1284,578) scale(0.8461538461538461)" fill="none" stroke="#9b8cf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#9b8cf2"/></g>
+<text x="1322" y="574" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Secret Manager</text>
+<text x="1322" y="598" font-size="15" fill="#55626a" text-anchor="start">SESSION_SECRET</text>
+<circle cx="1284" cy="652" r="22" fill="#ffffff" stroke="#9b8cf2" stroke-width="3"/>
+<g transform="translate(1284,652) scale(0.8461538461538461)" fill="none" stroke="#9b8cf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<text x="1322" y="648" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Cloud KMS</text>
+<text x="1322" y="672" font-size="15" fill="#55626a" text-anchor="start">授業パッケージに署名</text>
+<rect x="40" y="770" width="360" height="110" fill="none" stroke="#8a9aa3" stroke-width="4"/>
+<rect x="62" y="748" width="76.0" height="42" fill="#d3dadd"/>
+<text x="78" y="777" font-size="22" font-weight="700" fill="#1f2a30">記録</text>
+<circle cx="354" cy="770" r="28" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(354,770) scale(1.0769230769230769)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<circle cx="88" cy="828" r="22" fill="#ffffff" stroke="#8a9aa3" stroke-width="3"/>
+<g transform="translate(88,828) scale(0.8461538461538461)" fill="none" stroke="#8a9aa3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,-14 H5 L10,-9 V14 H-10 Z"/><path d="M-6,-5 H6 M-6,1 H6 M-6,7 H2"/></g>
+<text x="126" y="824" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">Cloud Logging</text>
+<text x="126" y="848" font-size="15" fill="#55626a" text-anchor="start">監査ログ（コード・IP は残さない）</text>
+<rect x="450" y="770" width="1110" height="110" fill="none" stroke="#d9534f" stroke-width="4" stroke-dasharray="10 7"/>
+<rect x="472" y="748" width="252.0" height="42" fill="#f3c2c0"/>
+<text x="488" y="777" font-size="22" font-weight="700" fill="#1f2a30">教員PC（校内LAN版）</text>
+<circle cx="1514" cy="770" r="28" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1514,770) scale(1.0769230769230769)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-12" y="-11" width="24" height="16" rx="2"/><path d="M-16,9 H16"/></g>
+<circle cx="498" cy="828" r="22" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(498,828) scale(0.8461538461538461)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M0,-14 L12,-9 V0 C12,8 6,12 0,15 C-6,12 -12,8 -12,0 V-9 Z"/><path d="M-6,0 L-1.5,5 L7,-4"/></g>
+<text x="536" y="824" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">ECDSA 検証</text>
+<text x="536" y="848" font-size="15" fill="#55626a" text-anchor="start">本物のパッケージだけ</text>
+<circle cx="768" cy="828" r="22" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(768,828) scale(0.8461538461538461)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#d9534f"/></g>
+<text x="806" y="824" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">AES-GCM</text>
+<text x="806" y="848" font-size="15" fill="#55626a" text-anchor="start">暗号化して保存</text>
+<circle cx="1038" cy="828" r="22" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1038,828) scale(0.8461538461538461)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="-6" cy="-6" r="6.5"/><path d="M-1.5,-1.5 L13,13 M7,7 L10.5,3.5 M10,10 L13.5,6.5"/></g>
+<text x="1076" y="824" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">scrypt</text>
+<text x="1076" y="848" font-size="15" fill="#55626a" text-anchor="start">コードの照合</text>
+<circle cx="1308" cy="828" r="22" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(1308,828) scale(0.8461538461538461)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="0" cy="-10" r="4"/><circle cx="-11" cy="9" r="4"/><circle cx="11" cy="9" r="4"/><path d="M-2,-6.5 L-9,5.5 M2,-6.5 L9,5.5 M-7,9 H7"/></g>
+<text x="1346" y="824" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">LAN だけ</text>
+<text x="1346" y="848" font-size="15" fill="#55626a" text-anchor="start">外へは接続しない</text>
+<path d="M402,300 L448,300" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="425" y="286.0" font-size="14" fill="#1f2a30" text-anchor="middle" paint-order="stroke" stroke="#efefef" stroke-width="6">HTTPS</text>
+<path d="M852,250 L898,250" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="875" y="236" font-size="14" fill="#1f2a30" text-anchor="middle">検査</text>
+<path d="M852,560 L898,560" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="875" y="546" font-size="14" fill="#1f2a30" text-anchor="middle">コード</text>
+<path d="M852,700 L876,700 L876,732 L1400,732 L1400,714" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="1250" y="754" font-size="14" fill="#1f2a30" text-anchor="middle">読み書き・署名</text>
+<path d="M460,712 L380,766" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="470" y="744" font-size="14" fill="#1f2a30" text-anchor="start">監査ログ</text>
+<path d="M800,712 L800,766" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<text x="812" y="756" font-size="14" fill="#d9534f" text-anchor="start">授業パッケージ</text>
+</svg>
