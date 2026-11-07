@@ -118,19 +118,29 @@ def test_whole_class_continues_on_the_lan_and_results_return_to_the_cloud(client
     quiz = device.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers).json()
     submitted = device.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": answers_for(quiz)}, headers=headers)
     assert submitted.status_code == 200
+    # 解答のあとの振り返りも教室の端末からできる。説明は自分の言葉、ヒントは AI を使わない定型文
+    student_id = next(sid for sid, number in store.get_class(created["class_id"]).student_numbers.items() if number == "1")
+    key = store.get_answer_key(assignment, student_id)
+    line = service.explainable_lines({"graded": service.grade(key, answers_for(quiz))}, key)[0]
+    explained = device.post(f"/v1/assignments/{assignment}/attempt:explain", json={"line": line, "text": "合計に足す行"}, headers=headers)
+    assert explained.status_code == 200, explained.text
+    chat = device.post(f"/v1/assignments/{assignment}/attempt:chat", json={"message": "どこが違う？"}, headers=headers)
+    assert chat.status_code == 200 and chat.json()["by"] == "template" and chat.json()["remaining"] == service.CHAT_LIMIT - 1
 
     assert teacher_pc.post(f"/v1/assignments/{assignment}:close").status_code == 200
     view = teacher_pc.get(f"/v1/assignments/{assignment}/followups").json()
-    student_id = view["order"][0]["student_id"]
+    assert view["order"][0]["student_id"] == student_id
     teacher_pc.post(f"/v1/assignments/{assignment}/followups/{student_id}", json={"action": "ask_in_class"})
     results = teacher_pc.get(f"/v1/edge/results/{assignment}").json()
     assert results["attempts"][student_id]["answers"]
+    assert results["attempts"][student_id]["explanations"] == {str(line): "合計に足す行"}
 
     back_to_cloud(monkeypatch)
     response = client.post(f"/v1/assignments/{assignment}/edge-results", json=results, headers=TEACHER)
     assert response.json() == {"imported": 1, "skipped": 0}
     attempt = store.get_attempt(assignment, student_id)
     assert attempt["via"] == "lan" and attempt["submitted_at"] is not None
+    assert attempt["explanations"] == {str(line): "合計に足す行"}
     assert store.followups(assignment)[student_id]["action"] == "ask_in_class"
 
 
@@ -150,6 +160,27 @@ def test_cloud_regrades_lan_results_with_its_own_answer_key(client, store, monke
     assert all(item["correct"] for item in graded)
     # 2回目はクラウドの提出が正なので上書きしない
     assert client.post(f"/v1/assignments/{assignment}/edge-results", json=results, headers=TEACHER).json()["imported"] == 0
+
+
+def test_cloud_keeps_lan_explanations_only_for_lines_it_would_ask_about(client, store):
+    _, assignment = setup_open(client)
+    student_id = next(iter(store.get_class(store.get_assignment(assignment).class_id).student_numbers))
+    key = store.get_answer_key(assignment, student_id)
+    wrong = {qid: "0" for qid in key["questions"]}
+    line = service.explainable_lines({"graded": service.grade(key, wrong)}, key)[0]
+    now = time.time()
+    attempt = {"started_at": now - 60, "submitted_at": now, "answers": wrong}
+
+    def results(explanations):
+        return {"format": "mushitori-results-v1", "assignment_id": assignment, "attempts": {student_id: {**attempt, "explanations": explanations}}}
+
+    # 誤答した問いが指す行の説明だけ残す。問いと関係ない行や、空白だけの文は捨てる（ファイル全体は取り込む）
+    bad = {str(line): "この行で合計に足す", "9999": "関係ない行", str(line + 100): "   "}
+    assert client.post(f"/v1/assignments/{assignment}/edge-results", json=results(bad), headers=TEACHER).json()["imported"] == 1
+    assert store.get_attempt(assignment, student_id)["explanations"] == {str(line): "この行で合計に足す"}
+    # 長すぎる文、行番号でないキーはファイルごと断る
+    for explanations in ({str(line): "あ" * 301}, {"abc": "x"}, {"0": "x"}):
+        assert client.post(f"/v1/assignments/{assignment}/edge-results", json=results(explanations), headers=TEACHER).status_code == 422
 
 
 def test_every_lan_action_is_imported_into_the_cloud_and_the_student_record(client, store):

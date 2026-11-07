@@ -70,4 +70,4 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | `DELETE /v1/assignments/{id}`・`DELETE /v1/classes/{id}` | 教員 | 課題、またはクラスとそのすべてのデータを、期限を待たずに消す |
 | `POST /v1/assignments/{id}/package` | 教員 | 授業パッケージ（署名・暗号化）を作る。解除コードは1回だけ返す |
 | `POST /v1/assignments/{id}/attempt:submit-offline` | 生徒 | 通信が切れている間に端末にためた解答を送る |
-| `POST /v1/assignments/{id}/edge-results` | 教員 | 校内LAN版の結果を取り込み、クラウドの正解で採点し直す |
+| `POST /v1/assignments/{id}/edge-results` | 教員 | 校内LAN版の結果（解答、生徒の説明、処置）を取り込み、クラウドの正解で採点し直す |

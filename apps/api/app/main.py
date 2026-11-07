@@ -19,6 +19,7 @@ from .access import student_assignment
 from .csv_export import build_csv, csv_cell  # noqa: F401  csv_cell はテストが app.main から読む
 from .fields import (
     ACTIONS,
+    EXPLANATION_CHARS,
     GENERATION_STALE_SEC,
     MAX_ANSWERS,
     MAX_DURATION_MS,
@@ -44,7 +45,6 @@ MAX_BODY_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
 NO_CLASS_ID = "0" * 16
 MAX_STDIN_CHARS = 2_000
 NUMBER_PATTERN = r"^[A-Za-z0-9_-]{1,20}$"
-EXPLANATION_CHARS = 300
 QUESTION_TYPES = {"output", "trace", "impact"}
 # 画面のファイル。リポジトリでは apps/api/app/main.py から見て ../../web にある
 WEB_DIR = Path(os.environ.get("WEB_DIR") or Path(__file__).resolve().parents[2] / "web")

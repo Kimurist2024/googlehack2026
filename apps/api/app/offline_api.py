@@ -29,6 +29,8 @@ from .fields import (
     Action,
     AnswerText,
     AssignmentId,
+    ExplanationText,
+    LineNumber,
     ResourceId,
 )
 from .store import AssignmentRecord, ClassRecord, Store, is_expired
@@ -43,7 +45,8 @@ LAN_STUDENT_PATHS = [
     ("HEAD", re.compile(r"^/(?!v1/).*$")),
     ("GET", re.compile(r"^/v1/health$")),
     ("POST", re.compile(r"^/v1/sessions$")),
-    ("POST", re.compile(r"^/v1/assignments/[0-9a-f]{16}/attempt:(start|submit|submit-offline)$")),
+    # 解答のあとの振り返り（自分の言葉の説明、定型のヒント）も生徒の操作。校内LAN版では AI を使わないので外へは出ない
+    ("POST", re.compile(r"^/v1/assignments/[0-9a-f]{16}/attempt:(start|submit|submit-offline|explain|chat)$")),
 ]
 # 校内LAN版では使わない経路。問いを作るにはコードの実行と AI が要るので、クラウドでだけ行う
 LAN_DISABLED_PATHS = [
@@ -141,6 +144,8 @@ class EdgeAttempt(BaseModel):
     started_at: float = Field(ge=0)
     submitted_at: float | None = Field(default=None, ge=0)
     answers: dict[AnswerKey, AnswerText] = Field(default_factory=dict, max_length=MAX_ANSWERS)
+    # 生徒が校内LAN版で書いた、行ごとの自分の言葉の説明。取り込むときにクラウドの正解で行を確かめる
+    explanations: dict[LineNumber, ExplanationText] = Field(default_factory=dict, max_length=MAX_ANSWERS)
 
 
 class EdgeFollowup(BaseModel):
@@ -276,10 +281,15 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
                 continue
             store.start_attempt(assignment_id, student_id, item.started_at)
             graded = service.grade(key, item.answers)
-            if store.finish_attempt(assignment_id, student_id, graded, item.submitted_at, extra={"via": "lan"}):
-                imported += 1
-            else:
+            if not store.finish_attempt(assignment_id, student_id, graded, item.submitted_at, extra={"via": "lan"}):
                 skipped += 1
+                continue
+            imported += 1
+            # 説明は、クラウドの採点で「説明してもらう行」になった行だけを残す（LAN 側の判断は使わない）
+            allowed = set(service.explainable_lines(store.get_attempt(assignment_id, student_id), key))
+            for line, text in item.explanations.items():
+                if int(line) in allowed and text.strip():
+                    store.save_explanation(assignment_id, student_id, int(line), text.strip())
         for student_id, followup in body.followups.items():
             if student_id in classroom.student_numbers:
                 store.record_action(assignment_id, student_id, {**followup.model_dump(), "by": teacher, "via": "lan"})
@@ -388,7 +398,7 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
 
         @router.get("/v1/edge/results/{assignment_id}")
         def export_results(assignment_id: AssignmentId, request: Request, teacher: str = Depends(lan_teacher)) -> dict:
-            """クラウドに取り込むための結果。答えそのものではなく、生徒が書いた解答と時刻だけを出す。"""
+            """クラウドに取り込むための結果。正解や採点ではなく、生徒が書いた解答・説明と時刻、教員の処置だけを出す。"""
             assignment = store.get_assignment(assignment_id)
             if assignment is None:
                 raise HTTPException(status_code=404, detail="課題が見つかりません")
@@ -397,6 +407,7 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
                     "started_at": attempt["started_at"],
                     "submitted_at": attempt["submitted_at"],
                     "answers": {item["id"]: item["given"] for item in attempt.get("graded", [])},
+                    "explanations": attempt.get("explanations") or {},
                 }
                 for sid, attempt in store.attempts(assignment_id).items()
             }
