@@ -107,7 +107,7 @@ function richText(tag, text, className) {
 }
 
 function selectTab(name) {
-  for (const key of ["teacher", "student"]) {
+  for (const key of ["teacher", "student", "rsi"]) {
     $(key).hidden = key !== name;
     $(`tab-${key}`).setAttribute("aria-selected", String(key === name));
   }
@@ -116,6 +116,7 @@ function selectTab(name) {
 }
 $("tab-teacher").onclick = () => selectTab("teacher");
 $("tab-student").onclick = () => selectTab("student");
+$("tab-rsi").onclick = () => { selectTab("rsi"); window.loadRsiTest(); };
 $("to-student").onclick = () => selectTab("student");
 
 function setButtons({ generate = false, open = false, close = false }) {
