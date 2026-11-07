@@ -5,6 +5,7 @@
 
 const PENDING_KEY = "mushitori.pending.v1";
 const PENDING_LIMIT = 5;
+const FLUSH_INTERVAL_MS = 30000; // ためた解答を送り直す間隔
 
 // --- Service Worker：画面をオフラインでも開けるようにする ---
 // CSP で Trusted Types を必須にしているので、登録する URL は app.js のポリシー（trustedScriptURL）を通す
@@ -91,7 +92,7 @@ async function flushOfflineAnswers() {
 }
 
 window.addEventListener("online", flushOfflineAnswers);
-setInterval(flushOfflineAnswers, 30000);
+setInterval(flushOfflineAnswers, FLUSH_INTERVAL_MS);
 flushOfflineAnswers();
 
 // --- ①② 教員の画面 ---
@@ -125,7 +126,7 @@ function cloudCard() {
   const code = make("p", "", "code");
   save.onclick = () => guarded(async () => {
     if (!assignmentId) throw new Error("先に問いを作ってください。");
-    const pack = await api(`/v1/assignments/${assignmentId}/package`, { method: "POST", headers: await teacherHeaders() });
+    const pack = await teacherPost(`/v1/assignments/${assignmentId}/package`);
     download(pack.filename, pack.sealed, "application/octet-stream");
     code.textContent = `解除コード：${pack.unlock_code}`;
     status.textContent = `保存しました。${new Date(pack.not_after * 1000).toLocaleString("ja-JP")} まで使えます。`;
@@ -137,11 +138,7 @@ function cloudCard() {
   file.onchange = () => guarded(async () => {
     if (!file.files.length) return;
     const results = JSON.parse(await file.files[0].text());
-    const done = await api(`/v1/assignments/${results.assignment_id}/edge-results`, {
-      method: "POST",
-      headers: { ...(await teacherHeaders()), "Content-Type": "application/json" },
-      body: JSON.stringify(results),
-    });
+    const done = await teacherJson(`/v1/assignments/${results.assignment_id}/edge-results`, results);
     status.textContent = `${done.imported}人分を取り込みました（クラウドの正解で採点し直しています）。`;
     file.value = "";
   });
@@ -174,6 +171,7 @@ function lanCard(state) {
   };
   load.onclick = () => guarded(async () => {
     if (!file.files.length) throw new Error("授業パッケージのファイルを選んでください。");
+    // 教員の確認を先に済ませてから、ファイルと解除コードを読む（入力中に直したコードを使うため、この順を変えない）
     const imported = await api("/v1/edge/import", {
       method: "POST",
       headers: { ...(await teacherHeaders()), "Content-Type": "application/json" },
@@ -187,7 +185,7 @@ function lanCard(state) {
   const exportButton = make("button", "結果を書き出す");
   exportButton.onclick = () => guarded(async () => {
     if (!assignmentId) throw new Error("先に授業パッケージを取り込んでください。");
-    const results = await api(`/v1/edge/results/${assignmentId}`, { headers: await teacherHeaders() });
+    const results = await teacherGet(`/v1/edge/results/${assignmentId}`);
     download(`mushitori-results-${assignmentId}.json`, JSON.stringify(results), "application/json");
     status.textContent = "書き出しました。ネットが戻ったら、クラウドの「校内LANの結果を取り込む」から入れてください。";
   });

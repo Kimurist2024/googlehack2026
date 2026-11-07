@@ -7,6 +7,13 @@ const REASONS = {
   too_much_output: "出力が多すぎる", no_questions: "問いを作れない", sandbox_error: "実行環境の失敗", not_submitted: "未提出",
 };
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.14.1";
+// サーバー（apps/api/app/main.py）の上限に合わせた値
+const MAX_DURATION_MS = 60 * 60 * 1000; // 処置までにかかった時間（ActionIn.duration_ms）
+const CHAT_HISTORY_TURNS = 8; // 振り返りで送る、これまでのやりとりの数（ChatIn.history）
+const REASON_CHARS = 400; // 問題なしと判断した理由（ActionIn.reason）
+const EXPLANATION_CHARS = 300; // 生徒が書く行の説明（ExplainIn.text）
+const GENERATE_POLL_MS = 500; // 問いを作り終えたかを確かめる間隔
+const FOLLOWUP_WAIT_MS = 300; // 締切のあと、質問案ができるのを待ってから読み込む
 // CSP で Trusted Types を必須にしているので、読み込むスクリプトの URL はこのポリシーだけを通す。
 // 許すのは Firebase の SDK と Service Worker（offline.js）だけ。CSP が許すポリシー名は mushitori の1つなので、ここで1回だけ作る
 const scriptPolicy = window.trustedTypes?.createPolicy("mushitori", {
@@ -69,6 +76,18 @@ async function teacherHeaders() {
 }
 
 const teacherPost = async (path) => api(path, { method: "POST", headers: await teacherHeaders() });
+// 教員の GET
+const teacherGet = async (path) => api(path, { headers: await teacherHeaders() });
+// 教員が JSON を送る POST
+const teacherJson = async (path, body) => api(path, {
+  method: "POST",
+  headers: { ...(await teacherHeaders()), "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+// 生徒の認証。入室のときに受け取ったトークンを送る
+const studentHeaders = () => ({ Authorization: `Bearer ${studentToken}`, "Content-Type": "application/json" });
+// 生徒の POST。body がなければ本文は付けない（JSON.stringify(undefined) は undefined）
+const studentPost = (path, body) => api(path, { method: "POST", headers: studentHeaders(), body: JSON.stringify(body) });
 const setStatus = (text) => { $("status").textContent = text; };
 
 function make(tag, text, className) {
@@ -109,27 +128,30 @@ async function guarded(action) {
   try { await action(); } catch (error) { setStatus(error.message); }
 }
 
+// 個人コードの表の1行。「生徒画面で試す」で、そのコードを入れた生徒の画面に移る
+function codeRow(number, code, classCode) {
+  const row = make("tr");
+  row.append(make("td", number), make("td", code, "code"));
+  const cell = make("td");
+  const use = make("button", "生徒画面で試す");
+  use.type = "button";
+  use.onclick = () => {
+    $("class-input").value = classCode;
+    $("personal-input").value = code;
+    resetStudent();
+    selectTab("student");
+  };
+  cell.append(use);
+  row.append(cell);
+  return row;
+}
+
 $("seed").onclick = () => guarded(async () => {
   const created = await teacherPost("/v1/dev/seed");
   assignmentId = created.assignment_id;
   $("class-code").textContent = created.class_code;
   $("class-input").value = created.class_code;
-  $("codes").replaceChildren(...Object.entries(created.personal_codes).map(([number, code]) => {
-    const row = make("tr");
-    row.append(make("td", number), make("td", code, "code"));
-    const cell = make("td");
-    const use = make("button", "生徒画面で試す");
-    use.type = "button";
-    use.onclick = () => {
-      $("class-input").value = created.class_code;
-      $("personal-input").value = code;
-      resetStudent();
-      selectTab("student");
-    };
-    cell.append(use);
-    row.append(cell);
-    return row;
-  }));
+  $("codes").replaceChildren(...Object.entries(created.personal_codes).map(([number, code]) => codeRow(number, code, created.class_code)));
   $("codes-card").hidden = false;
   $("followups-card").hidden = true;
   classId = created.class_id;
@@ -159,8 +181,8 @@ $("generate").onclick = () => guarded(async () => {
   await teacherPost(`/v1/assignments/${assignmentId}:generate`);
   let state;
   do {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    state = await api(`/v1/assignments/${assignmentId}`, { headers: await teacherHeaders() });
+    await new Promise((resolve) => setTimeout(resolve, GENERATE_POLL_MS));
+    state = await teacherGet(`/v1/assignments/${assignmentId}`);
   } while (state.state === "generating");
   const ready = state.submissions.ready || 0;
   const excluded = state.submissions.excluded || 0;
@@ -181,7 +203,7 @@ $("close").onclick = () => guarded(async () => {
   setStatus("締め切りました。");
   lastActionAt = Date.now();
   $("followups-card").hidden = false;
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, FOLLOWUP_WAIT_MS));
   await loadFollowups();
 });
 
@@ -190,32 +212,32 @@ $("budget").onchange = () => guarded(loadFollowups);
 
 async function record(studentId, action, reason = "") {
   const duration = Date.now() - lastActionAt;
-  await api(`/v1/assignments/${assignmentId}/followups/${studentId}`, {
-    method: "POST",
-    headers: { ...(await teacherHeaders()), "Content-Type": "application/json" },
-    body: JSON.stringify({ action, reason, duration_ms: Math.min(duration, 3600000) }),
+  await teacherJson(`/v1/assignments/${assignmentId}/followups/${studentId}`, {
+    action, reason, duration_ms: Math.min(duration, MAX_DURATION_MS),
   });
   lastActionAt = Date.now();
   await loadFollowups();
 }
 
+const ACTION_LABEL = {
+  explained: "聞いて説明できた", not_explained: "説明が難しかった", ask_in_class: "あとで授業で聞く",
+  no_problem: "問題なし", question_bad: "問いが不適切",
+};
+
 function actionButtons(row) {
   const actions = make("div", undefined, "row");
-  // 質問案で聞いた結果は生徒の記録に残り、次の課題で AI が様子をまとめる材料になる
-  const explained = make("button", "聞いて説明できた", "primary");
-  explained.onclick = () => guarded(() => record(row.student_id, "explained"));
-  const struggled = make("button", "説明が難しかった");
-  struggled.onclick = () => guarded(() => record(row.student_id, "not_explained"));
-  const ask = make("button", "あとで授業で聞く");
-  ask.onclick = () => guarded(() => record(row.student_id, "ask_in_class"));
+  // 理由のいらない処置のボタン。文字は ACTION_LABEL と同じ
+  const plainButton = (action, className) => {
+    const button = make("button", ACTION_LABEL[action], className);
+    button.onclick = () => guarded(() => record(row.student_id, action));
+    return button;
+  };
   const fine = make("button", "問題なし＋理由");
-  const bad = make("button", "問いが不適切");
-  bad.onclick = () => guarded(() => record(row.student_id, "question_bad"));
   fine.onclick = () => {
     const form = make("form", undefined, "row reason");
     const input = make("input");
     input.required = true;
-    input.maxLength = 400;
+    input.maxLength = REASON_CHARS;
     input.placeholder = "問題なしと判断した理由";
     input.setAttribute("aria-label", "問題なしと判断した理由");
     const save = make("button", "理由を保存");
@@ -227,17 +249,23 @@ function actionButtons(row) {
     actions.replaceChildren(form);
     input.focus();
   };
-  actions.append(explained, struggled, ask, fine, bad);
+  // 質問案で聞いた結果（explained、not_explained）は生徒の記録に残り、次の課題で AI が様子をまとめる材料になる
+  actions.append(plainButton("explained", "primary"), plainButton("not_explained"), plainButton("ask_in_class"), fine, plainButton("question_bad"));
   return actions;
+}
+
+// まとめの見出し。AI が書いたときだけ印を付ける
+function badgeHead(title, isAi, badge) {
+  const head = make("p", undefined, "memo-head");
+  head.append(make("strong", title));
+  if (isAi) head.append(make("span", badge, "ai-badge"));
+  return head;
 }
 
 // クラス全体のつまずき。人数は集計そのもの、まとめは AI（または集計の文）
 function classSummaryBlock(summary, minStudents) {
   const box = make("div", undefined, "summary-box");
-  const head = make("p", undefined, "memo-head");
-  head.append(make("strong", "クラス全体のつまずき"));
-  if (summary && summary.by === "gemini") head.append(make("span", "AIのまとめ", "ai-badge"));
-  box.append(head);
+  box.append(badgeHead("クラス全体のつまずき", summary && summary.by === "gemini", "AIのまとめ"));
   if (!summary) {
     box.append(make("p", `解答した生徒が${minStudents}人以上になると、締切のときにまとめを作ります。`, "hint"));
     return box;
@@ -268,10 +296,7 @@ function evidenceDetails(row) {
 // 以前の締切で作った声かけメモ。新しい締切では reviewBlock を使う
 function memoBlock(row) {
   const box = make("div", undefined, "memo");
-  const head = make("p", undefined, "memo-head");
-  head.append(make("strong", "考えられるつまずき"));
-  if (row.memo.by === "gemini") head.append(make("span", "AIの推測", "ai-badge"));
-  box.append(head, richText("p", row.memo.hypothesis));
+  box.append(badgeHead("考えられるつまずき", row.memo.by === "gemini", "AIの推測"), richText("p", row.memo.hypothesis));
   box.append(make("p", "授業で聞いてみる", "memo-label"));
   const asks = make("ol", undefined, "memo-asks");
   for (const question of row.memo.questions) asks.append(richText("li", question));
@@ -309,10 +334,7 @@ function ownWords(line, text) {
 
 function reviewBlock(row) {
   const box = make("div", undefined, "memo");
-  const head = make("p", undefined, "memo-head");
-  head.append(make("strong", "本人の説明を聞きたい箇所"));
-  if (row.review.by === "gemini") head.append(make("span", "質問案とまとめはAI", "ai-badge"));
-  box.append(head);
+  box.append(badgeHead("本人の説明を聞きたい箇所", row.review.by === "gemini", "質問案とまとめはAI"));
   box.append(make("p", "書いた本人なら説明できるはずの箇所です。説明を聞いて確かめてください。AIを使ったかどうかの判定ではありません。", "hint"));
   for (const spot of row.review.spots) box.append(spotBlock(spot, row.explanations));
   const shown = new Set(row.review.spots.map((spot) => String(spot.line)));
@@ -321,11 +343,6 @@ function reviewBlock(row) {
   return box;
 }
 
-const ACTION_LABEL = {
-  explained: "聞いて説明できた", not_explained: "説明が難しかった", ask_in_class: "あとで授業で聞く",
-  no_problem: "問題なし", question_bad: "問いが不適切",
-};
-
 // 生徒ごとのこれまでの記録。開いたときに読み込む
 function historyDetails(row) {
   const details = make("details", undefined, "memo-evidence history");
@@ -333,7 +350,7 @@ function historyDetails(row) {
   details.ontoggle = () => guarded(async () => {
     if (!details.open || details.dataset.loaded) return;
     details.dataset.loaded = "1";
-    const record = await api(`/v1/assignments/${assignmentId}/students/${row.student_id}/record`, { headers: await teacherHeaders() });
+    const record = await teacherGet(`/v1/assignments/${assignmentId}/students/${row.student_id}/record`);
     if (!record.entries.length) {
       details.append(make("p", "まだ記録がありません。"));
       return;
@@ -355,25 +372,28 @@ function historyDetails(row) {
   return details;
 }
 
+// 声をかける順の、1人分のカード
+function followupCard(row, index) {
+  const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
+  card.append(make("h3", `${index + 1}. 番号 ${row.number}（${row.score}/${row.total} 問正解）`));
+  if (!row.in_budget && !row.action) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
+  if (row.review) card.append(reviewBlock(row));
+  else if (row.memo) card.append(memoBlock(row));
+  else if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
+  else card.append(make("p", "今回は、説明を聞きたい箇所はありません。", "hint"));
+  if (row.review && row.evidence.length) card.append(evidenceDetails(row));
+  card.append(historyDetails(row));
+  if (row.action) card.append(make("p", `処置済み：${ACTION_LABEL[row.action]}`, "done"));
+  else card.append(actionButtons(row));
+  return card;
+}
+
 async function loadFollowups() {
   const budget = Number($("budget").value) || 0;
-  const view = await api(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`, { headers: await teacherHeaders() });
+  const view = await teacherGet(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`);
   $("tau").textContent = `1人あたり ${Math.round(view.tau_sec)}秒として計算`;
   $("class-summary").replaceChildren(classSummaryBlock(view.class_summary, view.summary_min_students));
-  $("order").replaceChildren(...view.order.map((row, index) => {
-    const card = make("div", undefined, `card person${row.in_budget ? " now" : ""}`);
-    card.append(make("h3", `${index + 1}. 番号 ${row.number}（${row.score}/${row.total} 問正解）`));
-    if (!row.in_budget && !row.action) card.append(make("p", "持ち時間の外です。次の空き時間に回します。", "hint"));
-    if (row.review) card.append(reviewBlock(row));
-    else if (row.memo) card.append(memoBlock(row));
-    else if (row.question) card.append(make("p", `聞いてみる：${row.question}`, "ask"));
-    else card.append(make("p", "今回は、説明を聞きたい箇所はありません。", "hint"));
-    if (row.review && row.evidence.length) card.append(evidenceDetails(row));
-    card.append(historyDetails(row));
-    if (row.action) card.append(make("p", `処置済み：${ACTION_LABEL[row.action]}`, "done"));
-    else card.append(actionButtons(row));
-    return card;
-  }));
+  $("order").replaceChildren(...view.order.map(followupCard));
   const others = [];
   for (const item of view.not_attempted) others.push(`番号 ${item.number}：未解答`);
   for (const item of view.excluded) others.push(`番号 ${item.number}：${REASONS[item.reason] || item.reason}`);
@@ -407,10 +427,8 @@ $("chat-form").onsubmit = async (event) => {
   addChatMessage("student", message, "あなた");
   $("chat-input").value = "";
   try {
-    const reply = await api(`/v1/assignments/${studentAssignment}/attempt:chat`, {
-      method: "POST",
-      headers: studentHeaders(),
-      body: JSON.stringify({ message, history: chatHistory.slice(-8) }),
+    const reply = await studentPost(`/v1/assignments/${studentAssignment}/attempt:chat`, {
+      message, history: chatHistory.slice(-CHAT_HISTORY_TURNS),
     });
     addChatMessage("ai", reply.reply, reply.by === "gemini" ? "AI" : "ヒント");
     chatHistory.push({ role: "student", text: message }, { role: "ai", text: reply.reply });
@@ -453,8 +471,6 @@ $("login").onsubmit = async (event) => {
     $("login-error").textContent = error.message;
   }
 };
-
-const studentHeaders = () => ({ Authorization: `Bearer ${studentToken}`, "Content-Type": "application/json" });
 
 function showCode(element, code) {
   element.replaceChildren(...code.replace(/\n$/, "").split("\n").map((line) => make("span", line || " ", "ln")));
@@ -507,7 +523,7 @@ function startTimer(seconds) {
 $("start").onclick = async () => {
   $("start-error").textContent = "";
   try {
-    const quiz = await api(`/v1/assignments/${studentAssignment}/attempt:start`, { method: "POST", headers: studentHeaders() });
+    const quiz = await studentPost(`/v1/assignments/${studentAssignment}/attempt:start`);
     studentCode = quiz.code;
     showCode($("code"), quiz.code);
     $("stdin").textContent = quiz.stdin ? `入力：${quiz.stdin.trim()}` : "";
@@ -520,27 +536,26 @@ $("start").onclick = async () => {
   }
 };
 
+// 採点結果の1問分
+function resultCard(item) {
+  const card = make("div", undefined, "card");
+  card.append(richText("p", item.stem));
+  card.append(make("p", item.correct ? "正解" : "もう一度たどってみましょう", `mark ${item.correct ? "good" : "bad"}`));
+  card.append(make("p", `あなたの答え：${item.given || "（未回答）"} ／ 正解：${item.answer}`));
+  card.append(make("p", item.explanation, "hint"));
+  return card;
+}
+
 $("quiz").onsubmit = async (event) => {
   event.preventDefault();
   const answers = {};
   for (const [name, value] of new FormData($("quiz")).entries()) answers[name] = String(value);
   try {
-    const result = await api(`/v1/assignments/${studentAssignment}/attempt:submit`, {
-      method: "POST",
-      headers: studentHeaders(),
-      body: JSON.stringify({ answers }),
-    });
+    const result = await studentPost(`/v1/assignments/${studentAssignment}/attempt:submit`, { answers });
     clearInterval(timerHandle);
     $("score").textContent = `${result.total}問中 ${result.score}問 正解`;
     $("notice").textContent = result.notice;
-    $("result-items").replaceChildren(...result.results.map((item) => {
-      const card = make("div", undefined, "card");
-      card.append(richText("p", item.stem));
-      card.append(make("p", item.correct ? "正解" : "もう一度たどってみましょう", `mark ${item.correct ? "good" : "bad"}`));
-      card.append(make("p", `あなたの答え：${item.given || "（未回答）"} ／ 正解：${item.answer}`));
-      card.append(make("p", item.explanation, "hint"));
-      return card;
-    }));
+    $("result-items").replaceChildren(...result.results.map(resultCard));
     showCode($("trace"), result.trace.join("\n"));
     $("trace").style.counterReset = "none";
     showExplainItems(result.results);
@@ -554,44 +569,43 @@ $("quiz").onsubmit = async (event) => {
   }
 };
 
+// 1行分の、自分の言葉で説明を書く欄。codeLines は生徒のコードを行に分けたもの
+function explanationForm(line, codeLines) {
+  const form = make("form", undefined, "explain-item");
+  const where = make("p", undefined, "spot-where");
+  where.append(make("strong", `${line}行目`), make("code", (codeLines[line - 1] || "").trim()));
+  const text = make("textarea");
+  text.maxLength = EXPLANATION_CHARS;
+  text.rows = 3;
+  text.required = true;
+  text.placeholder = "例：この行では、60点以上のときだけ合計に足している。";
+  text.setAttribute("aria-label", `${line}行目の説明`);
+  const save = make("button", "先生に送る");
+  const state = make("p", undefined, "hint");
+  state.setAttribute("role", "status");
+  form.append(where, text, make("div", undefined, "row"), state);
+  form.querySelector(".row").append(save);
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    save.disabled = true;
+    state.textContent = "";
+    try {
+      await studentPost(`/v1/assignments/${studentAssignment}/attempt:explain`, { line, text: text.value });
+      state.textContent = "送りました。書き直して、もう一度送ることもできます。";
+    } catch (error) {
+      state.textContent = error.message;
+    }
+    save.disabled = false;
+  };
+  return form;
+}
+
 // まちがえた問いが指す行ごとに、自分の言葉で説明を書く欄を出す。AI は使わず、そのまま先生に届く
 function showExplainItems(results) {
   const codeLines = studentCode.split("\n");
   const lines = [...new Set(results.filter((item) => !item.correct && item.line).map((item) => item.line))].sort((a, b) => a - b);
   $("explain-card").hidden = !lines.length;
-  $("explain-items").replaceChildren(...lines.map((line) => {
-    const form = make("form", undefined, "explain-item");
-    const where = make("p", undefined, "spot-where");
-    where.append(make("strong", `${line}行目`), make("code", (codeLines[line - 1] || "").trim()));
-    const text = make("textarea");
-    text.maxLength = 300;
-    text.rows = 3;
-    text.required = true;
-    text.placeholder = "例：この行では、60点以上のときだけ合計に足している。";
-    text.setAttribute("aria-label", `${line}行目の説明`);
-    const save = make("button", "先生に送る");
-    const state = make("p", undefined, "hint");
-    state.setAttribute("role", "status");
-    form.append(where, text, make("div", undefined, "row"), state);
-    form.querySelector(".row").append(save);
-    form.onsubmit = async (event) => {
-      event.preventDefault();
-      save.disabled = true;
-      state.textContent = "";
-      try {
-        await api(`/v1/assignments/${studentAssignment}/attempt:explain`, {
-          method: "POST",
-          headers: studentHeaders(),
-          body: JSON.stringify({ line, text: text.value }),
-        });
-        state.textContent = "送りました。書き直して、もう一度送ることもできます。";
-      } catch (error) {
-        state.textContent = error.message;
-      }
-      save.disabled = false;
-    };
-    return form;
-  }));
+  $("explain-items").replaceChildren(...lines.map((line) => explanationForm(line, codeLines)));
 }
 
 function loadScript(src) {
@@ -651,7 +665,7 @@ async function setupTeacherAuth() {
       return;
     }
     try {
-      const me = await api("/v1/me", { headers: await teacherHeaders() });
+      const me = await teacherGet("/v1/me");
       rememberTeacher(true);
       showSignedIn(me.email);
     } catch (error) {

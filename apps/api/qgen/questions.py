@@ -99,7 +99,7 @@ def build_candidates(result: dict, stdin: str, seed: str) -> list[Question]:
     usable = [key for key, entries in series.items() if len(entries) >= 3]
     for number, key in enumerate(usable, start=1):
         entries = series[key]
-        position = rng.randrange(2, min(len(entries), 6)) if len(entries) > 2 else 2
+        position = rng.randrange(2, min(len(entries), 6))
         chosen = entries[position]
         values = [_printable(entry["value"]) for entry in entries]
         scope, name = key

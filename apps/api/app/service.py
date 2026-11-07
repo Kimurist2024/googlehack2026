@@ -12,7 +12,7 @@ from qgen.questions import IMPACT, OUTPUT, TRACE, build_candidates, seeded_rando
 from qgen.sandbox import Sandbox
 
 from . import insight
-from .ordering import Candidate, rank, tau_from, within_budget
+from .ordering import Candidate, Ranked, rank, tau_from, within_budget
 from .store import AssignmentRecord, ClassRecord, Store
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ MIN_STUDENTS_FOR_SUMMARY = 3
 TYPE_LABELS = {OUTPUT: "出力の予測", TRACE: "変数の追跡", IMPACT: "変更の影響"}
 # 振り返りの質問は1人1課題あたりこの回数まで。Gemini の費用を抑える
 CHAT_LIMIT = 10
+RESULT_NOTICE = "この結果は成績には使いません。"
 # 隔離環境が返す理由のうち、保存して画面やCSVに出してよいもの。隔離環境の出力は信用しない
 EXCLUSION_REASONS = {
     "syntax_error",
@@ -169,6 +170,22 @@ def grade(key: dict, answers: dict[str, str]) -> list[dict]:
     return graded
 
 
+def score(graded: list[dict]) -> int:
+    """採点結果から正答数を数える。"""
+    return sum(1 for item in graded if item["correct"])
+
+
+def result_view(graded: list[dict], key: dict) -> dict:
+    """生徒に返す採点結果と実行の記録をまとめる。"""
+    return {
+        "score": score(graded),
+        "total": len(graded),
+        "results": graded,
+        "trace": key["trace"],
+        "notice": RESULT_NOTICE,
+    }
+
+
 def lined_items(attempt: dict, key: dict) -> list[dict]:
     """採点結果に、問いが指す行を添える。行は解答の前に保存した正解の側から取る。"""
     return [
@@ -220,7 +237,7 @@ def create_followups(store: Store, assignment: AssignmentRecord, ai: QuizAI) -> 
                 "closed_at": closed_at,
                 # 元の課題と同じ期限で、記録からも消える（生徒のデータの保存期間をそろえる）
                 "expire_at": assignment.expire_at,
-                "score": sum(1 for item in items if item["correct"]),
+                "score": score(items),
                 "total": len(items),
                 "wrong_types": sorted({item["type"] for item in items if not item["correct"]}),
                 "constructs": insight.constructs_in(code),
@@ -278,6 +295,26 @@ def chat_context(store: Store, assignment_id: str, student_id: str, attempt: dic
     return {"code": quiz["code"], "stdin": quiz["stdin"], "results": results, "trace": key["trace"][:80]}
 
 
+def _followup_row(item: Ranked, number: str, attempt: dict, record: dict, in_budget: bool) -> dict:
+    """採点結果と声かけの記録を、生徒1人分の表示にまとめる。"""
+    return {
+        "student_id": item.student_id,
+        "number": number,
+        "t_sec": round(item.t, 1),
+        "score": score(attempt["graded"]),
+        "total": len(attempt["graded"]),
+        "in_budget": in_budget,
+        "question": record.get("question"),
+        "review": record.get("review"),
+        "memo": record.get("memo"),  # 以前の形の声かけメモ。新しい締切では作らない
+        # 生徒が自分の言葉で書いた説明。行番号（文字列）-> 本文
+        "explanations": attempt.get("explanations") or {},
+        # 根拠は AI ではなく採点結果からそのまま出す
+        "evidence": [{"stem": g["stem"], "given": g["given"], "answer": g["answer"]} for g in attempt["graded"] if not g["correct"]],
+        "action": record.get("action"),
+    }
+
+
 def followup_view(store: Store, assignment: AssignmentRecord, classroom: ClassRecord, budget_sec: float) -> dict:
     submissions = store.submission_statuses(assignment.id)
     attempts = store.attempts(assignment.id)
@@ -305,24 +342,7 @@ def followup_view(store: Store, assignment: AssignmentRecord, classroom: ClassRe
         record = followups.get(item.student_id, {})
         attempt = attempts[item.student_id]
         rows.append(
-            {
-                "student_id": item.student_id,
-                "number": classroom.student_numbers[item.student_id],
-                "t_sec": round(item.t, 1),
-                "score": sum(1 for g in attempt["graded"] if g["correct"]),
-                "total": len(attempt["graded"]),
-                "in_budget": item.student_id in in_budget,
-                "question": record.get("question"),
-                "review": record.get("review"),
-                "memo": record.get("memo"),  # 以前の形の声かけメモ。新しい締切では作らない
-                # 生徒が自分の言葉で書いた説明。行番号（文字列）-> 本文
-                "explanations": attempt.get("explanations") or {},
-                # 根拠は AI ではなく採点結果からそのまま出す
-                "evidence": [
-                    {"stem": g["stem"], "given": g["given"], "answer": g["answer"]} for g in attempt["graded"] if not g["correct"]
-                ],
-                "action": record.get("action"),
-            }
+            _followup_row(item, classroom.student_numbers[item.student_id], attempt, record, item.student_id in in_budget)
         )
     return {
         "tau_sec": tau,
