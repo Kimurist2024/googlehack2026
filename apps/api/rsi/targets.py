@@ -16,6 +16,8 @@ class Target:
     build: Callable[[str], Pipeline]  # 指示文 → 評価できる流れ
     notes: Callable[[], list[dict]] = field(default=lambda: [])  # 直前に組み立てた流れの出力の記録
     api_errors: Callable[[], int] = field(default=lambda: 0)  # 直前に組み立てた流れで、AI の呼び出しが失敗した回数
+    # この段階の指示文で直せる失敗か（失敗, 出力の記録）。直せない失敗は改善役に見せない
+    fixable: Callable[[dict, list[dict]], bool] = field(default=lambda failure, notes: True)
 
 
 def probe_planner(client, model: str, sandbox) -> Target:
@@ -39,4 +41,9 @@ def probe_planner(client, model: str, sandbox) -> Target:
     def api_errors() -> int:
         return last["planner"].api_errors if "planner" in last else 0
 
-    return Target(PROBE_TARGET, load_active(PROBE_TARGET), build, notes, api_errors)
+    def fixable(failure: dict, notes: list[dict]) -> bool:
+        """構造の主張に確かめる実行を作らなかったときは、判定は根拠探し（偽物）のもので、この指示文では直せない。"""
+        planned = {note["claim"] for note in notes}
+        return not (failure.get("claim_kind") == "structure" and failure.get("pred_claim") not in planned)
+
+    return Target(PROBE_TARGET, load_active(PROBE_TARGET), build, notes, api_errors, fixable)

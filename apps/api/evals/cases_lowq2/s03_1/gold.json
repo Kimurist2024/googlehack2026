@@ -1,0 +1,52 @@
+{
+  "split": "heldout",
+  "goal": "入力と出力を、具体的な値で確かめられる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた s03 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "-5と5を入れると0と表示されます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "-5\n5\n"
+      }
+    },
+    {
+      "id": "g2",
+      "text": "10と20を入れると30と表示されます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "30",
+        "function": "",
+        "args": "[]",
+        "stdin": "10\n20\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "3と4を入れると7と表示されます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "7",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n4\n"
+      }
+    }
+  ]
+}

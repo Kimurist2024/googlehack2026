@@ -1,0 +1,1 @@
+count_wordsという関数を作った。'a a a'を数えると{'a': 3}になるはず。'apple banana apple'だと{'apple': 2, 'banana': 1}になる（たぶん）。何も書いてない文だと{}になる。

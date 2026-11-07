@@ -1,0 +1,1 @@
+関数count_vowelsを書きました。count_vowels('education')は5が返る。bananaの母音は3個と数えられる。空の文字列なら1になるはず。母音がない'sky'は0になります。

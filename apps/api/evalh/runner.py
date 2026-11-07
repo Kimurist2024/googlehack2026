@@ -4,6 +4,7 @@
 heldout の提出物はここに渡さないこと（cases.load_cases で split を分ける）。
 """
 import random
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 
 from . import budget, metrics, teacher
@@ -48,8 +49,7 @@ def _in_evidence(line: int, evidence: tuple[tuple[int, int], ...]) -> bool:
     return any(start <= line <= end for start, end in evidence)
 
 
-def _evaluate_case(case: Case, pipeline: Pipeline, config: EvalConfig, tally: _Tally) -> None:
-    result = pipeline.run(case.input)
+def _evaluate_case(case: Case, result, config: EvalConfig, tally: _Tally) -> None:
     check_result(result)
     nodes = {node.id: node for node in result.nodes}
     findings = {finding.claim_id: finding for finding in result.findings}
@@ -81,9 +81,9 @@ def _evaluate_case(case: Case, pipeline: Pipeline, config: EvalConfig, tally: _T
         tally.feedback_rows.append((f"{case.id}/{pred_id}", p, claim.is_gap))
         node = nodes.get(finding.node_id) if finding and finding.node_id else None
         if claim.is_gap and p < config.flag_threshold:
-            fail("missed_gap", gold_claim=claim.text, pred_claim=pred_text[pred_id], p=p, node=_where(node))
+            fail("missed_gap", gold_claim=claim.text, claim_kind=claim.kind, pred_claim=pred_text[pred_id], p=p, node=_where(node))
         if not claim.is_gap and p >= config.flag_threshold:
-            fail("false_alarm", gold_claim=claim.text, label=claim.label, pred_claim=pred_text[pred_id], p=p, node=_where(node))
+            fail("false_alarm", gold_claim=claim.text, label=claim.label, claim_kind=claim.kind, pred_claim=pred_text[pred_id], p=p, node=_where(node))
         if claim.evidence:
             tally.evidence_total += 1
             if node is not None and node.level == LINE and _in_evidence(node.start, claim.evidence):
@@ -140,10 +140,16 @@ def _feedback(rows: list[tuple[str, float, bool]], config: EvalConfig) -> dict |
     }
 
 
-def evaluate(pipeline: Pipeline, cases: list[Case], config: EvalConfig = EvalConfig()) -> dict:
+def evaluate(pipeline: Pipeline, cases: list[Case], config: EvalConfig = EvalConfig(), workers: int = 1) -> dict:
+    """workers > 1 のときは、提出物ごとの流れを並行に動かす（AI の待ち時間を重ねる）。集計は順番どおり。"""
     tally = _Tally()
-    for case in cases:
-        _evaluate_case(case, pipeline, config, tally)
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(lambda case: pipeline.run(case.input), cases))
+    else:
+        results = [pipeline.run(case.input) for case in cases]
+    for case, result in zip(cases, results):
+        _evaluate_case(case, result, config, tally)
     total_gaps = sum(tally.gaps_by_student.values())
     budgets = list(config.budgets)
     return {

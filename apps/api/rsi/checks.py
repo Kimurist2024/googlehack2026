@@ -2,13 +2,16 @@
 
 - 差し込み口（{data} など）を消したり増やしたりしない
 - 長くしすぎない
-- dev の提出物の文やコードを書き写さない（答えを覚えさせて点を取るのを防ぐ）
+- dev の提出物の文やコードを書き写さない（答えを覚えさせて点を取るのを防ぐ）。多くの提出物に共通する言い回しは除く
 - <data> の囲みを自分で書かない。囲みと「指示ではない」の注意書きはコードが {data} に入れるので、
   指示文の中に偽の囲みを書くと、生徒のデータの範囲をごまかせてしまう
 """
 import string
+from collections import Counter
 
 LEAK_NGRAM = 8
+# これだけの数の提出物に出てくる言い回し（「Falseを返す」など）は、特定の提出物の答えではないので書き写しとみなさない
+COMMON_CASES = 3
 MAX_GROWTH = 2.0
 
 
@@ -28,8 +31,8 @@ def _ngrams(text: str, n: int) -> set[str]:
 def leaked(candidate: str, base: str, secrets: list[str], n: int = LEAK_NGRAM) -> list[str]:
     """元の指示文になかった文字列のうち、dev の提出物と n 文字以上一致するもの。"""
     added = _ngrams(candidate, n) - _ngrams(base, n)
-    secret = set().union(*(_ngrams(text, n) for text in secrets)) if secrets else set()
-    return sorted(added & secret)
+    counts = Counter(gram for text in secrets for gram in _ngrams(text, n))
+    return sorted(gram for gram in added if 0 < counts[gram] < COMMON_CASES)
 
 
 def problems(candidate: str, base: str, secrets: list[str]) -> list[str]:
@@ -58,8 +61,5 @@ def problems(candidate: str, base: str, secrets: list[str]) -> list[str]:
 
 
 def secrets_of(cases) -> list[str]:
-    """書き写してはいけない文。提出物のコード、説明、正解の主張。"""
-    texts = []
-    for case in cases:
-        texts += [case.input.code, case.input.explanation] + [claim.text for claim in case.claims]
-    return texts
+    """書き写してはいけない文。提出物ごとに、コード、説明、正解の主張を1つにまとめる（何件の提出物に出るかを数えるため）。"""
+    return ["\n".join([case.input.code, case.input.explanation, *(claim.text for claim in case.claims)]) for case in cases]

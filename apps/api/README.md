@@ -45,6 +45,7 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | [`rsi/`](./rsi/) | 指示文の自動改善。評価ハーネスの点数で候補を選び、記録を残す |
 | [`evals/cases/`](./evals/cases/) | 評価用の模擬提出物と正解（合成データ。dev と heldout に分ける。`weak/` は説明の下手な生徒役） |
 | [`evals/cases_lowq/`](./evals/cases_lowq/) | 小さなモデル（Qwen2.5-Coder-1.5B）が書いた質の低い提出物と、人が付けた正解（合成データ） |
+| [`evals/cases_lowq2/`](./evals/cases_lowq2/) | 4つの小さなモデルが書いたコード（クセを取ったもの）と生徒らしい説明。動きの主張の正解は実行で決める（合成データ） |
 | [`tests/unit/`](./tests/unit/) | 単体テスト |
 | [`tests/integration/`](./tests/integration/) | 結合テスト（攻撃の入力、保存期間、校内LAN版を含む） |
 | [`scripts/dev.sh`](./scripts/dev.sh) | 手元の開発サーバー（合成データ専用） |

@@ -1,5 +1,7 @@
 # セキュリティ設計
 
+[README](./README.md) ｜ [RSI](./RSI.md) ｜ [Security](./SECURITY.md)
+
 ムシトリは、高校生が書いたコードを実行し、その結果を Gemini に渡し、採点結果を教員に返します。生徒のコードもAIへの入力も「信用できないデータ」として扱うことを出発点に、Google が公開している考え方（[SAIF](https://saif.google/secure-ai-framework)、Strict CSP と Trusted Types、鍵の用途分離、最小権限）に沿って、層を重ねて守ります。
 
 ## 用語ミニ辞典

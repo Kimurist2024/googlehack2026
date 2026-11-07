@@ -1,0 +1,89 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた s06 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文を使って1つずつ見ている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "5を入れると最初に5が表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "5",
+        "function": "",
+        "args": "[]",
+        "stdin": "5\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "3を入れると最後に発射と表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "3を入れると0まで表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "3を入力したら1も出る",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    }
+  ]
+}

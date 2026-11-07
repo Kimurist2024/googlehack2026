@@ -142,10 +142,25 @@ def warm_up(shared_ai: Callable[[], QuizAI]) -> None:
             logger.warning("起動直後の準備に失敗しました step=%s", name, exc_info=True)
 
 
+# RSIテスト（保存済みの合成データの記録を再生するタブ）の記録。起動オプションのときだけ配る
+RSI_TEST_ASSETS = "rsi-test-assets"
+
+
+def rsi_test_enabled() -> bool:
+    """RSIテストを出すか。手元の開発で RSI_TEST=1（scripts/dev.sh --rsi-test）のときだけ。"""
+    return auth.is_local() and os.environ.get("RSI_TEST") == "1"
+
+
 class NoCacheStaticFiles(StaticFiles):
     """手元の開発で画面を配る。本番の Firebase Hosting（firebase.json）と同じく、毎回配信元に新しい版を確かめさせる。"""
 
+    def __init__(self, *args, rsi_test: bool = False, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._rsi_test = rsi_test
+
     async def get_response(self, path, scope):
+        if not self._rsi_test and path.replace("\\", "/").split("/")[0] == RSI_TEST_ASSETS:
+            raise HTTPException(status_code=404)
         response = await super().get_response(path, scope)
         response.headers["cache-control"] = "no-cache"
         return response
@@ -215,7 +230,8 @@ def create_app(
     # Cloud Run は末尾が z のパス（/healthz など）を予約していて、アプリまで届かない
     @app.get("/v1/health")
     def health() -> dict:
-        return {"status": "ok"}
+        # rsi_test は画面が「RSIテスト」のタブを出すかどうかに使う
+        return {"status": "ok", "rsi_test": rsi_test_enabled()}
 
     @app.get("/v1/me")
     def me(teacher: str = Depends(auth.current_teacher)) -> dict:
@@ -508,5 +524,5 @@ def create_app(
 
     if os.environ.get("SERVE_WEB") == "1":
         # 手元の開発だけで使う。本番の画面は Firebase Hosting が apps/web から配る
-        app.mount("/", NoCacheStaticFiles(directory=WEB_DIR, html=True), name="web")
+        app.mount("/", NoCacheStaticFiles(directory=WEB_DIR, html=True, rsi_test=rsi_test_enabled()), name="web")
     return app

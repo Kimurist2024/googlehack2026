@@ -1,0 +1,91 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c11 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "関数cumulativeを書きました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "マイナスの日がある[3, -1, 2]は[3, 2, 4]になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[3, 2, 4]",
+        "function": "cumulative",
+        "args": "[[3, -1, 2]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "cumulative([1, 2, 3])は[1, 3, 6]を返す",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 3, 6]",
+        "function": "cumulative",
+        "args": "[[1, 2, 3]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "1日分だけの[5]なら[5]になると思う",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[5]",
+        "function": "cumulative",
+        "args": "[[5]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "空のリストなら[]を返すはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "cumulative",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

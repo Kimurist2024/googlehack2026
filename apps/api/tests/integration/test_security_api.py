@@ -59,6 +59,36 @@ def test_static_pages_carry_the_same_policy(monkeypatch, store):
     assert "<script>" not in page.text and "onclick" not in page.text
 
 
+RSI_DATA = "/rsi-test-assets/rsi-demo.json"
+
+
+def local_web(monkeypatch, store, rsi_test: str | None) -> TestClient:
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("SERVE_WEB", "1")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    if rsi_test is None:
+        monkeypatch.delenv("RSI_TEST", raising=False)
+    else:
+        monkeypatch.setenv("RSI_TEST", rsi_test)
+    return TestClient(create_app(store, LocalDevSandbox, TemplateAI))
+
+
+def test_rsi_test_is_off_unless_started_with_the_option(monkeypatch, store):
+    """RSIテストの記録とタブは、起動オプション（RSI_TEST=1）のときだけ。"""
+    off = local_web(monkeypatch, store, None)
+    assert off.get("/v1/health").json() == {"status": "ok", "rsi_test": False}
+    assert off.get(RSI_DATA).status_code == 404
+    assert off.get("/app.js").status_code == 200
+    on = local_web(monkeypatch, store, "1")
+    assert on.get("/v1/health").json()["rsi_test"] is True
+    assert on.get(RSI_DATA).json()["synthetic"] is True
+
+
+def test_rsi_test_never_turns_on_in_production(monkeypatch, store):
+    monkeypatch.setenv("RSI_TEST", "1")
+    assert production_client(monkeypatch, store).get("/v1/health").json()["rsi_test"] is False
+
+
 def test_production_hides_api_docs_and_sends_hsts(monkeypatch, store):
     production = production_client(monkeypatch, store)
     assert production.get("/docs").status_code == 404

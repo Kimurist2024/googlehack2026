@@ -1,0 +1,74 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた s01 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "79を入力するとCが出るはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "C",
+        "function": "",
+        "args": "[]",
+        "stdin": "79\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "100を入力するとAと出る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "100\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "80を入力するとAが出るはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "80\n"
+      }
+    }
+  ]
+}

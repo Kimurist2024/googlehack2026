@@ -1,0 +1,74 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた p01 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "11は表示されない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "11",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "最後に発射と表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "10は表示されない",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "10",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

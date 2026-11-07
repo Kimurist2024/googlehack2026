@@ -1,0 +1,94 @@
+{
+  "split": "heldout",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた p02 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文を使って1つずつ見ている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "15という数字は表示されない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "15",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "29はそのまま29と表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "29",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "30という数字は出ない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "30",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "FizzBuzzもちゃんと表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "FizzBuzz",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

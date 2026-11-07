@@ -237,3 +237,60 @@ def test_planner_counts_api_failures_but_not_bad_answers():
     garbled = GeminiProbePlanner(Client("not json"), "m")
     garbled.plan("空のリストでも動く", "def f(x):\n    return x\n")
     assert garbled.api_errors == 0
+
+
+def test_planner_retries_temporary_errors_before_giving_up(monkeypatch):
+    """429 のような一時的な失敗は待ってやり直す。続けて失敗したときだけ api_errors に数える。"""
+    from qgen import probes
+    from qgen.probes import GeminiProbePlanner
+
+    monkeypatch.setattr(probes.time, "sleep", lambda seconds: None)
+
+    class Busy(Exception):
+        code = 429
+
+    class Client:
+        def __init__(self, failures):
+            self.models, self.calls, self._failures = self, 0, failures
+
+        def generate_content(self, **kwargs):
+            self.calls += 1
+            if self.calls <= self._failures:
+                raise Busy("429 RESOURCE_EXHAUSTED")
+            return type("Response", (), {"text": '{"probes": []}'})()
+
+    code = "def f(x):\n    return x\n"
+    recovered = GeminiProbePlanner(Client(2), "m")
+    recovered.plan("空のリストでも動く", code)
+    assert (recovered.api_errors, recovered._client.calls) == (0, 3)
+    stuck = GeminiProbePlanner(Client(99), "m")
+    stuck.plan("空のリストでも動く", code)
+    assert (stuck.api_errors, stuck._client.calls) == (1, 1 + len(probes.RETRY_WAITS))
+
+
+def test_proposer_sees_only_failures_this_prompt_can_fix():
+    """点数に入らない失敗（根拠の場所）と、偽物の部品が判定した構造の主張の失敗は、改善役に見せない。"""
+    import random
+
+    from rsi.loop import _failures_for_proposer
+    from rsi.targets import probe_planner
+
+    target = probe_planner(client=None, model="m", sandbox=None)
+    failures = [
+        {"kind": "wrong_evidence", "gold_claim": "a"},
+        {"kind": "false_alarm", "claim_kind": "structure", "pred_claim": "forでくり返している"},
+        {"kind": "false_alarm", "claim_kind": "structure", "pred_claim": "関数fを作った"},
+        {"kind": "missed_gap", "claim_kind": "behavior", "pred_claim": "f(0)は1"},
+    ]
+    notes = [{"claim": "関数fを作った"}]  # 構造の主張なのに確かめる実行を作った → 指示文の誤り
+    shown = _failures_for_proposer({"failures": failures}, random.Random(0), target, notes)
+    assert sorted(f["pred_claim"] for f in shown) == ["f(0)は1", "関数fを作った"]
+
+
+def test_common_phrasing_is_not_a_leak_but_case_specific_text_is():
+    from rsi.checks import leaked
+
+    secrets = ["is_prime(1)はFalseを返す", "is_leap(2023)はFalseを返す", "is_even(3)はFalseを返す", "find_index(['sato', 'suzuki'], 'yamada')は-1"]
+    base = "主張を確かめる。{data}"
+    assert leaked("真偽を返す関数で「Falseを返す」なら returns を使う。" + base, base, secrets) == []
+    assert leaked("例: find_index(['sato', 'suzuki'], 'yamada') を使う。" + base, base, secrets)

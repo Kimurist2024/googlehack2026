@@ -1,0 +1,1 @@
+is_palindromeって名前の関数にした。'noon'は回文と判定される。'abc'は回文じゃないからFalseになります。is_palindrome('level')はTrueが返る。空の文字列は回文なのでTrueになります。

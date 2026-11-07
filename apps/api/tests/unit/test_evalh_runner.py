@@ -66,6 +66,11 @@ def test_fake_pipeline_is_deterministic_and_reports_failures():
     assert first["guardrails"]["violations"] == 0
 
 
+def test_parallel_evaluation_gives_the_same_report():
+    """並行に動かしても、集計は順番どおりなので結果は変わらない。"""
+    assert evaluate(lexicon_pipeline(), DEV, workers=4) == evaluate(lexicon_pipeline(), DEV)
+
+
 def test_feedback_is_skipped_when_too_few_claims():
     one = [case for case in DEV if len(case.claims) < 4][:1]
     assert evaluate(OraclePipeline(one), one, EvalConfig())["feedback"] is None

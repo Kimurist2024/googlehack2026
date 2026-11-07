@@ -21,10 +21,33 @@
     <nav role="tablist">
       <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
       <button role="tab" id="tab-student" aria-selected="false">生徒</button>
+      <button role="tab" id="tab-rsi" aria-selected="false" hidden>RSIテスト</button>
     </nav>
   </div>
 </header>
 <main>
+  <section id="rsi" hidden aria-label="RSIテスト">
+    <div class="card">
+      <h2>RSIの改善をたどる</h2>
+      <p>Geminiへの指示文を、失敗例から改善する過程を見られます。</p>
+      <p class="hint">保存済みの実測記録の再生です。新しいAI呼び出し・コード実行・本番への反映は行いません。データはすべて合成です。</p>
+      <div class="row">
+        <button id="rsi-play" class="primary" disabled>テストを再生</button>
+        <button id="rsi-next" disabled>次のステップ</button>
+        <button id="rsi-reset" disabled>最初に戻す</button>
+      </div>
+      <p id="rsi-status" role="status">記録を読み込みます。</p>
+      <p id="rsi-error" class="error" role="alert"></p>
+      <ol id="rsi-flow" class="rsi-flow" aria-label="改善の流れ"></ol>
+      <p id="rsi-meta" class="hint"></p>
+    </div>
+    <div id="rsi-detail" class="card" hidden></div>
+    <div class="card">
+      <h2>候補の比較</h2>
+      <p class="hint">表示済みの候補を選ぶと、指示文と評価記録を確認できます。点数は正しく扱えた主張の割合を提出物ごとに平均したものです。</p>
+      <div class="rsi-table"><table><thead><tr><th>候補／親</th><th>改善用の点数</th><th>判定</th></tr></thead><tbody id="rsi-candidates"></tbody></table></div>
+    </div>
+  </section>
   <section id="teacher">
     <div class="card signin" id="signin-card" hidden>
       <h2>教員としてログイン</h2>
@@ -111,6 +134,7 @@
   </section>
 </main>
 <script src="app.js"></script>
+<script src="rsi.js"></script>
 <script src="offline.js"></script>
 </body>
 </html>

@@ -78,3 +78,19 @@ def test_low_quality_set_loads_and_keeps_its_splits():
     dev, held = load_cases(folder, split="dev"), load_cases(folder, split="heldout")
     assert len(dev) == 14 and len(held) == 6
     assert sum(g.is_gap and g.kind == "behavior" for case in dev for g in case.claims) == 10
+
+
+def test_low_quality_v2_set_has_execution_checks_for_every_behavior_claim():
+    """evals/cases_lowq2：コードは小さなモデル、説明は型から作り、動きの主張の正解は実行で決めてある。"""
+    import json
+
+    from evalh.cases import DEFAULT_DIR, load_cases
+
+    folder = DEFAULT_DIR.parent / "cases_lowq2"
+    dev, held = load_cases(folder, split="dev"), load_cases(folder, split="heldout")
+    assert len(dev) >= 40 and len(held) >= 20
+    # 課題ごとに dev と heldout を分けている（同じ課題の提出物が両方に入らない）
+    assert not {c.id.split("_")[0] for c in dev} & {c.id.split("_")[0] for c in held}
+    for case in dev + held:
+        raw = json.loads((folder / case.id / "gold.json").read_text(encoding="utf-8"))["claims"]
+        assert all("check" in c for c in raw if c["kind"] == "behavior"), case.id

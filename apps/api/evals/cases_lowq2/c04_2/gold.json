@@ -1,0 +1,101 @@
+{
+  "split": "dev",
+  "goal": "探索の終わり方を説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c04 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "ifで場合分けしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-1",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki'], 'yamada']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'sato'], 'sato']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "['sato', 'suzuki', 'tanaka']から'suzuki'を探すと1が返ってきた",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'tanaka'], 'suzuki']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "名前が1つもないリストで'sato'を探しても-1になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-1",
+        "function": "find_index",
+        "args": "[[], 'sato']",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -58,8 +58,12 @@ class RunResult:
         return next(c for c in self.candidates if c.id == candidate_id)
 
 
-def _failures_for_proposer(report: dict, rng: random.Random) -> list[dict]:
-    useful = [f for f in report["failures"] if f["kind"] != "extra_claim"]
+# 点数（と守るべき決まり）に効く失敗だけを改善役に見せる。根拠の場所の違いなどは点数に入らない
+SCORED_FAILURES = {"missed_gap", "false_alarm", "guardrail"}
+
+
+def _failures_for_proposer(report: dict, rng: random.Random, target: Target | None = None, notes: list[dict] = ()) -> list[dict]:
+    useful = [f for f in report["failures"] if f["kind"] in SCORED_FAILURES and (target is None or target.fixable(f, list(notes)))]
     rng.shuffle(useful)
     return useful[:FAILURE_SAMPLE]
 
@@ -78,6 +82,7 @@ def optimize(
     iterations: int = 5,
     repeats: int = 1,
     config: EvalConfig = EvalConfig(),
+    workers: int = 1,
     seed: str = "mushitori-rsi",
     log=lambda message: None,
 ) -> RunResult:
@@ -92,7 +97,7 @@ def optimize(
     def measure(prompt: str, cases: list[Case] = dev) -> tuple[dict, list[dict]]:
         reports, notes = [], []
         for _ in range(repeats):
-            reports.append(evaluate(target.build(prompt), cases, config))
+            reports.append(evaluate(target.build(prompt), cases, config, workers))
             if target.api_errors():
                 raise MeasurementError(f"AI の呼び出しが {target.api_errors()} 回失敗したので測れませんでした")
             notes += target.notes()
@@ -108,7 +113,7 @@ def optimize(
         parent = _choose_parent(pool, rng)
         candidate_id = f"c{index:03d}"
         try:
-            proposal = proposer.propose(target.name, parent.prompt, _failures_for_proposer(parent.report, rng), parent.notes)
+            proposal = proposer.propose(target.name, parent.prompt, _failures_for_proposer(parent.report, rng, target, parent.notes), parent.notes)
         except Exception as error:  # 改善役が止まっても、ループは記録を残して続ける
             candidates.append(Candidate(candidate_id, parent.id, "", "rejected", reasons=[f"改善役が失敗しました: {error}"]))
             log(f"{candidate_id}: 改善役が失敗")
