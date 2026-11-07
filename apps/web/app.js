@@ -696,6 +696,7 @@ function showSignedOut(message) {
 function showSignedIn(email) {
   teacherEmail = email;
   $("who").textContent = email ?? "ログインを確認中…";
+  $("who").title = email ?? "";
   $("signin-error").textContent = "";
   $("signin-card").hidden = true;
   $("teacher-work").hidden = false;

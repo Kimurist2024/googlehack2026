@@ -13,18 +13,19 @@
 <body>
 <header>
   <h1>ムシトリ<small>（仮称）</small></h1>
-  <div class="header-right">
-    <div id="account" class="account" hidden>
-      <span id="who"></span>
-      <button id="signout" class="link">ログアウト</button>
-    </div>
-    <nav role="tablist">
-      <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
-      <button role="tab" id="tab-student" aria-selected="false">生徒</button>
-      <button role="tab" id="tab-rsi" aria-selected="false" hidden>RSIテスト</button>
-    </nav>
+  <div id="account" class="account" hidden>
+    <span id="who"></span>
+    <button id="signout" class="link">ログアウト</button>
   </div>
 </header>
+<!-- 使う人の切り替えは、アカウントの操作と混ぜず、上の帯のすぐ下に独立させる -->
+<div class="role-bar">
+  <nav role="tablist" aria-label="使う人を選ぶ">
+    <button role="tab" id="tab-teacher" aria-selected="true"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>教員として使う</button>
+    <button role="tab" id="tab-student" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>生徒として答える</button>
+    <button role="tab" id="tab-rsi" aria-selected="false" hidden>RSIテスト</button>
+  </nav>
+</div>
 <main>
   <section id="rsi" hidden aria-label="RSIテスト">
     <div class="card">
