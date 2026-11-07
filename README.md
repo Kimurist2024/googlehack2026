@@ -1,5 +1,7 @@
 # ムシトリ
 
+[README](./README.md) ｜ [RSI](./RSI.md) ｜ [Security](./SECURITY.md)
+
 ![Website](https://img.shields.io/website?url=https%3A%2F%2Fmushitori-hackathon.web.app&label=demo)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-282%20passed-17694A)

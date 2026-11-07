@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1100" viewBox="0 0 1000 1100" role="img" aria-labelledby="title desc">
+<title id="title">測る → 振り返る → 書き直す → 確かめる</title><desc id="desc">候補生成から推薦までを自動化し、採用は人が判断する。開始時の指示文を測定：改善用データで複数回試し、平均点と点数の幅を記録：点数＝提出物ごとの「正しく扱えた主張の割合」の平均。親を選び、Geminiが書き直す：提出物ごとの最高点の回数に応じて、親候補を抽選：その段階で直せる失敗例・成功例・実行記録を読む。検査して、候補を評価：差し込み口・長さ・例の丸写しなどを機械的に検査：親よりぶれを超えて改善し、必須ルールも守れば候補に残す。候補を親にして探索を繰り返す：不採用の理由も含め、全候補と親子関係を保存：終了後、残った候補から最良のものを選ぶ。別データで最終確認：開始時より点数が下がらず、必須ルールも守れば推薦：最終確認の失敗例は書き直し役に渡さない。人が差分を読み、採用する：promote で新しい指示文の版を作り、ACTIVEを切り替える：推薦だけでは本番の指示文は変わらない</desc>
+<rect width="1000" height="1100" fill="#f4f7f5"/>
+<g font-family="Hiragino Sans, Noto Sans JP, Yu Gothic, sans-serif" fill="#20352c">
+<text x="50" y="55" font-size="30" font-weight="700">測る → 振り返る → 書き直す → 確かめる</text>
+<text x="50" y="92" font-size="19">候補生成から推薦までを自動化し、採用は人が判断する</text>
+<rect x="50" y="125" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="159" r="20" fill="#216b50"/>
+<text x="88" y="166" font-size="20" text-anchor="middle" fill="#ffffff">1</text>
+<text x="125" y="165" font-size="23" font-weight="700">開始時の指示文を測定</text>
+<text x="125" y="196" font-size="19">改善用データで複数回試し、平均点と点数の幅を記録</text>
+<text x="125" y="222" font-size="18" fill="#4d6357">点数＝提出物ごとの「正しく扱えた主張の割合」の平均</text>
+<path d="M500 242 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="270" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="304" r="20" fill="#216b50"/>
+<text x="88" y="311" font-size="20" text-anchor="middle" fill="#ffffff">2</text>
+<text x="125" y="310" font-size="23" font-weight="700">親を選び、Geminiが書き直す</text>
+<text x="125" y="341" font-size="19">提出物ごとの最高点の回数に応じて、親候補を抽選</text>
+<text x="125" y="367" font-size="18" fill="#4d6357">その段階で直せる失敗例・成功例・実行記録を読む</text>
+<path d="M500 387 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="415" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="449" r="20" fill="#216b50"/>
+<text x="88" y="456" font-size="20" text-anchor="middle" fill="#ffffff">3</text>
+<text x="125" y="455" font-size="23" font-weight="700">検査して、候補を評価</text>
+<text x="125" y="486" font-size="19">差し込み口・長さ・例の丸写しなどを機械的に検査</text>
+<text x="125" y="512" font-size="18" fill="#4d6357">親よりぶれを超えて改善し、必須ルールも守れば候補に残す</text>
+<path d="M500 532 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="560" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="594" r="20" fill="#216b50"/>
+<text x="88" y="601" font-size="20" text-anchor="middle" fill="#ffffff">4</text>
+<text x="125" y="600" font-size="23" font-weight="700">候補を親にして探索を繰り返す</text>
+<text x="125" y="631" font-size="19">不採用の理由も含め、全候補と親子関係を保存</text>
+<text x="125" y="657" font-size="18" fill="#4d6357">終了後、残った候補から最良のものを選ぶ</text>
+<path d="M500 677 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="705" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="739" r="20" fill="#216b50"/>
+<text x="88" y="746" font-size="20" text-anchor="middle" fill="#ffffff">5</text>
+<text x="125" y="745" font-size="23" font-weight="700">別データで最終確認</text>
+<text x="125" y="776" font-size="19">開始時より点数が下がらず、必須ルールも守れば推薦</text>
+<text x="125" y="802" font-size="18" fill="#4d6357">最終確認の失敗例は書き直し役に渡さない</text>
+<path d="M500 822 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="850" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="884" r="20" fill="#216b50"/>
+<text x="88" y="891" font-size="20" text-anchor="middle" fill="#ffffff">6</text>
+<text x="125" y="890" font-size="23" font-weight="700">人が差分を読み、採用する</text>
+<text x="125" y="921" font-size="19">promote で新しい指示文の版を作り、ACTIVEを切り替える</text>
+<text x="125" y="947" font-size="18" fill="#4d6357">推薦だけでは本番の指示文は変わらない</text>
+<text x="50" y="1070" font-size="19">UIのRSIテストは、この過程の実測記録を再生するモード。</text>
+</g></svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="810" viewBox="0 0 1000 810" role="img" aria-labelledby="title desc">
+<title id="title">RSIが改善する場所</title><desc id="desc">対象：説明を確かめる実行テストを考える probe_planner の指示文。生徒の説明とコード：例：「入力が空でもエラーにならない」：評価では正解つきの合成提出物を使用。Geminiが実行テストを設計：空の入力で動かし、「エラーなし」を期待結果にする：RSIは、この設計を頼む指示文を書き直す。隔離環境でコードを実行：実際にエラーが起きるかを記録する：期待結果をコードの挙動に合わせて書き換えない。実行結果と説明を機械的に比較：説明と食い違えば、確認が必要な主張として扱う：失敗したテスト設計と結果が、次の改善の材料になる</desc>
+<rect width="1000" height="810" fill="#f4f7f5"/>
+<g font-family="Hiragino Sans, Noto Sans JP, Yu Gothic, sans-serif" fill="#20352c">
+<text x="50" y="55" font-size="30" font-weight="700">RSIが改善する場所</text>
+<text x="50" y="92" font-size="19">対象：説明を確かめる実行テストを考える probe_planner の指示文</text>
+<rect x="50" y="125" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="159" r="20" fill="#216b50"/>
+<text x="88" y="166" font-size="20" text-anchor="middle" fill="#ffffff">1</text>
+<text x="125" y="165" font-size="23" font-weight="700">生徒の説明とコード</text>
+<text x="125" y="196" font-size="19">例：「入力が空でもエラーにならない」</text>
+<text x="125" y="222" font-size="18" fill="#4d6357">評価では正解つきの合成提出物を使用</text>
+<path d="M500 242 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="270" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="304" r="20" fill="#216b50"/>
+<text x="88" y="311" font-size="20" text-anchor="middle" fill="#ffffff">2</text>
+<text x="125" y="310" font-size="23" font-weight="700">Geminiが実行テストを設計</text>
+<text x="125" y="341" font-size="19">空の入力で動かし、「エラーなし」を期待結果にする</text>
+<text x="125" y="367" font-size="18" fill="#4d6357">RSIは、この設計を頼む指示文を書き直す</text>
+<path d="M500 387 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="415" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="449" r="20" fill="#216b50"/>
+<text x="88" y="456" font-size="20" text-anchor="middle" fill="#ffffff">3</text>
+<text x="125" y="455" font-size="23" font-weight="700">隔離環境でコードを実行</text>
+<text x="125" y="486" font-size="19">実際にエラーが起きるかを記録する</text>
+<text x="125" y="512" font-size="18" fill="#4d6357">期待結果をコードの挙動に合わせて書き換えない</text>
+<path d="M500 532 v18 m-7 -7 7 7 7 -7" fill="none" stroke="#216b50" stroke-width="3"/>
+<rect x="50" y="560" width="900" height="112" rx="14" fill="#ffffff" stroke="#b9cec2"/>
+<circle cx="88" cy="594" r="20" fill="#216b50"/>
+<text x="88" y="601" font-size="20" text-anchor="middle" fill="#ffffff">4</text>
+<text x="125" y="600" font-size="23" font-weight="700">実行結果と説明を機械的に比較</text>
+<text x="125" y="631" font-size="19">説明と食い違えば、確認が必要な主張として扱う</text>
+<text x="125" y="657" font-size="18" fill="#4d6357">失敗したテスト設計と結果が、次の改善の材料になる</text>
+<text x="50" y="780" font-size="19">改善するのは指示文。モデルの重みや生徒のコードは更新しない。</text>
+</g></svg>

@@ -4,6 +4,7 @@
 
 | 文書 | 内容 |
 |---|---|
+| [`../RSI.md`](../RSI.md) | 失敗例から指示文を改善するRSIの仕組み、GEPAとの関係、実測例とUIテスト |
 | [`design.md`](./design.md) | 問いの作り方、声をかける順、本人の説明を聞きたい行の選び方、Gemini の出力の検査 |
 | [`verification-2026-11-06.md`](./verification-2026-11-06.md) | 2026年11月6日に公開URLで、本物の Code Execution、Gemini、Firestore を使って確かめたこと |
 | [`offline.md`](./offline.md) | ネットが落ちても授業を止めない仕組み（授業パッケージ、校内LAN版、端末にためる解答） |
@@ -13,6 +14,7 @@
 
 | 図 | 内容 |
 |---|---|
+| [`rsi-target.svg`](./rsi-target.svg)・[`rsi-loop.svg`](./rsi-loop.svg) | RSIの改善対象と、候補生成から人による採用まで（`make_rsi_diagrams.py`で再生成） |
 | [`security-easy.svg`](./security-easy.svg) | 何から守っているか（セキュリティに詳しくない人向け） |
 | [`security-stack.svg`](./security-stack.svg)・[`security-architecture.svg`](./security-architecture.svg) | セキュリティの技術構成と信頼の境界 |
 | [`ai-guard-flow.svg`](./ai-guard-flow.svg) | AI の入出力の検査の流れ |
