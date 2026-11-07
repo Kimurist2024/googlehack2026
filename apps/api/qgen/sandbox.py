@@ -16,6 +16,7 @@ DEFAULT_REQUEST = {
     "max_mutants": 30,
     "max_output_chars": 20_000,
     "deadline_sec": 45,
+    "max_probes": 3,
 }
 
 
@@ -25,6 +26,13 @@ class SandboxError(RuntimeError):
 
 class Sandbox(Protocol):
     def analyze(self, student_code: str, stdin: str) -> dict: ...
+
+    def probe(self, student_code: str, probes: list[dict]) -> dict: ...
+
+
+def probe_request(probes: list[dict]) -> dict:
+    """動きの主張を確かめる依頼。中身の形は qgen.probes で検査してから渡す。"""
+    return {**DEFAULT_REQUEST, "stdin": "", "mode": "probe", "probes": probes}
 
 
 def parse_result(stdout: str) -> dict:
@@ -49,16 +57,22 @@ class LocalDevSandbox:
             raise SandboxError("LocalDevSandbox は APP_ENV=local かつ ALLOW_LOCAL_SANDBOX=1 のときだけ使えます")
 
     def analyze(self, student_code: str, stdin: str) -> dict:
+        return self._execute(student_code, {**DEFAULT_REQUEST, "stdin": stdin})
+
+    def probe(self, student_code: str, probes: list[dict]) -> dict:
+        return self._execute(student_code, probe_request(probes))
+
+    def _execute(self, student_code: str, request: dict) -> dict:
         with tempfile.TemporaryDirectory(prefix="sandbox-") as folder:
             Path(folder, "student.py").write_text(student_code, encoding="utf-8")
-            Path(folder, "request.json").write_text(json.dumps({**DEFAULT_REQUEST, "stdin": stdin}), encoding="utf-8")
+            Path(folder, "request.json").write_text(json.dumps(request), encoding="utf-8")
             try:
                 done = subprocess.run(
                     [sys.executable, "-I", "-c", HARNESS_SOURCE],
                     capture_output=True,
                     text=True,
                     encoding="utf-8",
-                    timeout=DEFAULT_REQUEST["deadline_sec"] + 15,
+                    timeout=request["deadline_sec"] + 15,
                     cwd=folder,
                     # SESSION_SECRET などの環境変数を、生徒のコードが動く側に渡さない
                     env=HARNESS_ENV,
@@ -85,6 +99,12 @@ class CodeExecutionSandbox:
         return self._runtime_name
 
     def analyze(self, student_code: str, stdin: str) -> dict:
+        return self._execute(student_code, {**DEFAULT_REQUEST, "stdin": stdin})
+
+    def probe(self, student_code: str, probes: list[dict]) -> dict:
+        return self._execute(student_code, probe_request(probes))
+
+    def _execute(self, student_code: str, request: dict) -> dict:
         from agentplatform import types
 
         operation = self._client.sandboxes.create(
@@ -100,7 +120,7 @@ class CodeExecutionSandbox:
                     "code": HARNESS_SOURCE,
                     "files": [
                         {"name": "student.py", "content": student_code.encode("utf-8")},
-                        {"name": "request.json", "content": json.dumps({**DEFAULT_REQUEST, "stdin": stdin}).encode("utf-8")},
+                        {"name": "request.json", "content": json.dumps(request).encode("utf-8")},
                     ],
                 },
             )

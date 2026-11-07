@@ -1,0 +1,43 @@
+{
+  "split": "dev",
+  "goal": "特別な入力での動きを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t06-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "factorial 関数は、正の整数 n を引数として受け取り、その階乗（n!）を計算し返します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "factorial(0) は 1 になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "factorial(5) は 120 になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          5,
+          8
+        ]
+      ]
+    }
+  ]
+}

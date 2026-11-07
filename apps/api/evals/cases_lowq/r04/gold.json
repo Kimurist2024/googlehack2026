@@ -1,0 +1,38 @@
+{
+  "split": "heldout",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t20-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "この関数は、与えられた温度リストから最高気温と最低気温を比較し、その差を計算します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "最初の要素を最高と最低の初期値にしています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "テストでは32と25の差が示されました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

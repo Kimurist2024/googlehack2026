@@ -1,0 +1,37 @@
+{
+  "split": "dev",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "隣どうしを比べて大きい方を後ろに送った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "全体を1回だけ見れば並べ替えが終わる",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "並べ替えたリストを表示した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          7
+        ]
+      ]
+    }
+  ]
+}

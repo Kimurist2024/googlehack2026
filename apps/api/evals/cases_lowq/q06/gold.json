@@ -1,0 +1,57 @@
+{
+  "split": "dev",
+  "goal": "条件と繰り返しの組み合わせを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t07-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "整数 n は素数かどうかを判定する関数 is_prime を作成しました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "1 から 10 で試すため、range(1, 11) で数字を順番に処理します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          10,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "関数 is_prime 内では、n を 1 から sqrt(n) までの範囲で割り算を行います",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g4",
+      "text": "1 から 10 で判定すると、1 は True になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g5",
+      "text": "9 は False になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          4,
+          6
+        ]
+      ]
+    }
+  ]
+}

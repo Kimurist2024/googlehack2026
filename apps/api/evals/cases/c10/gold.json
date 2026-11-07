@@ -1,0 +1,25 @@
+{
+  "split": "dev",
+  "goal": "繰り返しと条件分岐で、変数の値がどう変わるかを追える",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "外側と内側の2つのループで組み合わせを作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "掛け算の結果をリストに保存してから表示した",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    }
+  ]
+}

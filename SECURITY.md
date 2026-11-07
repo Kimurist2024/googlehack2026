@@ -86,6 +86,7 @@
 | `__import__`、`open`、`eval`、`exec`、`getattr` などの組み込み関数と、`__class__` のような特殊な属性を使うコードは実行せず「対応していない書き方」として先生に知らせる | `apps/api/qgen/harness.py` |
 | 生徒のコードを動かす子プロセスには環境変数を渡さない。手元の開発でも `SESSION_SECRET` は届かない | `apps/api/qgen/harness.py`、`apps/api/qgen/sandbox.py` |
 | メモリ（512MB）、書き込むファイルの大きさ、CPU 時間に上限をかける。メモリを食いつぶすコードは「実行時にエラー」で止まる | `apps/api/qgen/harness.py` |
+| 説明の「動き」の主張を確かめる実行（`mode=probe`、関数を1つ呼ぶ）にも、上の import と名前の検査、環境変数なし、資源の上限を同じようにかける。主張とコードは `<data>` で囲み、Model Armor で検査してから Gemini に渡す。囲みと注意書きはコードが付けるので、指示文の自動改善（`apps/api/rsi/`）でも外れない | `apps/api/qgen/harness.py`、`apps/api/qgen/probes.py` |
 | 隔離環境が返した結果は形を確かめてから使う。対象外の理由は決めた値だけを保存し、それ以外は `error` にする | `apps/api/qgen/sandbox.py`、`apps/api/app/service.py` |
 
 ### AI（SAIF のリスクとの対応）

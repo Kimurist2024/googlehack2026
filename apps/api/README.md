@@ -39,10 +39,17 @@ Gemini の出力は、文字数、評価の言葉、存在しない行番号、�
 | [`qgen/questions.py`](./qgen/questions.py) | 実行結果から問いと正解を作る |
 | [`qgen/ai.py`](./qgen/ai.py) | Gemini の呼び出しと出力の検査。失敗時はテンプレートに戻す |
 | [`qgen/guard.py`](./qgen/guard.py) | Gemini に渡す文と返答を Model Armor で検査する。検査できなければ通さない |
-| [`tests/unit/`](./tests/unit/) | 単体テスト（135件） |
-| [`tests/integration/`](./tests/integration/) | 結合テスト（147件。攻撃の入力、保存期間、校内LAN版を含む） |
+| [`qgen/probes.py`](./qgen/probes.py) | 説明のうち「動き」の主張（空のリストでも動く、など）の確かめ方と、実行結果との照合 |
+| [`qgen/prompts/`](./qgen/prompts/) | Gemini に渡す指示文の版。`ACTIVE` が今使っている版 |
+| [`evalh/`](./evalh/) | 評価ハーネス。模擬提出物で、確認事項を作る流れの成績を測る |
+| [`rsi/`](./rsi/) | 指示文の自動改善。評価ハーネスの点数で候補を選び、記録を残す |
+| [`evals/cases/`](./evals/cases/) | 評価用の模擬提出物と正解（合成データ。dev と heldout に分ける。`weak/` は説明の下手な生徒役） |
+| [`evals/cases_lowq/`](./evals/cases_lowq/) | 小さなモデル（Qwen2.5-Coder-1.5B）が書いた質の低い提出物と、人が付けた正解（合成データ） |
+| [`tests/unit/`](./tests/unit/) | 単体テスト |
+| [`tests/integration/`](./tests/integration/) | 結合テスト（攻撃の入力、保存期間、校内LAN版を含む） |
 | [`scripts/dev.sh`](./scripts/dev.sh) | 手元の開発サーバー（合成データ専用） |
 | [`scripts/record_demo.py`](./scripts/record_demo.py) | デモ動画の自動収録 |
+| [`scripts/check_gemini.py`](./scripts/check_gemini.py) | Vertex AI 経由で Gemini のモデルが呼べるかを確かめる |
 | [`scripts/lan.py`](./scripts/lan.py) | 校内LAN版を教員PCで起動する（[`docs/offline.md`](../../docs/offline.md)） |
 
 ## 主な API

@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "aとbを一気に入れかえた",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "入れかえたあとの2つを出した",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    }
+  ]
+}

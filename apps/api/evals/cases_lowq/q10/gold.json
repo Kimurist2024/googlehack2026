@@ -1,0 +1,49 @@
+{
+  "split": "dev",
+  "goal": "辞書の使い方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t11-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "単語の出現回数を辞書を使って数えることができます",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ],
+        [
+          12,
+          16
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "単語ごとに出現回数を記録し、辞書から情報を抽出します",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          12,
+          20
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "この方法で、文章の中で使われたすべての単語の出現回数を確認できます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g4",
+      "text": "例えば「これはPythonの文章です」という文章では、「は」が2回出現しています",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

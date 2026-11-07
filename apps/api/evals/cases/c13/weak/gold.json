@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "5から1まで1ずつへらして出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "0まで出してから終わる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "さいごにstartって出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          5
+        ]
+      ]
+    }
+  ]
+}

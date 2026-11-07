@@ -1,0 +1,41 @@
+{
+  "split": "dev",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "先頭から順に名前を比べた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "見つかったらすぐにループを抜けるようにした",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "見つからないときは-1を表示する",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ],
+        [
+          7,
+          7
+        ]
+      ]
+    }
+  ]
+}

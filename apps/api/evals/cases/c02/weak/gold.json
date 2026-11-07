@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "並べかえて一番うしろのやつを取った",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "はじめの数を一番大きいことにしておいた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "で、それを表示",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

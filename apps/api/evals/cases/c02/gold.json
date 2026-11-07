@@ -1,0 +1,37 @@
+{
+  "split": "dev",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "並べ替えて最後の値を取り出した",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "最初の値を仮の最大値にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "最大値を表示した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

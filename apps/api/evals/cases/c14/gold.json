@@ -1,0 +1,30 @@
+{
+  "split": "dev",
+  "goal": "繰り返しと条件分岐で、変数の値がどう変わるかを追える",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "最初の値を最小値と最大値の両方の初期値にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "1回のループで最小と最大を同時に更新した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          8
+        ]
+      ]
+    }
+  ]
+}

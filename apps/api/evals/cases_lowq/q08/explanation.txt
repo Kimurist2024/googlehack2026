@@ -1,0 +1,1 @@
+文字列 s の反転を生成し、これは is_palindrome 関数の中で行われます。検索対象の文字列 s が空であれば True を返す。s の反転したストリーム reversed_stream が与えられた s と一致すれば True を返す。s が reversed_stream よりも長い場合は False を返す。

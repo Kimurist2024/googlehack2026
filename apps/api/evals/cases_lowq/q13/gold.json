@@ -1,0 +1,47 @@
+{
+  "split": "dev",
+  "goal": "探索の範囲の変え方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t14-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "二分探索は、リスト内の要素を半々分割し、特定の要素を見つけるアルゴリズムです",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          15
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "リストが空の場合は -1 を返します",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          3,
+          5
+        ],
+        [
+          17,
+          17
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "リスト中に対象の値がない場合は -1 を返します",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          17,
+          17
+        ]
+      ]
+    }
+  ]
+}

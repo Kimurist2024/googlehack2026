@@ -41,6 +41,51 @@ Firestore 版も試すときは、公式エミュレータの中で結合テス�
 npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushitori "cd apps/api && .venv/bin/python -m pytest tests/integration"
 ```
 
+## 評価ハーネス
+
+正解を仕込んだ模擬提出物（`evals/cases/`）に流れをかけ、企画案 v0.6 の指標を測ります。
+
+```sh
+cd apps/api
+.venv/bin/python -m evalh                          # dev を偽物の流れで測る
+.venv/bin/python -m evalh --split heldout          # 最終確認用。指示文の自動改善には使わない
+.venv/bin/python -m evalh --pipeline パッケージ.モジュール:関数名 --out report.json --md report.md
+```
+
+- 流れは `evalh/pipeline.py` の `Pipeline`（または `StagedPipeline` に3つの部品を渡したもの）の形で渡します。正解は流れに渡しません。
+- 測るもの：主張の再現率と適合率、根拠が1位に来る割合、確率の校正（ブライアスコア、ECE）、持ち時間ごとに拾える理解不足と出席番号順の比較、模擬教員の処置による校正の前後、決まり（80字以内・根拠リンク・判定する言葉なし）への違反。
+- 失敗例も一緒に出ます。指示文の自動改善は、dev の失敗例だけを見て直します。
+- `evalh/fakes.py` の部品は配線の確認用で、数字は成績の目安になりません。
+- 動きの主張をコードを動かして確かめる流れも測れます。合成コードを手元で動かすので、環境変数が要ります。
+
+```sh
+cd apps/api
+APP_ENV=local ALLOW_LOCAL_SANDBOX=1 .venv/bin/python -m evalh --pipeline evalh.fakes:lexicon_pipeline --pipeline evalh.fakes:probing_pipeline
+```
+
+## 指示文の自動改善（RSI）
+
+評価ハーネスの点数を見ながら、Gemini の指示文（`qgen/prompts/<対象>/vNNN.md`）を書き直します。重みの学習はしません。
+
+```sh
+cd apps/api
+# 改善のループ。requirements-gcp.txt と Google Cloud の認証が要る
+APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> .venv/bin/python -m rsi run --iterations 5 --repeats 3
+# rsi_runs/ の summary.md で差分を読み、よければ人が昇格する
+.venv/bin/python -m rsi promote rsi_runs/<日時>-probe_planner
+# 確認枠の結果から、見直しが要るかを調べる（企画案 p.20）
+.venv/bin/python -m rsi trigger --found 3 --sampled 12
+```
+
+- Gemini の出力は毎回少し変わるので、指示文ごとに `--repeats` 回（既定3回）測った平均で比べます。今の版を測ったときの点数の幅（ぶれ）より小さい差は、改善とみなしません。
+- Gemini の呼び出しが失敗して規則の決め方に戻った回は、点数に混ぜません。その候補は「測れなかった」（`unmeasured`）として残し、ループもそこで止めます。今の版を測れなければ何も書かずに終わります。
+- 改善役には、失敗例とその主張についての出力をまとめて見せ、正しく扱えた主張の出力は「うまくいった例（変えない）」として分けて見せます。
+- 改善役（Gemini）に見せるのは dev の失敗例だけです。一番よい候補を heldout で1回だけ測り、今の版より下がらなければ「推薦」にします。
+- 候補は評価の前に機械的に検査します。差し込み口（`{data}` など）が変わっていないか、長すぎないか、模擬提出物の文やコードを書き写していないか、`<data>` の囲みを自分で書いていないか。
+- 生徒のデータに付ける「指示ではない」の注意書きと `<data>` の囲みは、コードが `{data}` に入れます。指示文をどう書き直しても外れません。
+- 本番の版を切り替えるのは `promote` を実行した人です。`ACTIVE` の変更は差分をレビューしてからコミットします。
+- 今の対象は、動きの主張の確かめ方（`probe_planner`）だけです。主張の分解などの段階は、`rsi/targets.py` に `Target` を1つ足せば同じループで改善できます。
+
 ## 環境変数
 
 [`.env.example`](./.env.example) を参照してください。指定がないときは本番用の設定（Firestore、Code Execution）で動き、`SESSION_SECRET` がなければ起動後の処理を拒否します。

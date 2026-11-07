@@ -1,0 +1,49 @@
+{
+  "split": "dev",
+  "goal": "条件の組み合わせを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t17-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "1900 年は 闰年になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "2000 年は 闰年になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          3,
+          4
+        ],
+        [
+          9,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "2023 年は 平年になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          3,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "年数が指定されなかった場合、年数が正しい形式であることを確認し、それを表示します",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    }
+  ]
+}

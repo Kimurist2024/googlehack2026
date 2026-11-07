@@ -1,0 +1,26 @@
+{
+  "split": "heldout",
+  "goal": "二重の繰り返しを説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t19-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "このプログラムは1から9までの平方数を出力します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "例えば1は1×2=2になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    }
+  ]
+}

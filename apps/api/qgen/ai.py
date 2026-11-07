@@ -417,15 +417,23 @@ class GeminiAI:
         return {"reply": reply, "by": "gemini"} if reply else template_chat(context)
 
 
-def default_ai() -> QuizAI:
-    """AI_BACKEND=gemini のとき、本番では Model Armor の設定を必須にする。なければ Gemini を使わない。"""
-    if os.environ.get("AI_BACKEND", "template") != "gemini":
-        return TemplateAI()
+def gemini_guard() -> Guard | None:
+    """Gemini に生徒由来の文を渡すときの検査。本番で MODEL_ARMOR_TEMPLATE がなければ None（Gemini を使わない）。"""
     guard = default_guard()
     if guard is None:
         if os.environ.get("APP_ENV") != "local":
             logger.error("MODEL_ARMOR_TEMPLATE がないので Gemini を使わず、テンプレートで動かします")
-            return TemplateAI()
+            return None
         logger.warning("MODEL_ARMOR_TEMPLATE がないので、Model Armor の検査なしで Gemini を使います（ローカル開発のみ）")
         guard = NoGuard()
+    return guard
+
+
+def default_ai() -> QuizAI:
+    """AI_BACKEND=gemini のとき、本番では Model Armor の設定を必須にする。なければ Gemini を使わない。"""
+    if os.environ.get("AI_BACKEND", "template") != "gemini":
+        return TemplateAI()
+    guard = gemini_guard()
+    if guard is None:
+        return TemplateAI()
     return GeminiAI(project=os.environ["GOOGLE_CLOUD_PROJECT"], model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL), guard=guard)
