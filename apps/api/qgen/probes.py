@@ -7,6 +7,8 @@ import ast
 import json
 import logging
 import re
+import threading
+import time
 from dataclasses import asdict, dataclass
 from typing import Protocol
 
@@ -19,6 +21,9 @@ MAX_PROBES = 3
 MAX_ARGS_CHARS = 200
 EXPECT_KINDS = ("raises", "returns", "stdout_line", "no_stdout_line")
 HOLDS, FAILS, UNKNOWN = "holds", "fails", "unknown"
+# 混んでいるときの一時的な失敗（429 など）は、待ってからやり直す。続けて失敗したら規則に戻す
+RETRY_CODES = {429, 500, 503}
+RETRY_WAITS = (2.0, 5.0, 12.0)
 # 定義を取り出して呼ぶので、最上位の変数を使う関数ではこの例外が出る。生徒の誤りとは決めない
 SETUP_ERRORS = {"NameError"}
 
@@ -108,6 +113,17 @@ def functions_of(code: str) -> dict[str, int]:
     return {node.name: len(node.args.args) for node in tree.body if isinstance(node, ast.FunctionDef)}
 
 
+def with_retry(call):
+    """一時的な失敗（RETRY_CODES）だけ、RETRY_WAITS の秒数だけ待ってやり直す。それ以外の失敗はそのまま投げる。"""
+    for wait in (*RETRY_WAITS, None):
+        try:
+            return call()
+        except Exception as error:
+            if wait is None or getattr(error, "code", None) not in RETRY_CODES:
+                raise
+            time.sleep(wait)
+
+
 class ProbePlanner(Protocol):
     def plan(self, claim: str, code: str) -> list[Probe]: ...
 
@@ -181,7 +197,15 @@ class GeminiProbePlanner:
         # 呼び出し自体の失敗（上限、ネットワークなど）で規則に戻した回数。返答の形が悪かったときは数えない。
         # 評価では、これが1回でもあると指示文の良し悪しが測れないので、その回を使わない
         self.api_errors = 0
+        self._lock = threading.Lock()  # 評価では提出物ごとに並行して呼ぶ
         self.prompt = prompt if prompt is not None else load_active(PROBE_TARGET)  # 自動改善では候補を渡す
+
+    def _generate(self, prompt: str):
+        return with_retry(lambda: self._client.models.generate_content(
+            model=self._model,
+            contents=prompt,
+            config={"response_mime_type": "application/json", "response_json_schema": PROBE_SCHEMA},
+        ))
 
     def plan(self, claim: str, code: str) -> list[Probe]:
         data = student_data(claim, code)
@@ -189,13 +213,10 @@ class GeminiProbePlanner:
             return self._fallback.plan(claim, code)
         prompt = self.prompt.format(limit=MAX_PROBES, data=data)
         try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=prompt,
-                config={"response_mime_type": "application/json", "response_json_schema": PROBE_SCHEMA},
-            )
+            response = self._generate(prompt)
         except Exception:
-            self.api_errors += 1
+            with self._lock:
+                self.api_errors += 1
             logger.exception("Gemini を呼べなかったので、規則の決め方に戻します")
             return self._fallback.plan(claim, code)
         try:

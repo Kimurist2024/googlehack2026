@@ -1,0 +1,74 @@
+{
+  "split": "dev",
+  "goal": "割り算と余りの使い方を説明できる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた c10 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "関数digit_sumを書きました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "123のときは6になると思う",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "6",
+        "function": "digit_sum",
+        "args": "[123]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "1桁の9なら9が返ってくる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "9",
+        "function": "digit_sum",
+        "args": "[9]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "1005の各桁をたすと5になると思う",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5",
+        "function": "digit_sum",
+        "args": "[1005]",
+        "stdin": ""
+      }
+    }
+  ]
+}

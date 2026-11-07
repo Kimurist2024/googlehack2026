@@ -1,0 +1,79 @@
+{
+  "split": "heldout",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた p02 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "15のところでFizzBuzzが出る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "FizzBuzz",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "15は数字では出ない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "15",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "29はそのまま29と表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "29",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

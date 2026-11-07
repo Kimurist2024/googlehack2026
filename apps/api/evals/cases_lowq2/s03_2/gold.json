@@ -1,0 +1,67 @@
+{
+  "split": "heldout",
+  "goal": "入力と出力を、具体的な値で確かめられる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた s03 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "-5と5を入れると0と出ました",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "-5\n5\n"
+      }
+    },
+    {
+      "id": "g2",
+      "text": "1行目に3、2行目に4を入力すると7と表示されます",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "7",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n4\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "10と20を入れると30と表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "30",
+        "function": "",
+        "args": "[]",
+        "stdin": "10\n20\n"
+      }
+    }
+  ]
+}

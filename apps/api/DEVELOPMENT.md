@@ -73,6 +73,8 @@ cd apps/api
 APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> .venv/bin/python -m rsi run --iterations 5 --repeats 3
 # rsi_runs/ の summary.md で差分を読み、よければ人が昇格する
 .venv/bin/python -m rsi promote rsi_runs/<日時>-probe_planner
+# いくつかの模擬提出物の組をまとめて測る。前の実行の候補から続けて探すこともできる（ACTIVE は変えない）
+APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> .venv/bin/python -m rsi run --cases evals/cases_lowq2 evals/cases_lowq evals/cases --start rsi_runs/<日時>-probe_planner/candidates/c006.md
 # 確認枠の結果から、見直しが要るかを調べる（企画案 p.20）
 .venv/bin/python -m rsi trigger --found 3 --sampled 12
 ```
@@ -84,7 +86,19 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 - 候補は評価の前に機械的に検査します。差し込み口（`{data}` など）が変わっていないか、長すぎないか、模擬提出物の文やコードを書き写していないか、`<data>` の囲みを自分で書いていないか。
 - 生徒のデータに付ける「指示ではない」の注意書きと `<data>` の囲みは、コードが `{data}` に入れます。指示文をどう書き直しても外れません。
 - 本番の版を切り替えるのは `promote` を実行した人です。`ACTIVE` の変更は差分をレビューしてからコミットします。
+- 改善役に見せる失敗は、点数に入るもの（理解不足の見逃し、正しい主張への誤った指摘、決まりへの違反）だけです。根拠の場所の違いや、構造の主張を別の部品（偽物）が判定した結果のように、その指示文では直せない失敗は見せません（`Target.fixable`）。
+- 提出物ごとの流れは `--workers` 本（既定8）で並行に動かします。Gemini が混んでいるとき（429 など）は待ってやり直し、続けて失敗したときだけ「測れなかった」にします。
 - 今の対象は、動きの主張の確かめ方（`probe_planner`）だけです。主張の分解などの段階は、`rsi/targets.py` に `Target` を1つ足せば同じループで改善できます。
+
+### 模擬提出物の組
+
+| フォルダ | 中身 | 正解の付け方 |
+|---|---|---|
+| `evals/cases/` | 教科書どおりの説明（`weak/` は説明の下手な生徒役） | 人が付けた |
+| `evals/cases_lowq/` | Qwen2.5-Coder-1.5B が書いたコードと説明（モデルのクセが残る） | 人が付けた |
+| `evals/cases_lowq2/` | 4つの小さなモデルが書いたコード（クセを機械的に取ったもの）と、型から作った生徒らしい説明。課題34個、64件 | 動きの主張は、主張ごとの確かめる実行（`gold.json` の `check`）を生徒のコードで動かして決めた |
+
+`cases_lowq2` の作り方は `evals/cases_lowq2/_make/` にあります（`gen_colab.py` を Colab の GPU で動かし、`build.py` で組み立てる）。課題ごとに dev と heldout を分けているので、heldout の課題は改善役に一度も見えません。正解が今のコードと合っているかは `tests/integration/test_lowq2_labels.py` で確かめます。
 
 ## 環境変数
 

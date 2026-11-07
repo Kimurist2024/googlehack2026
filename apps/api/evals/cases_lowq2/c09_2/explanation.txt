@@ -1,0 +1,1 @@
+関数count_wordsを書きました。if文で条件を分けた。'a a a'を数えると{'a': 3}になると思う。空の文字列を渡すと{}を返す。'apple banana apple'だと{'apple': 2, 'banana': 1}になる（たぶん）。

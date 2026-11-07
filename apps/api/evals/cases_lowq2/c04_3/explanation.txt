@@ -1,0 +1,1 @@
+find_indexという関数を作った。['sato', 'suzuki', 'tanaka']から'suzuki'を探すと1が返る。見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になると思う。'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってくる。

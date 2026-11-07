@@ -1,0 +1,74 @@
+{
+  "split": "dev",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた c02 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "関数averageを書きました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "点数が1つもなくても止まらない",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "raises",
+        "expect_value": "false",
+        "function": "average",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "average([80, 90])は85.0が返る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "85.0",
+        "function": "average",
+        "args": "[[80, 90]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "60と70と80の平均は70.0になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "70.0",
+        "function": "average",
+        "args": "[[60, 70, 80]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

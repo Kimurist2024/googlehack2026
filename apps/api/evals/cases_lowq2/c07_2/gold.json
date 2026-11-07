@@ -1,0 +1,69 @@
+{
+  "split": "dev",
+  "goal": "並べ替えの手順を説明できる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた c07 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "同じ数がある[2, 2, 1]でも[1, 2, 2]になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 2, 2]",
+        "function": "my_sort",
+        "args": "[[2, 2, 1]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "[3, 1, 2]を並べ替えると[1, 2, 3]になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 2, 3]",
+        "function": "my_sort",
+        "args": "[[3, 1, 2]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリストを渡すと[]を返す",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "my_sort",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

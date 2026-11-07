@@ -79,10 +79,12 @@ class GeminiProposer:
         from .checks import placeholders
 
         text = reflection_prompt(target, prompt, failures, notes, sorted(placeholders(prompt)))
-        response = self._client.models.generate_content(
+        from qgen.probes import with_retry
+
+        response = with_retry(lambda: self._client.models.generate_content(
             model=self._model,
             contents=text,
             config={"response_mime_type": "application/json", "response_json_schema": SCHEMA},
-        )
+        ))
         payload = json.loads(response.text)
         return Proposal(str(payload["prompt"]), str(payload.get("rationale", "")))

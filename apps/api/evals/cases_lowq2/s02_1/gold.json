@@ -1,0 +1,67 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の意味を説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた s02 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "7を入れると奇数が表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "奇数",
+        "function": "",
+        "args": "[]",
+        "stdin": "7\n"
+      }
+    },
+    {
+      "id": "g2",
+      "text": "0を入力したら偶数と出る",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "偶数",
+        "function": "",
+        "args": "[]",
+        "stdin": "0\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "-4を入れると偶数と出ました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "偶数",
+        "function": "",
+        "args": "[]",
+        "stdin": "-4\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "10を入力したら奇数と出る",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "奇数",
+        "function": "",
+        "args": "[]",
+        "stdin": "10\n"
+      }
+    }
+  ]
+}

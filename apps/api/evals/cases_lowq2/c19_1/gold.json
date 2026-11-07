@@ -1,0 +1,89 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c19 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "fizzbuzzって名前の関数にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "15のときは'FizzBuzz'が返る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'FizzBuzz'",
+        "function": "fizzbuzz",
+        "args": "[15]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "fizzbuzz(5)は'Buzz'になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Buzz'",
+        "function": "fizzbuzz",
+        "args": "[5]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "3のときは'Buzz'を返します",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Buzz'",
+        "function": "fizzbuzz",
+        "args": "[3]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "30のときは'Fizz'が返る",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Fizz'",
+        "function": "fizzbuzz",
+        "args": "[30]",
+        "stdin": ""
+      }
+    }
+  ]
+}

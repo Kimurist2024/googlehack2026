@@ -1,0 +1,94 @@
+{
+  "split": "dev",
+  "goal": "条件の組み合わせを説明できる",
+  "source": "HuggingFaceTB/SmolLM2-1.7B-Instruct が書いた s05 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "12を入力すると子どもが出るはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "子ども",
+        "function": "",
+        "args": "[]",
+        "stdin": "12\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "19を入力すると10代と表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "19\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "20歳だと大人が表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "大人",
+        "function": "",
+        "args": "[]",
+        "stdin": "20\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "13歳だと10代が出るはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "13\n"
+      }
+    }
+  ]
+}

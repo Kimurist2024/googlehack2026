@@ -1,0 +1,74 @@
+{
+  "split": "dev",
+  "goal": "特別な入力での動きを説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた c16 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "second_largestという関数を作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "[10, 8, 9]の2番目に大きい数は9になると思う",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "9",
+        "function": "second_largest",
+        "args": "[[10, 8, 9]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "2つだけの[1, 2]なら1になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "second_largest",
+        "args": "[[1, 2]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "second_largest([3, 5, 1])は3になる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "3",
+        "function": "second_largest",
+        "args": "[[3, 5, 1]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた c11 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "cumulativeって名前の関数にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "[1, 2, 3]は[1, 3, 6]になるはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 3, 6]",
+        "function": "cumulative",
+        "args": "[[1, 2, 3]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリストなら[]が返る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "cumulative",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "1日分だけの[5]なら[5]になる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[5]",
+        "function": "cumulative",
+        "args": "[[5]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "マイナスの日がある[3, -1, 2]は[4, 2, 3]になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[4, 2, 3]",
+        "function": "cumulative",
+        "args": "[[3, -1, 2]]",
+        "stdin": ""
+      }
+    }
+  ]
+}
