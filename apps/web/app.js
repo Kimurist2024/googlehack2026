@@ -38,8 +38,12 @@ let chatHistory = [];
 // Cloud Run は使われていないと止まり、止まったあとの最初の通信は起動に数秒かかる。
 // 画面を開いた時点で起こしておき、画面が見えている間は止まらないように数分ごとに知らせる
 const KEEP_WARM_MS = 4 * 60 * 1000;
-const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => {});
-wakeServer();
+const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => null);
+// RSIテストのタブは、サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたときだけ出す
+wakeServer()
+  .then((response) => (response && response.ok ? response.json() : {}))
+  .then((health) => { $("tab-rsi").hidden = health.rsi_test !== true; })
+  .catch(() => {});
 setInterval(() => { if (document.visibilityState === "visible") wakeServer(); }, KEEP_WARM_MS);
 
 // 前回この端末で教員として確かめられたかどうか（メールアドレスは残さない）。

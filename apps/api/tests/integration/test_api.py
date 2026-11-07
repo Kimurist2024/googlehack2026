@@ -367,7 +367,7 @@ def test_answer_too_long_for_storage_is_rejected(client):
 
 
 def test_health_is_reachable_on_cloud_run_paths(client):
-    assert client.get("/v1/health").json() == {"status": "ok"}
+    assert client.get("/v1/health").json()["status"] == "ok"
 
 
 @pytest.fixture

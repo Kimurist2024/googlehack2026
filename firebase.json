@@ -2,7 +2,8 @@
   "hosting": {
     "public": "apps/web",
     "ignore": [
-      "**/.*"
+      "**/.*",
+      "rsi-test-assets/**"
     ],
     "headers": [
       {
