@@ -40,9 +40,15 @@ echo "   なし"
 
 echo "== README に書き残し（TODO）がないか"
 if grep -n 'TODO' "$SRC/README.md"; then
-  echo "README の上の行を埋めてから書き出してください。止めます" >&2; exit 1
+  # 締切前の途中の反映だけは ALLOW_README_TODO=1 で通す。最終の提出では必ず埋める
+  if [ "${ALLOW_README_TODO:-}" = 1 ]; then
+    echo "注意: README に TODO が残ったまま書き出します（途中の反映）。最終の提出までに埋めてください" >&2
+  else
+    echo "README の上の行を埋めてから書き出してください（途中の反映なら ALLOW_README_TODO=1）。止めます" >&2; exit 1
+  fi
+else
+  echo "   なし"
 fi
-echo "   なし"
 
 echo "== 提出用リポジトリの中身を入れ替える"
 ORIGINAL_IGNORE=$(mktemp); ORIGINAL_LICENSE=$(mktemp)
