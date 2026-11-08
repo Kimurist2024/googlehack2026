@@ -43,7 +43,7 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 ## 評価ハーネス
 
-正解を仕込んだ模擬提出物（`evals/cases/`）に流れをかけ、企画案 v0.6 の指標を測ります。
+正解を仕込んだ模擬提出物（`evals/cases/`）に流れをかけ、見逃しや誤った指摘などの指標を測ります。
 
 ```sh
 cd apps/api
@@ -75,7 +75,7 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 .venv/bin/python -m rsi promote rsi_runs/<日時>-probe_planner
 # いくつかの模擬提出物の組をまとめて測る。前の実行の候補から続けて探すこともできる（ACTIVE は変えない）
 APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> .venv/bin/python -m rsi run --cases evals/cases_lowq2 evals/cases_lowq evals/cases --start rsi_runs/<日時>-probe_planner/candidates/c006.md
-# 確認枠の結果から、見直しが要るかを調べる（企画案 p.20）
+# 確認枠の結果から、見直しが要るかを調べる
 .venv/bin/python -m rsi trigger --found 3 --sampled 12
 ```
 
@@ -124,16 +124,16 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 |---|---|
 | Firebase Hosting | `apps/web` を配信し、`/v1/**` を Cloud Run の `mushitori`（`asia-northeast1`）へ転送する（直下の `firebase.json`）。画面の HTML・JS・CSS は `Cache-Control: no-cache` で配り、デプロイした直後から新しい画面が出るようにする |
 | Firebase Auth | Google ログイン。教員は `TEACHER_EMAILS` のアカウントだけを通す |
-| Cloud Run | 誰でも呼べる設定。サービスアカウント `mushitori-run` には Firestore と Agent Platform の利用権限だけを付ける |
+| Cloud Run | 誰でも呼べる設定。サービスアカウント `mushitori-run` には Firestore（`roles/datastore.user`）、Agent Platform（`roles/aiplatform.user`）、Model Armor（`roles/modelarmor.user`）の利用権限と、`mushitori-session-secret` だけの読み取り権限を付ける |
 | Secret Manager | `mushitori-session-secret` を `SESSION_SECRET` として渡す |
 | Code Execution | 実行環境を1つ作り、`SANDBOX_RUNTIME_NAME` で渡す。指定しないと問いを作るたびに新しく作られる |
 
-Cloud Run の環境変数は `APP_ENV=production`、`STORE_BACKEND=firestore`、`AI_BACKEND=gemini`、`SANDBOX_BACKEND=code_execution`、`TEACHER_EMAILS`、`ALLOW_DEMO_SEED=1`、`SERVE_WEB=0` などです。
+Cloud Run の環境変数は `APP_ENV=production`、`STORE_BACKEND=firestore`、`AI_BACKEND=gemini`、`SANDBOX_BACKEND=code_execution`、`TEACHER_EMAILS`、`MODEL_ARMOR_TEMPLATE`、`ALLOW_DEMO_SEED=1`、`SERVE_WEB=0` などです。
 
 ## デプロイ
 
 > [!IMPORTANT]
-> `security/Taiga` のセキュリティ対策を取り込んだ版を初めてデプロイすると、次のことが起きます。
+> セキュリティ対策を取り込んだ版を初めてデプロイすると、次のことが起きます。
 > - 授業コードと個人コードのハッシュの作り方が変わるので、今あるクラスのコードでは入れなくなります。デモクラスは作り直してください。
 > - `MODEL_ARMOR_TEMPLATE` がないと、Gemini を使わずテンプレートで動きます。先に Model Armor のテンプレートを作り、Cloud Run のサービスアカウントに `roles/modelarmor.user` を付けて、環境変数を設定します。
 > - 授業パッケージは `PACKAGE_SIGNING_KMS_KEY` がないと作れません（503）。授業そのものには影響しません。
@@ -157,7 +157,7 @@ gcloud run services update mushitori --region asia-northeast1 --project mushitor
 
 - **Cloud Storage：** 仕様では提出コードと実行の記録を Storage に置きますが、今は Firestore の文書に入れています。1文書の上限を超えそうな提出は「出力が多すぎる」として対象外にします。
 - **入室の試行回数の制限：** 失敗した入室だけを、接続元ごとに毎分30回まで Firestore で数えます（インスタンスをまたいで効きます）。Cloud Run では `X-Forwarded-For` の右端を接続元とします。Firebase Hosting を通したときの段数（`TRUSTED_PROXY_HOPS`）は、デプロイ後に監査ログで確かめます。
-- **Model Armor、Cloud KMS、TTL：** 検査と署名のコードと試験はありますが、テンプレート、鍵、TTL の設定はまだ作っていません（[`SECURITY.md`](../../SECURITY.md#デプロイのときに行う設定)）。
+- **Cloud KMS：** 授業パッケージの署名のコードと試験はありますが、本番の鍵はまだ作っていません。本番では授業パッケージを作れません（503）。Model Armor のテンプレートと Firestore の TTL は、本番で有効にしました（[`SECURITY.md`](../../SECURITY.md#デプロイのときに行う設定)）。
 - **画面の CSP：** 本番の画面ではまだ Report-Only です。違反がないことを確かめてから強制にします。
 - **Cloud Run Jobs：** 問いの生成と締切のあとの処理は、APIの中のバックグラウンド処理です。本番ではジョブに分けます。
 - **Cloud Shell へのコードの持ち込み：** GitHub との連携を設定していないので、今は手作業で送っています。

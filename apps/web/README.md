@@ -21,7 +21,7 @@
 
 ## 決めごと
 
-- 生徒のコードと文章は、すべて `textContent` で入れます。HTML としては解釈させません。本番の画面は CSP と Trusted Types（`require-trusted-types-for 'script'`）で、`innerHTML` などへの文字列の代入そのものをブラウザが拒否します。
+- 生徒のコードと文章は、すべて `textContent` で入れます。HTML としては解釈させません。画面は Trusted Types（`require-trusted-types-for 'script'`）に対応していて、強制すれば `innerHTML` などへの文字列の代入そのものをブラウザが拒否します。本番の画面の CSP は、違反がないことを確かめるために今は Report-Only で動かしています（`firebase.json`）。
 - コードの表示では合字を切ります（`font-variant-ligatures: none`）。`>=` が1文字に見えると、問いの読み違いにつながるためです。
 - AI が書いた文には「質問案とまとめはAI」「AI」などの印を付け、既定の文（テンプレート）と見分けられるようにします。
 - 説明を聞きたい行には「AIを使ったかどうかの判定ではありません」と添えます。

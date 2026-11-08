@@ -4,7 +4,7 @@
 
 ![Website](https://img.shields.io/website?url=https%3A%2F%2Fmushitori-hackathon.web.app&label=demo)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-282%20passed-17694A)
+![Tests](https://img.shields.io/badge/tests-458%20passed-17694A)
 
 [![自分のコードを、自分の言葉で。](./assets/mushitori_hero.png)](https://mushitori-hackathon.web.app)
 

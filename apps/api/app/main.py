@@ -1,4 +1,8 @@
-"""ムシトリのAPI。生徒のコードは実行せず、Geminiも直接は呼ばない。"""
+"""ムシトリのAPI。
+
+このプロセスの中では生徒のコードを動かさない。実行は、本番では使い捨ての Code Execution の環境、手元の開発では別のプロセスで行う（qgen/sandbox.py）。
+Gemini も直接は呼ばず、qgen を通して Model Armor の検査と出力の機械的な確認をかけてから使う。
+"""
 import logging
 import os
 import re

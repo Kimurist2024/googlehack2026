@@ -69,7 +69,7 @@
 
 | 対策 | 場所 |
 | --- | --- |
-| 教員は Firebase の ID トークンで確かめる。署名、発行元、期限に加えて、失効と無効化も確かめる（`check_revoked`）。メールの確認済みと許可リスト（`TEACHER_EMAILS`）の両方が必要 | `apps/api/app/auth.py` |
+| 教員は Firebase の ID トークンで確かめる。署名、発行元、期限を確かめる。失効と無効化の確認（`check_revoked`）は `FIREBASE_CHECK_REVOKED=1` のときに行う（本番ではまだ有効にしていない。下の手順8）。メールの確認済みと許可リスト（`TEACHER_EMAILS`）の両方が必要 | `apps/api/app/auth.py` |
 | 生徒のトークンは HMAC-SHA256 で署名し、版（`v`）、種類（`typ`）、期限を必ず確かめる。署名を確かめる前に中身を読まない。形が違うものはすべて理由を区別せず 401 | `apps/api/app/auth.py` |
 | 鍵は `SESSION_SECRET` から HKDF で用途ごとに導出する（トークンの署名、コードのハッシュ、接続元のハッシュ）。1つの用途の値が漏れても、他の用途の鍵にならない | `apps/api/app/auth.py` |
 | 授業コードと個人コードは鍵付きハッシュだけを保存する。平文で返すのはクラスを作った1回だけ | `apps/api/app/main.py` |
@@ -174,7 +174,7 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 
 アプリのコードは上の対策を備えています。次の設定は Google Cloud 側で、デプロイのときにチームが行います。
 
-1. **秘密を Secret Manager に置く。** `SESSION_SECRET` は環境変数に直接書かず、Secret Manager から渡します（`gcloud run deploy --set-secrets SESSION_SECRET=session-secret:latest`）。値を変えると、保存済みのコードで入室できなくなります。
+1. **秘密を Secret Manager に置く。** `SESSION_SECRET` は環境変数に直接書かず、Secret Manager から渡します（`gcloud run deploy --set-secrets SESSION_SECRET=mushitori-session-secret:latest`）。値を変えると、保存済みのコードで入室できなくなります。
 2. **専用のサービスアカウントで動かす。** 既定の Compute Engine のアカウントは使わず、必要なロールだけを付けます。`roles/datastore.user`（Firestore）、`roles/aiplatform.user`（Gemini と Code Execution）、`roles/modelarmor.user`（Model Armor）、`roles/secretmanager.secretAccessor`（その秘密だけに付ける）、`roles/cloudkms.signerVerifier`（授業パッケージの鍵だけに付ける）。
 3. **Model Armor のテンプレートを作る。** 日本語の検出には多言語の検出が必要で、`asia-northeast1` は対応していないため、`us` に作ります。Gemini はすでに `global` で呼んでいるので、データの所在の条件は変わりません。
 
@@ -224,7 +224,7 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 - **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
 - **準備まで完全にオフラインにする：** 教員PCでのコードの隔離実行（WebAssembly）とローカルの AI は設計だけです（[docs/offline.md](docs/offline.md)）。
 - **名簿の保存期間：** クラス（出席番号の名簿、担当教員のメール、コードのハッシュ）は、教員が消すまで残ります。生徒のデータより重さは低いですが、年度の終わりに消す運用が必要です。
-- **本番での確認：** Model Armor、Cloud KMS の署名、Firestore の入室の数え方と TTL の印は、偽の応答と（Firestore は）エミュレータで試す作りですが、本物の Google Cloud ではまだ動かしていません。
+- **本番での確認（2026年11月8日、Cloud Run のリビジョン `mushitori-00011`）：** Model Armor（`us` のテンプレート `mushitori-guard`）、Firestore の TTL（8つのコレクショングループの `expire_at`）、Secret Manager からの `SESSION_SECRET`、専用のサービスアカウント（`roles/datastore.user`・`roles/aiplatform.user`・`roles/modelarmor.user` と、その秘密だけの読み取り）は、本番で有効です。Gemini の呼び出しの前後で Model Armor を通ることは、11月6日に公開 URL で確かめました。一方、Cloud KMS の署名の鍵（手順6）とトークンの失効の確認（手順8）は、本番ではまだ設定していません。そのため、本番では授業パッケージを作れません（`/v1/package-key` は 503）。コードの振る舞いは、偽の応答と Firestore のエミュレータで試験しています。
 
 ## 確かめ方
 
