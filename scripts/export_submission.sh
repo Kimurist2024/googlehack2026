@@ -38,6 +38,12 @@ if git -C "$SRC" grep -nIE '@gmail\.com|@icloud\.com|@yahoo\.co\.jp|/Users/[A-Za
 fi
 echo "   なし"
 
+echo "== README に書き残し（TODO）がないか"
+if grep -n 'TODO' "$SRC/README.md"; then
+  echo "README の上の行を埋めてから書き出してください。止めます" >&2; exit 1
+fi
+echo "   なし"
+
 echo "== 提出用リポジトリの中身を入れ替える"
 ORIGINAL_IGNORE=$(mktemp); ORIGINAL_LICENSE=$(mktemp)
 [ -f "$DEST/.gitignore" ] && cp "$DEST/.gitignore" "$ORIGINAL_IGNORE"
