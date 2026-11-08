@@ -235,7 +235,7 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
 - **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
 - **準備まで完全にオフラインにする：** 教員PCでのコードの隔離実行（WebAssembly）とローカルの AI は設計だけです（[docs/offline.md](docs/offline.md)）。
 - **名簿の保存期間：** クラス（出席番号の名簿、担当教員のメール、コードのハッシュ）は、教員が消すまで残ります。生徒のデータより重さは低いですが、年度の終わりに消す運用が必要です。
-- **本番での確認（2026年11月8日、Cloud Run のリビジョン `mushitori-00011`）：** Model Armor（`us` のテンプレート `mushitori-guard`）、Firestore の TTL（8つのコレクショングループの `expire_at`）、Secret Manager からの `SESSION_SECRET`、専用のサービスアカウント（`roles/datastore.user`・`roles/aiplatform.user`・`roles/modelarmor.user` と、その秘密だけの読み取り）は、本番で有効です。Gemini の呼び出しの前後で Model Armor を通ることは、11月6日に公開 URL で確かめました。一方、Cloud KMS の署名の鍵（手順6）とトークンの失効の確認（手順9）は、本番ではまだ設定していません。そのため、本番では授業パッケージを作れません（`/v1/package-key` は 503）。コードの振る舞いは、偽の応答と Firestore のエミュレータで試験しています。
+- **本番での確認（2026年11月8日、Cloud Run のリビジョン `mushitori-00012`）：** Model Armor（`us` のテンプレート `mushitori-guard`）、Firestore の TTL（9つのコレクショングループの `expire_at`。体験用の回数の `guestUsage` を含む）、Secret Manager からの `SESSION_SECRET`、専用のサービスアカウント（`roles/datastore.user`・`roles/aiplatform.user`・`roles/modelarmor.user` と、その秘密だけの読み取り）は、本番で有効です。Gemini の呼び出しの前後で Model Armor を通ることは、11月6日に公開 URL で確かめました。体験用の教員（手順7。匿名ログインと `ALLOW_GUEST_TEACHER=1`）も本番で開いていて、11月8日に公開 URL で「ログインせずに試す」から、問いの生成（Code Execution）、生徒の解答、締切のあとの Gemini の質問案までを通しで確かめました。一方、Cloud KMS の署名の鍵（手順6）とトークンの失効の確認（手順9）は、本番ではまだ設定していません。そのため、本番では授業パッケージを作れません（`/v1/package-key` は 503）。コードの振る舞いは、偽の応答と Firestore のエミュレータで試験しています。
 
 ## 確かめ方
 
