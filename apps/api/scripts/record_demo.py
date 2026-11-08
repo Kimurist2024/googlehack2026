@@ -3,6 +3,11 @@
 使い方: apps/api で ../../.venv/bin/python scripts/record_demo.py
 必要なもの: requirements-demo.txt と Google Chrome
 字幕は収録時に画面へ重ねるだけで、アプリ本体には含まれない。
+
+提出する動画は、画面に出る解説や質問案が本物の Gemini のものになるよう、環境変数を付けて収録する
+（何も付けないと AI は定型文、実行は手元のサンドボックスになり、動画の説明と中身がずれる）:
+  AI_BACKEND=gemini GOOGLE_CLOUD_PROJECT=<project> MODEL_ARMOR_TEMPLATE=<template> \\
+  SANDBOX_BACKEND=code_execution ../../.venv/bin/python scripts/record_demo.py
 """
 import asyncio
 import base64
@@ -18,15 +23,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-os.environ.update(
-    APP_ENV="local",
-    SERVE_WEB="1",
-    SANDBOX_BACKEND="local",
-    ALLOW_LOCAL_SANDBOX="1",
-    AI_BACKEND="template",
-    STORE_BACKEND="memory",
-    SESSION_SECRET=secrets.token_hex(32),
-)
+# 先に環境変数で指定されていればそれを使う（本物の Gemini と Code Execution で収録するため）
+for name, value in {
+    "APP_ENV": "local",
+    "SERVE_WEB": "1",
+    "SANDBOX_BACKEND": "local",
+    "ALLOW_LOCAL_SANDBOX": "1",
+    "AI_BACKEND": "template",
+    "STORE_BACKEND": "memory",
+    "SESSION_SECRET": secrets.token_hex(32),
+}.items():
+    os.environ.setdefault(name, value)
+if os.environ["AI_BACKEND"] != "gemini" or os.environ["SANDBOX_BACKEND"] != "code_execution":
+    print("注意: AI または実行が本物ではない設定で収録します（提出用には AI_BACKEND=gemini SANDBOX_BACKEND=code_execution）", file=sys.stderr)
 
 import imageio_ffmpeg  # noqa: E402
 import uvicorn  # noqa: E402

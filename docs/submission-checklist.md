@@ -1,0 +1,60 @@
+# 提出要件のチェック（Kickoff 資料 2026-11-01 版との照合）
+
+Kickoff スライドの「開発ルール」「実行基盤の必須条件」「審査対象外となるもの」「提出物一覧」「提出ルール」と、このリポジトリの状態を 2026-11-08 に照合した記録です。**締切は 11/10（火）19:00。** 以後は提出用リポジトリが読み取り専用になります。
+
+凡例：✅ 満たしている ／ ❌ まだ ／ ⚠️ 決めること・手で確かめること
+
+## 審査対象外になる条件（ここだけは落とさない）
+
+| 条件 | 状態 | 根拠・やること |
+| --- | --- | --- |
+| Google Cloud の実行基盤を使う（App Engine / Compute Engine / GKE / Cloud Run / Firebase App Hosting / Firebase Hosting のいずれか） | ✅ | API は Cloud Run、画面は Firebase Hosting（`firebase.json` の rewrites で `/v1/**` を Cloud Run へ）。11/6 に公開 URL で確認済み（`docs/verification-2026-11-06.md`） |
+| テーマ・カテゴリ（教育）に入っている | ✅ | README に「教育部門」と明記。高校情報科のプログラミング課題の確認が対象 |
+| 他社 AI ツールが前面に出ていない | ⚠️→✅ | README の「GPT で作った」の記載を「生成AI」に直した（出典は著作物利用シートへ）。プロダクトが呼ぶ AI は Gemini だけ。評価用の合成データ（`evals/cases_lowq2`）は公開モデルの出力を元にしているが、プロダクトは呼ばない。**デモ動画・ピッチ・提出ドキュメントでも他社 AI 製品名を出さない** |
+| デモ動画を偽装しない | ⚠️ | `apps/api/scripts/record_demo.py` は既定では AI が定型文・実行が手元のサンドボックス。動画の最後に「Gemini が担う設計」と出すので、**提出する動画は `AI_BACKEND=gemini SANDBOX_BACKEND=code_execution` で収録し直す**（script の先頭に手順）。それができないときは、動画の字幕から Gemini の言及を外す |
+| 必須項目の不足がない | ❌ | 提出用リポジトリ `Devfest-Hackathon-2026/df-2026-t032` は **11/8 時点で運営の雛形（README・LICENSE・.gitignore）だけ**。コードも資料も入っていない。`scripts/export_submission.sh` で最終版を置く |
+| ルール違反がない（開始前のコード、秘密情報のコミット、PoC の流用） | ✅ | 最初のコミットは 11/5 09:56 の README 1行（リポジトリ作成）だけで、コードは 11/5 20:37 から。全履歴に API キー・秘密鍵・サービスアカウントの形式はなし。`.env` 類は追跡していない |
+
+## 提出物
+
+| 提出物 | 状態 | やること |
+| --- | --- | --- |
+| GitHub リポジトリ（提出用） | ❌ | `scripts/export_submission.sh ../df-2026-t032` → 中身を確かめて push。履歴ごと push しない（運営の README の注意どおり）。README に公開 URL が載っていることを確かめる |
+| プロダクト説明ドキュメント（テンプレートあり） | ⚠️ | Drive に作る。必須の採点外項目「AIをどの場面でどう使ったか、なぜその場面か」「開発を通して何を得たか」を埋める。審査基準 1b「Google 技術を採用した理由」は、比較した案とメリット/デメリットまで書く（Kickoff「Own the Why」） |
+| デモ動画（オンライン会場はプレゼン動画） | ⚠️ | 上の「偽装しない」のとおり本物の Gemini で収録。会場がオンラインなら、デモを含むプレゼン動画にする |
+| 著作物利用シート | ⚠️ | 下書き `docs/third-party.md` の「要記入」（画像を作った生成 AI のツール名、BGM）を埋めて Drive の表に写す |
+| ピッチ用スライド（現地会場の申込者のみ） | ⚠️ | 会場が現地なら用意する。他社製品名を前面に出さない |
+| Drive フォルダ | ⚠️ | 「リンクを知っている全員が閲覧可」にする。権限不足は審査されない |
+| Google フォーム | ⚠️ | 会場別のフォームに GitHub の URL と Drive フォルダの URL を出す |
+
+## 審査基準に対応する記載
+
+| 基準 | 状態 | 場所 |
+| --- | --- | --- |
+| 1a Google 技術が中核で機能している | ✅ | Code Execution で生徒のコードを実行し問いを作る、Gemini が質問案とまとめ、Model Armor が AI の前後を検査、Firestore/Cloud Run/Firebase Hosting/Auth、Cloud KMS、Secret Manager、Cloud Logging（README「活用した技術」） |
+| 1b 採用理由が合理的・具体的 | ⚠️ | README は役割の表のみ。提出ドキュメントに「なぜ Cloud Run（App Engine・GKE と比べて）」「なぜ Firestore（TTL・トランザクション）」「なぜ Gemini Flash-Lite」「なぜ Model Armor を自作フィルタでなく」「なぜ Code Execution を自前サンドボックスでなく」を、捨てた案とセットで書く |
+| 2a 一連の流れが動く | ✅ | 取り込み → 問いの生成 → 受付 → 解答 → 締切 → 声をかける順 → 振り返り。結合テスト 460 件 |
+| 2b 対象ユーザーの UI/UX | ✅ | 教員と生徒の画面。校内 LAN 版とオフラインの解答 |
+| 2c 安全性・拡張性・保守性 | ✅ | `SECURITY.md`、`docs/security-easy.svg`、保存期間 30 日と削除、監査ログ、Firestore はブラウザから全拒否 |
+| 3a 課題が具体的・明確 | ✅ | README「背景」 |
+| 3b 機能が課題解決に有効 | ✅ | README「解決出来ること」 |
+| 4a デモ・話の構成 | ⚠️ | Demo-first（何を・なぜ → デモ）。1 チーム 6 分（発表 5 分＋質疑 1 分） |
+
+## 運用（提出後も続くこと）
+
+| 項目 | 状態 | やること |
+| --- | --- | --- |
+| デプロイ URL を Regional Day（11/14）まで動かし続ける | ⚠️ | Cloud Credit の残額・有効期限、予算アラート。Firestore の TTL で古いデータは消えるが、デモクラスは 11/14 まで残る設定か（`RETENTION_DAYS`）を確かめる |
+| API キーに利用制限をかける | ⚠️ | Firebase の Web API キーに HTTP リファラ制限（`mushitori-hackathon.web.app`、`firebaseapp.com`）。Gemini は Vertex AI 経由（サービスアカウント）なので API キーなし |
+| 提出後に提出用リポジトリを触らない | ⚠️ | 締切後は読み取り専用。追加開発は開発用リポジトリで続け、決勝進出なら Demo Day までに反映 |
+
+## 確認に使ったコマンド
+
+```bash
+# 開始前のコミットがないか
+TZ=Asia/Tokyo git log --all --before='2026-11-05T10:00:00+09:00' --format='%h %ad %s' --date=iso
+# 全履歴に秘密情報の形式がないか
+git log -p --all | grep -nE 'AIza[0-9A-Za-z_-]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|"private_key"|ya29\.'
+# 提出用リポジトリの中身
+git clone --depth 1 https://github.com/Devfest-Hackathon-2026/df-2026-t032 && ls -a df-2026-t032
+```

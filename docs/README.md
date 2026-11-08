@@ -9,6 +9,8 @@
 | [`verification-2026-11-06.md`](./verification-2026-11-06.md) | 2026年11月6日に公開URLで、本物の Code Execution、Gemini、Firestore を使って確かめたこと |
 | [`offline.md`](./offline.md) | ネットが落ちても授業を止めない仕組み（授業パッケージ、校内LAN版、端末にためる解答） |
 | [`../SECURITY.md`](../SECURITY.md) | セキュリティの設計と対策、デプロイのときに行う設定 |
+| [`submission-checklist.md`](./submission-checklist.md) | Kickoff 資料の提出要件・審査対象外の条件との照合（締切 11/10 19:00、提出用リポジトリへの置き方） |
+| [`third-party.md`](./third-party.md) | 著作物利用シートの下書き（ライブラリ・画像・データの出典とライセンス） |
 
 ## 図
 
