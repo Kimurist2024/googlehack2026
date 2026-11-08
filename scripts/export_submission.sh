@@ -34,8 +34,10 @@ ORIGINAL_IGNORE=$(mktemp); ORIGINAL_LICENSE=$(mktemp)
 git -C "$DEST" rm -rq --ignore-unmatch . >/dev/null
 git -C "$SRC" archive --format=tar HEAD | tar -x -C "$DEST"
 
-# 提出に要らないもの（開発の進め方の記録）は置かない
+# 提出に要らないもの（開発の進め方の記録）は置かない。README の「このリポジトリは開発用です」の注意書きも外す
 rm -f "$DEST/docs/submission-checklist.md"
+sed -i '/^> \[!NOTE\]$/{N;/開発用です/d}' "$DEST/README.md"
+sed -i '/submission-checklist\.md/d' "$DEST/docs/README.md"
 
 # 運営の .gitignore（秘密情報の形式）はこちらの .gitignore に足す。運営の LICENSE（MIT）は、こちらに無ければ残す
 if [ -s "$ORIGINAL_IGNORE" ]; then
