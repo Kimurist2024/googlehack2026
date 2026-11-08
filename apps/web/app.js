@@ -39,10 +39,10 @@ let chatHistory = [];
 // 画面を開いた時点で起こしておき、画面が見えている間は止まらないように数分ごとに知らせる
 const KEEP_WARM_MS = 4 * 60 * 1000;
 const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => null);
-// RSIテストのタブは、サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたときだけ出す
+// RSIテストへの入口は、サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたときだけ出す
 wakeServer()
   .then((response) => (response && response.ok ? response.json() : {}))
-  .then((health) => { $("tab-rsi").hidden = health.rsi_test !== true; })
+  .then((health) => { rsiTestEnabled = health.rsi_test === true; updateHeaderSide(); })
   .catch(() => {});
 setInterval(() => { if (document.visibilityState === "visible") wakeServer(); }, KEEP_WARM_MS);
 
@@ -110,18 +110,30 @@ function richText(tag, text, className) {
   return element;
 }
 
-function selectTab(name) {
-  for (const key of ["teacher", "student", "rsi"]) {
-    $(key).hidden = key !== name;
-    $(`tab-${key}`).setAttribute("aria-selected", String(key === name));
-  }
+// いま出している画面（teacher / student / rsi）。切り替えは画面の中の入口から行う
+let currentView = "teacher";
+let rsiTestEnabled = false;
+let accountShown = false; // 教員としてログインしている（または前回の記録から先に出している）
+
+// 上の帯の右には、いまの画面で要るものを1つだけ出す
+function updateHeaderSide() {
   // 生徒の画面では教員のアカウントを見せない
-  $("account").hidden = name !== "teacher" || !teacherEmail;
+  $("account").hidden = currentView !== "teacher" || !accountShown;
+  $("to-teacher").hidden = currentView === "teacher";
+  $("to-rsi").hidden = currentView !== "teacher" || !rsiTestEnabled;
 }
-$("tab-teacher").onclick = () => selectTab("teacher");
-$("tab-student").onclick = () => selectTab("student");
-$("tab-rsi").onclick = () => { selectTab("rsi"); window.loadRsiTest(); };
-$("to-student").onclick = () => selectTab("student");
+
+function showView(name) {
+  const changed = name !== currentView;
+  currentView = name;
+  for (const key of ["teacher", "student", "rsi"]) $(key).hidden = key !== name;
+  updateHeaderSide();
+  // 別の画面に移ったときは、ページを移ったときと同じく上から見せる
+  if (changed) window.scrollTo(0, 0);
+}
+$("to-teacher").onclick = () => showView("teacher");
+$("to-student").onclick = () => showView("student");
+$("to-rsi").onclick = () => { showView("rsi"); window.loadRsiTest(); };
 
 function setButtons({ generate = false, open = false, close = false }) {
   $("generate").disabled = !generate;
@@ -144,7 +156,7 @@ function codeRow(number, code, classCode) {
     $("class-input").value = classCode;
     $("personal-input").value = code;
     resetStudent();
-    selectTab("student");
+    showView("student");
   };
   cell.append(use);
   row.append(cell);
@@ -686,9 +698,10 @@ async function setupTeacherAuth() {
 
 function showSignedOut(message) {
   teacherEmail = null;
+  accountShown = false;
   $("signin-card").hidden = false;
   $("teacher-work").hidden = true;
-  $("account").hidden = true;
+  updateHeaderSide();
   if (message !== undefined) $("signin-error").textContent = message;
 }
 
@@ -696,10 +709,12 @@ function showSignedOut(message) {
 function showSignedIn(email) {
   teacherEmail = email;
   $("who").textContent = email ?? "ログインを確認中…";
+  $("who").title = email ?? "";
   $("signin-error").textContent = "";
   $("signin-card").hidden = true;
   $("teacher-work").hidden = false;
-  $("account").hidden = $("teacher").hidden;
+  accountShown = true;
+  updateHeaderSide();
 }
 
 setupTeacherAuth().catch((error) => {

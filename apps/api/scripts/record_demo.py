@@ -170,7 +170,9 @@ class Demo:
 
     async def enter_as(self, number: str) -> None:
         page = self.page
-        await page.locator("#tab-teacher").click()
+        # 生徒の画面にいるときは、上の帯の右の「教員の画面へ」で教員の画面に戻る
+        if await page.locator("#to-teacher").is_visible():
+            await page.locator("#to-teacher").click()
         row = page.locator("#codes tr").filter(has=page.get_by_role("cell", name=number, exact=True))
         await self.click(row.get_by_role("button"))
         await self.click(page.get_by_role("button", name="入室", exact=True))
@@ -258,7 +260,7 @@ async def scenario(demo: Demo) -> None:
     await demo.show(page.locator("#result-items .card").first, 2.4)
 
     await demo.background_attempt(class_code, codes["4"], 1, "4")
-    await page.locator("#tab-teacher").click()
+    await page.locator("#to-teacher").click()
     await demo.say("教員が締め切ると、誤答をもとに声をかける順が出ます", 0.6)
     await demo.click(page.locator("#close"), 0.8)
     await page.wait_for_selector(".person")

@@ -13,16 +13,16 @@
 <body>
 <header>
   <h1>ムシトリ<small>（仮称）</small></h1>
-  <div class="header-right">
+  <!-- 右側には、いまの画面で要るものを1つだけ出す。
+       教員の画面ではアカウント、生徒の画面では教員の画面への入口（生徒の画面への入口はログインのカードと、配るコードの表にある） -->
+  <div class="header-side">
     <div id="account" class="account" hidden>
       <span id="who"></span>
       <button id="signout" class="link">ログアウト</button>
     </div>
-    <nav role="tablist">
-      <button role="tab" id="tab-teacher" aria-selected="true">教員</button>
-      <button role="tab" id="tab-student" aria-selected="false">生徒</button>
-      <button role="tab" id="tab-rsi" aria-selected="false" hidden>RSIテスト</button>
-    </nav>
+    <button id="to-teacher" class="link" hidden>教員の画面へ</button>
+    <!-- 手元の開発で scripts/dev.sh --rsi-test を付けたときだけ出す -->
+    <button id="to-rsi" class="link" hidden>RSIテスト</button>
   </div>
 </header>
 <main>
@@ -49,6 +49,15 @@
     </div>
   </section>
   <section id="teacher">
+    <div class="intro">
+      <p class="lead">提出されたコードについて、本人に短く聞いて確かめる授業の道具です。</p>
+      <h2 class="section-title">使い方</h2>
+      <ol class="steps" aria-label="使い方" tabindex="0">
+        <li class="step"><span class="step-no" aria-hidden="true">1</span><strong>課題を準備して問いを作る</strong><span>生徒のコードを隔離した環境で実際に動かし、その動きから本人のコードについての問いを作ります。</span></li>
+        <li class="step"><span class="step-no" aria-hidden="true">2</span><strong>コードを配って答えてもらう</strong><span>生徒は配られたコードで入り、5分で自分のコードについての問いに答えます。成績には使いません。</span></li>
+        <li class="step"><span class="step-no" aria-hidden="true">3</span><strong>声をかける順に確かめる</strong><span>誤答した行と本人に聞きたいことを、持ち時間の中で声をかける順に並べます。</span></li>
+      </ol>
+    </div>
     <div class="card signin" id="signin-card" hidden>
       <h2>教員としてログイン</h2>
       <p>授業の準備や、声をかける順の確認には、許可された Google アカウントでのログインが必要です。</p>
@@ -58,7 +67,7 @@
     </div>
     <div id="teacher-work" hidden>
     <div class="card" id="prepare-card">
-      <h2>1. 課題を準備する</h2>
+      <h2><span class="step-no" aria-hidden="true">1</span>課題を準備する</h2>
       <p class="hint">デモは合成データだけを使います。実在の生徒の提出物は入れないでください。</p>
       <div class="row">
         <button id="seed" class="primary">デモクラスを作る</button>
@@ -69,13 +78,18 @@
       </div>
       <p id="status" role="status" class="status"></p>
     </div>
+    <div class="card empty" id="empty-state">
+      <span class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/><path d="M14 4l-4 16"/></svg></span>
+      <p>まだ課題がありません。</p>
+      <p>「デモクラスを作る」から始めましょう。</p>
+    </div>
     <div class="card" id="codes-card" hidden>
-      <h2>2. 生徒に配るコード</h2>
+      <h2><span class="step-no" aria-hidden="true">2</span>生徒に配るコード</h2>
       <p>授業コード <strong id="class-code" class="code"></strong></p>
       <table><thead><tr><th>番号</th><th>個人コード</th><th></th></tr></thead><tbody id="codes"></tbody></table>
     </div>
     <div class="card" id="followups-card" hidden>
-      <h2>3. 声をかける順</h2>
+      <h2><span class="step-no" aria-hidden="true">3</span>声をかける順</h2>
       <div class="row">
         <label>持ち時間（秒） <input id="budget" type="number" min="0" step="10" value="90"></label>
         <button id="refresh">更新</button>
@@ -91,23 +105,24 @@
   <section id="student" hidden>
     <form id="login" class="card">
       <h2>入室する</h2>
+      <p class="hint">先生から配られた授業コードと個人コードを入れてください。</p>
       <label>授業コード <input id="class-input" autocomplete="off" required></label>
       <label>個人コード <input id="personal-input" autocomplete="off" required></label>
-      <button class="primary">入室</button>
+      <button class="primary cta">入室</button>
       <p id="login-error" class="error" role="alert"></p>
     </form>
     <div id="ready" class="card" hidden>
       <h2 id="welcome"></h2>
       <p>自分の提出したコードについて、短い問いに答えます。始めると持ち時間が進みます。</p>
       <p class="hint">コードを手元で動かしたり、AIに聞いたりせずに答えてください。結果は成績には使いません。</p>
-      <button id="start" class="primary">始める</button>
+      <button id="start" class="primary cta">始める</button>
       <p id="start-error" class="error" role="alert"></p>
     </div>
     <form id="quiz" hidden>
       <div class="card sticky"><strong id="timer" role="timer"></strong></div>
       <div class="card"><h2>あなたのコード</h2><pre id="code"></pre><p id="stdin" class="hint"></p></div>
       <div id="questions"></div>
-      <button class="primary wide">解答を送る</button>
+      <button class="primary wide cta sticky-cta">解答を送る</button>
       <p id="quiz-error" class="error" role="alert"></p>
     </form>
     <div id="result" hidden>
