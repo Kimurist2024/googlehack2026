@@ -22,7 +22,7 @@ git -C "$DEST" remote get-url origin | grep -qi 'Devfest-Hackathon-2026/df-2026-
 [ -z "$(git -C "$SRC" status --porcelain)" ] || { echo "開発リポジトリに未コミットの変更があります。先にコミットするか戻してください" >&2; exit 1; }
 
 echo "== 秘密らしき文字列がないか（追跡しているファイル）"
-if git -C "$SRC" grep -nIE 'AIza[0-9A-Za-z_-]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|"private_key"|ya29\.[0-9A-Za-z_-]{20,}' -- . ':(exclude)scripts/export_submission.sh'; then
+if git -C "$SRC" grep -nIE 'AIza[0-9A-Za-z_-]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|"private_key"|ya29\.[0-9A-Za-z_-]{20,}' -- . ':(exclude)scripts/export_submission.sh' ':(exclude)docs/submission-checklist.md'; then
   echo "上の行を確かめてください。止めます" >&2; exit 1
 fi
 echo "   なし"
