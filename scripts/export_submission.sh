@@ -95,6 +95,7 @@ ${COAUTHORS}
 EOF
 
 echo
-git -C "$DEST" log -1 --stat | head -20
+# head に渡すと、pipefail の下で git が SIGPIPE（終了コード 141）で止まり、書き出せていても失敗になる。要約だけを出す
+git -C "$DEST" --no-pager log -1 --shortstat
 echo
 echo "確かめてから push してください:  git -C $DEST push origin $(git -C "$DEST" branch --show-current)"
