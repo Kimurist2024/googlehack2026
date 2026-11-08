@@ -291,3 +291,12 @@ def test_rules_refuse_browser_access():
     assert httpx.get(f"{base}/classes/x").status_code == 403
     assert httpx.get(f"{base}/assignments/x/answerKeys/y").status_code == 403
     assert httpx.patch(f"{base}/classes/x", json={"fields": {}}).status_code == 403
+
+
+def test_guest_usage_is_counted_per_key_and_together(store):
+    key, other = unique("generate-1"), unique("generate-1")
+    assert store.usage_count(key) == 0
+    run_together(4, lambda _: store.add_usage(key, expire_at=10_000_000_000))
+    store.add_usage(other, expire_at=10_000_000_000)
+    assert store.usage_count(key) == 4
+    assert store.usage_count(other) == 1

@@ -123,12 +123,12 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 | 部品 | 設定 |
 |---|---|
 | Firebase Hosting | `apps/web` を配信し、`/v1/**` を Cloud Run の `mushitori`（`asia-northeast1`）へ転送する（直下の `firebase.json`）。画面の HTML・JS・CSS は `Cache-Control: no-cache` で配り、デプロイした直後から新しい画面が出るようにする |
-| Firebase Auth | Google ログイン。教員は `TEACHER_EMAILS` のアカウントだけを通す |
+| Firebase Auth | Google ログイン。教員は `TEACHER_EMAILS` のアカウントだけを通す。`ALLOW_GUEST_TEACHER=1` のときは、匿名ログインを体験用の教員として通す（`app/guest.py`。上限つき、データは1日で消える） |
 | Cloud Run | 誰でも呼べる設定。サービスアカウント `mushitori-run` には Firestore（`roles/datastore.user`）、Agent Platform（`roles/aiplatform.user`）、Model Armor（`roles/modelarmor.user`）の利用権限と、`mushitori-session-secret` だけの読み取り権限を付ける |
 | Secret Manager | `mushitori-session-secret` を `SESSION_SECRET` として渡す |
 | Code Execution | 実行環境を1つ作り、`SANDBOX_RUNTIME_NAME` で渡す。指定しないと問いを作るたびに新しく作られる |
 
-Cloud Run の環境変数は `APP_ENV=production`、`STORE_BACKEND=firestore`、`AI_BACKEND=gemini`、`SANDBOX_BACKEND=code_execution`、`TEACHER_EMAILS`、`MODEL_ARMOR_TEMPLATE`、`ALLOW_DEMO_SEED=1`、`SERVE_WEB=0` などです。
+Cloud Run の環境変数は `APP_ENV=production`、`STORE_BACKEND=firestore`、`AI_BACKEND=gemini`、`SANDBOX_BACKEND=code_execution`、`TEACHER_EMAILS`、`MODEL_ARMOR_TEMPLATE`、`ALLOW_DEMO_SEED=1`、`ALLOW_GUEST_TEACHER=1`、`SERVE_WEB=0` などです。体験用の教員を開く手順（匿名ログインの有効化と `guestUsage` の TTL）は [`SECURITY.md`](../../SECURITY.md#デプロイのときに行う設定) の手順7にあります。
 
 ## デプロイ
 

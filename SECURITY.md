@@ -69,7 +69,8 @@
 
 | 対策 | 場所 |
 | --- | --- |
-| 教員は Firebase の ID トークンで確かめる。署名、発行元、期限を確かめる。失効と無効化の確認（`check_revoked`）は `FIREBASE_CHECK_REVOKED=1` のときに行う（本番ではまだ有効にしていない。下の手順8）。メールの確認済みと許可リスト（`TEACHER_EMAILS`）の両方が必要 | `apps/api/app/auth.py` |
+| 教員は Firebase の ID トークンで確かめる。署名、発行元、期限を確かめる。失効と無効化の確認（`check_revoked`）は `FIREBASE_CHECK_REVOKED=1` のときに行う（本番ではまだ有効にしていない。下の手順9）。メールの確認済みと許可リスト（`TEACHER_EMAILS`）の両方が必要 | `apps/api/app/auth.py` |
+| 体験用の教員（審査員や見学の人向け）は、`ALLOW_GUEST_TEACHER=1` のときだけ、Firebase の匿名ログインを `guest:<uid>` として通す。許可リストの教員とは別の役で、1クラス10人まで、クラスの作成と問いの生成には1人あたりと全員の合計の1日の上限がある（Firestore で数えるので、インスタンスをまたいで効く）。課題と生徒のデータは1日で消える。クラスは教員ごとに分けているので、体験する人どうしで互いのものは見えない | `apps/api/app/guest.py`、`apps/api/app/auth.py` |
 | 生徒のトークンは HMAC-SHA256 で署名し、版（`v`）、種類（`typ`）、期限を必ず確かめる。署名を確かめる前に中身を読まない。形が違うものはすべて理由を区別せず 401 | `apps/api/app/auth.py` |
 | 鍵は `SESSION_SECRET` から HKDF で用途ごとに導出する（トークンの署名、コードのハッシュ、接続元のハッシュ）。1つの用途の値が漏れても、他の用途の鍵にならない | `apps/api/app/auth.py` |
 | 授業コードと個人コードは鍵付きハッシュだけを保存する。平文で返すのはクラスを作った1回だけ | `apps/api/app/main.py` |
@@ -213,18 +214,28 @@ Model Armor が検出したときは、どのフィルタが反応したかを�
    ```
 
    `PACKAGE_SIGNING_KMS_KEY=projects/mushitori-hackathon/locations/asia-northeast1/keyRings/mushitori/cryptoKeys/class-package/cryptoKeyVersions/1` を設定します。設定がないと、授業パッケージは作られません（503）。
-7. **画面の CSP を強制に切り替える。** デプロイしたら、ログインから締切までを一通り操作し、開発者ツールのコンソールに CSP の違反が出ないことを確かめます。出なければ `firebase.json` の `Content-Security-Policy-Report-Only` を `Content-Security-Policy` に変えて、もう一度デプロイします。
-8. **（任意）トークンの失効も確かめる。** サービスアカウントに `roles/firebaseauth.viewer` を付けてから `FIREBASE_CHECK_REVOKED=1` にします。付けずに有効にすると、全員がログインできなくなります。
+7. **（任意）体験用の教員を開く。** Firebase Authentication の匿名ログインを有効にし、利用の回数の記録（`guestUsage`）にも TTL を付けてから、`ALLOW_GUEST_TEACHER=1` にします。閉じるときは `ALLOW_GUEST_TEACHER` を外します（匿名ログインのトークンは 403 になります）。
+
+   ```sh
+   curl -X PATCH -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "X-Goog-User-Project: mushitori-hackathon" \
+     -H "Content-Type: application/json" -d '{"signIn":{"anonymous":{"enabled":true}}}' \
+     "https://identitytoolkit.googleapis.com/admin/v2/projects/mushitori-hackathon/config?updateMask=signIn.anonymous.enabled"
+   gcloud firestore fields ttls update expire_at --collection-group=guestUsage --enable-ttl
+   gcloud run services update mushitori --region asia-northeast1 --project mushitori-hackathon --update-env-vars ALLOW_GUEST_TEACHER=1
+   ```
+
+8. **画面の CSP を強制に切り替える。** デプロイしたら、ログインから締切までを一通り操作し、開発者ツールのコンソールに CSP の違反が出ないことを確かめます。出なければ `firebase.json` の `Content-Security-Policy-Report-Only` を `Content-Security-Policy` に変えて、もう一度デプロイします。
+9. **（任意）トークンの失効も確かめる。** サービスアカウントに `roles/firebaseauth.viewer` を付けてから `FIREBASE_CHECK_REVOKED=1` にします。付けずに有効にすると、全員がログインできなくなります。
 
 ## まだできていないこと
 
 - **エッジでの防御：** Cloud Armor（WAF、IP 単位の上限、ボット対策）はロードバランサーが必要なので入れていません。アプリ側の上限は接続元ごとなので、多数の接続元からの分散した総当たりには効きにくいです。ただしコードは授業コードと個人コードの両方が必要で、それぞれ31種類の文字の8桁です。
-- **画面の CSP：** 本番の画面では、まだ Report-Only です。上の手順 7 で強制に切り替えます。
+- **画面の CSP：** 本番の画面では、まだ Report-Only です。上の手順 8 で強制に切り替えます。
 - **校内LAN版の証明書：** 教員PCが作る自己署名の証明書は、生徒の端末に信頼させるまで警告が出ます。学校の管理コンソールから配る手順が要ります。保存ファイルの鍵は OS の鍵保管庫ではなく、権限を絞ったファイルに置いています。
 - **ソフトウェアの供給網：** ベースイメージは digest で、Python のパッケージはハッシュで固定していません。Artifact Registry の脆弱性スキャンと Binary Authorization も未設定です。
 - **準備まで完全にオフラインにする：** 教員PCでのコードの隔離実行（WebAssembly）とローカルの AI は設計だけです（[docs/offline.md](docs/offline.md)）。
 - **名簿の保存期間：** クラス（出席番号の名簿、担当教員のメール、コードのハッシュ）は、教員が消すまで残ります。生徒のデータより重さは低いですが、年度の終わりに消す運用が必要です。
-- **本番での確認（2026年11月8日、Cloud Run のリビジョン `mushitori-00011`）：** Model Armor（`us` のテンプレート `mushitori-guard`）、Firestore の TTL（8つのコレクショングループの `expire_at`）、Secret Manager からの `SESSION_SECRET`、専用のサービスアカウント（`roles/datastore.user`・`roles/aiplatform.user`・`roles/modelarmor.user` と、その秘密だけの読み取り）は、本番で有効です。Gemini の呼び出しの前後で Model Armor を通ることは、11月6日に公開 URL で確かめました。一方、Cloud KMS の署名の鍵（手順6）とトークンの失効の確認（手順8）は、本番ではまだ設定していません。そのため、本番では授業パッケージを作れません（`/v1/package-key` は 503）。コードの振る舞いは、偽の応答と Firestore のエミュレータで試験しています。
+- **本番での確認（2026年11月8日、Cloud Run のリビジョン `mushitori-00011`）：** Model Armor（`us` のテンプレート `mushitori-guard`）、Firestore の TTL（8つのコレクショングループの `expire_at`）、Secret Manager からの `SESSION_SECRET`、専用のサービスアカウント（`roles/datastore.user`・`roles/aiplatform.user`・`roles/modelarmor.user` と、その秘密だけの読み取り）は、本番で有効です。Gemini の呼び出しの前後で Model Armor を通ることは、11月6日に公開 URL で確かめました。一方、Cloud KMS の署名の鍵（手順6）とトークンの失効の確認（手順9）は、本番ではまだ設定していません。そのため、本番では授業パッケージを作れません（`/v1/package-key` は 503）。コードの振る舞いは、偽の応答と Firestore のエミュレータで試験しています。
 
 ## 確かめ方
 

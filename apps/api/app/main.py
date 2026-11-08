@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator, model
 from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
-from . import audit, auth, classpack, demo, offline_api, security, service
+from . import audit, auth, classpack, demo, guest, offline_api, security, service
 from .access import student_assignment
 from .csv_export import build_csv, csv_cell  # noqa: F401  csv_cell はテストが app.main から読む
 from .fields import (
@@ -234,13 +234,15 @@ def create_app(
     # Cloud Run は末尾が z のパス（/healthz など）を予約していて、アプリまで届かない
     @app.get("/v1/health")
     def health() -> dict:
-        # rsi_test は画面が「RSIテスト」のタブを出すかどうかに使う
-        return {"status": "ok", "rsi_test": rsi_test_enabled()}
+        # rsi_test は画面が「RSIテスト」の入口を、guest_teacher は「ログインせずに試す」を出すかどうかに使う
+        return {"status": "ok", "rsi_test": rsi_test_enabled(), "guest_teacher": guest.enabled()}
 
     @app.get("/v1/me")
     def me(teacher: str = Depends(auth.current_teacher)) -> dict:
-        """ログインしたアカウントが教員として通るかを、画面が確かめるのに使う。"""
-        return {"email": teacher}
+        """ログインしたアカウントが教員として通るかを、画面が確かめるのに使う。体験用の教員にはメールアドレスがない。"""
+        if guest.is_guest(teacher):
+            return {"email": None, "guest": True}
+        return {"email": teacher, "guest": False}
 
     @app.post("/v1/dev/seed", status_code=201)
     def seed_demo(request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
@@ -265,6 +267,9 @@ def create_app(
 
     @app.post("/v1/classes", status_code=201)
     def create_class(body: ClassIn, request: Request, teacher: str = Depends(auth.current_teacher)) -> dict:
+        if guest.is_guest(teacher) and len(body.student_numbers) > guest.MAX_STUDENTS:
+            raise HTTPException(status_code=400, detail=f"体験用のクラスは{guest.MAX_STUDENTS}人までです")
+        guest.check(store, "class", teacher, service.now())
         class_id = secrets.token_hex(8)
         class_code = auth.new_code()
         numbers: dict[str, str] = {}
@@ -281,6 +286,7 @@ def create_app(
         store.create_class(ClassRecord(class_id, body.name, teacher, numbers), auth.code_hash(class_code), credentials)
         # 授業パッケージ用の照合値。コードの平文があるのはこの時だけなので、ここで作る
         store.save_offline_verifiers(class_id, classpack.make_verifiers(class_code, by_student))
+        guest.use(store, "class", teacher, service.now())
         audit.event("class.created", request, principal=teacher, class_id=class_id, count=len(numbers))
         # コードを平文で返すのはこの1回だけ
         return {"class_id": class_id, "class_code": class_code, "personal_codes": codes}
@@ -299,7 +305,8 @@ def create_app(
                 time_limit_sec=body.time_limit_sec,
                 question_count=body.question_count,
                 weights=body.weights,
-                expire_at=service.now() + retention_sec(),
+                # 体験用の教員のデータは、設定の日数によらず1日で消す
+                expire_at=service.now() + (guest.RETENTION_SEC if guest.is_guest(teacher) else retention_sec()),
             )
         )
         audit.event("assignment.created", request, principal=teacher, class_id=body.class_id, assignment_id=assignment_id)
@@ -332,8 +339,11 @@ def create_app(
         assignment = owned_assignment(assignment_id, teacher)
         if not store.submission_counts(assignment_id):
             raise HTTPException(status_code=409, detail="提出がありません")
+        # 問いを作るたびに Gemini とコードの実行を使うので、体験用の教員には回数の上限がある
+        guest.check(store, "generate", teacher, service.now())
         if not store.begin_generation(assignment_id, service.now(), GENERATION_STALE_SEC):
             raise HTTPException(status_code=409, detail="今は問いを作れません")
+        guest.use(store, "generate", teacher, service.now())
         audit.event("generation.started", request, principal=teacher, assignment_id=assignment_id)
         tasks.add_task(run_generation, assignment)
         return {"state": "generating"}

@@ -11,6 +11,7 @@ assignments/{id}/answerKeys/{sid}     正解、解説、実行の記録       �
 assignments/{id}/attempts/{sid}       開始と提出の時刻、採点結果   │ 1つずつに印を付ける
 assignments/{id}/followups/{sid}      教員に渡す質問案と処置       ┘
 loginFailures/{client}-{window}       接続元（鍵付きハッシュ）ごとの1分間の入室の失敗。expire_at で TTL 削除
+guestUsage/{kind}-{day}[-{uid}]       体験用の教員の1日の利用回数（app/guest.py）。expire_at で TTL 削除
 
 生徒ごとの記録（classes/{id}/students/{sid}）は課題をまたいで残すので、記録の1件ずつに元の課題の expire_at を持たせ、
 読むときと書くときに期限の過ぎたものを外す。文書の expire_at は最後まで残る記録の期限にし、TTL で消す。
@@ -370,6 +371,15 @@ class FirestoreStore:
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         # Increment はサーバー側で足すので、同時に失敗しても数え漏れない
         self._login_failure(client_key, window).set(
+            {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
+        )
+
+    def usage_count(self, key: str) -> int:
+        snapshot = self.db.collection("guestUsage").document(key).get()
+        return int(snapshot.get("count") or 0) if snapshot.exists else 0
+
+    def add_usage(self, key: str, expire_at: float) -> None:
+        self.db.collection("guestUsage").document(key).set(
             {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
         )
 

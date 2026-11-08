@@ -35,6 +35,7 @@ MUTATING = (
     "set_entry_action",
     "remove_entries",
     "add_login_failure",
+    "add_usage",
     "save_offline_verifiers",
     "delete_assignment",
     "delete_class",
@@ -102,6 +103,7 @@ class LanStore(MemoryStore):
             "followups": self._followups,
             "records": [[class_id, student_id, record] for (class_id, student_id), record in self._records.items()],
             "login_failures": [[client, window, count] for (client, window), count in self._login_failures.items()],
+            "usage": self._usage,
             "offline_verifiers": self._offline_verifiers,
         }
 
@@ -113,6 +115,8 @@ class LanStore(MemoryStore):
         for name in ("submissions", "quizzes", "answer_keys", "attempts", "followups", "offline_verifiers"):
             setattr(self, f"_{name}", state[name])
         self._login_failures = {(client, window): count for client, window, count in state["login_failures"]}
+        # 体験用の教員の回数（app/guest.py）を足す前に書いた保存ファイルにも対応する。校内LAN版では体験用は使わない
+        self._usage = state.get("usage", {})
         # 生徒ごとの記録を足す前に書いた保存ファイルにも対応する
         self._records = {(class_id, student_id): record for class_id, student_id, record in state.get("records", [])}
 

@@ -167,6 +167,12 @@ class Store(Protocol):
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
         """入室の失敗を1回数える。expire_at を過ぎた記録は消してよい。"""
 
+    def usage_count(self, key: str) -> int:
+        """体験用の教員の利用回数（app/guest.py）。インスタンスをまたいで数える。"""
+
+    def add_usage(self, key: str, expire_at: float) -> None:
+        """体験用の教員の利用を1回数える。expire_at を過ぎた記録は消してよい。"""
+
     def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
         """授業パッケージに入れる、コードの照合値（scrypt）を保存する。app/classpack.py を参照。"""
 
@@ -195,6 +201,7 @@ class MemoryStore:
         self._followups: dict[str, dict[str, Doc]] = {}
         self._records: dict[tuple[str, str], Doc] = {}
         self._login_failures: dict[tuple[str, int], int] = {}
+        self._usage: dict[str, int] = {}
         self._offline_verifiers: dict[str, Doc] = {}
 
     def _assignment_tables(self) -> tuple[dict[str, dict[str, Doc]], ...]:
@@ -397,6 +404,15 @@ class MemoryStore:
             for key in [key for key in self._login_failures if key[1] < window - 1]:
                 del self._login_failures[key]
             self._login_failures[(client_key, window)] = self._login_failures.get((client_key, window), 0) + 1
+
+    def usage_count(self, key: str) -> int:
+        with self._lock:
+            return self._usage.get(key, 0)
+
+    def add_usage(self, key: str, expire_at: float) -> None:
+        # 手元では再起動で消えるので、expire_at は使わない
+        with self._lock:
+            self._usage[key] = self._usage.get(key, 0) + 1
 
     def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
         with self._lock:

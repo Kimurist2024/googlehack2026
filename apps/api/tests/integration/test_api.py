@@ -391,7 +391,7 @@ def firebase_teacher(monkeypatch):
 
 
 def test_me_tells_the_page_whether_the_account_is_a_teacher(client, firebase_teacher):
-    assert client.get("/v1/me", headers=firebase_teacher("good")).json() == {"email": "teacher@example.com"}
+    assert client.get("/v1/me", headers=firebase_teacher("good")).json() == {"email": "teacher@example.com", "guest": False}
     assert client.get("/v1/me", headers=firebase_teacher("other")).status_code == 403
     assert client.get("/v1/me").status_code == 401
 

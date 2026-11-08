@@ -76,7 +76,7 @@ def local_web(monkeypatch, store, rsi_test: str | None) -> TestClient:
 def test_rsi_test_is_off_unless_started_with_the_option(monkeypatch, store):
     """RSIテストの記録とタブは、起動オプション（RSI_TEST=1）のときだけ。"""
     off = local_web(monkeypatch, store, None)
-    assert off.get("/v1/health").json() == {"status": "ok", "rsi_test": False}
+    assert off.get("/v1/health").json() == {"status": "ok", "rsi_test": False, "guest_teacher": False}
     assert off.get(RSI_DATA).status_code == 404
     assert off.get("/app.js").status_code == 200
     on = local_web(monkeypatch, store, "1")

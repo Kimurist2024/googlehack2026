@@ -32,6 +32,7 @@ STEPS = [
     ("save_student_entry", ("c1", "s1", {"assignment_id": "a1", "closed_at": 3.0, "score": 1, "total": 1})),
     ("set_entry_action", ("c1", "s1", "a1", {"action": "explained"})),
     ("add_login_failure", ("client", 1, 180.0)),
+    ("add_usage", ("generate-1", 172800.0)),
     ("remove_entries", ("c1", "a1")),
     ("delete_assignment", ("a1",)),
     ("delete_class", ("c1",)),
@@ -53,6 +54,7 @@ READS = {
     "followups": ("a1",),
     "get_student_record": ("c1", "s1"),
     "login_failures": ("client", 1),
+    "usage_count": ("generate-1",),
     "offline_verifiers": ("c1",),
 }
 REMOVING = ("remove_entries", "delete_assignment", "delete_class")

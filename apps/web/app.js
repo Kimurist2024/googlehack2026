@@ -25,6 +25,8 @@ const scriptPolicy = window.trustedTypes?.createPolicy("mushitori", {
 const trustedScriptURL = (url) => (scriptPolicy ? scriptPolicy.createScriptURL(url) : url);
 let teacherAuth = null; // Firebase Hosting で配信したときだけ使う。手元の開発では null
 let teacherEmail = null; // 教員として確かめられたアカウント
+let firebaseSignin = false; // Firebase のログインが使える配信（Firebase Hosting）か
+let guestTeacherEnabled = false; // サーバーが体験用の教員（ログインせずに試す）を許しているか
 let assignmentId = null;
 let classId = null;
 let studentToken = null;
@@ -42,7 +44,12 @@ const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => 
 // RSIテストへの入口は、サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたときだけ出す
 wakeServer()
   .then((response) => (response && response.ok ? response.json() : {}))
-  .then((health) => { rsiTestEnabled = health.rsi_test === true; updateHeaderSide(); })
+  .then((health) => {
+    rsiTestEnabled = health.rsi_test === true;
+    guestTeacherEnabled = health.guest_teacher === true;
+    updateHeaderSide();
+    updateGuestEntry();
+  })
   .catch(() => {});
 setInterval(() => { if (document.visibilityState === "visible") wakeServer(); }, KEEP_WARM_MS);
 
@@ -653,10 +660,13 @@ async function setupTeacherAuth() {
     markAuthReady();
     return;
   }
+  firebaseSignin = true;
+  updateGuestEntry();
   // 初めての端末では、SDK を待たずにログインの案内を出す（ボタンは準備ができてから押せる）
   if (!wasTeacher()) {
     showSignedOut();
     $("signin").disabled = true;
+    $("guest-signin").disabled = true;
   }
   await Promise.all([loadScript(`${FIREBASE_SDK}/firebase-app-compat.js`), loadScript(`${FIREBASE_SDK}/firebase-auth-compat.js`)]);
   firebase.initializeApp(config);
@@ -671,7 +681,17 @@ async function setupTeacherAuth() {
       else $("signin-error").textContent = "ログインできませんでした。もう一度お試しください。";
     }
   };
+  // 体験用。Firebase の匿名ログインで、ブラウザごとに別の体験用の教員になる（app/guest.py）
+  $("guest-signin").onclick = async () => {
+    $("signin-error").textContent = "";
+    try {
+      await teacherAuth.signInAnonymously();
+    } catch {
+      $("signin-error").textContent = "体験用の画面を開けませんでした。もう一度お試しください。";
+    }
+  };
   $("signin").disabled = false;
+  $("guest-signin").disabled = false;
   $("signout").onclick = () => teacherAuth.signOut();
   teacherAuth.onAuthStateChanged(async (user) => {
     // ここで初めてログインの状態がわかるので、待たせていた教員の API を通す
@@ -684,11 +704,12 @@ async function setupTeacherAuth() {
     try {
       const me = await teacherGet("/v1/me");
       rememberTeacher(true);
-      showSignedIn(me.email);
+      showSignedIn(me.email, me.guest === true);
     } catch (error) {
-      const message = error.status === 403
-        ? `${user.email} は教員として登録されていません。許可されたアカウントでログインしてください。`
-        : "ログインを確かめられませんでした。もう一度お試しください。";
+      const guestHint = guestTeacherEnabled ? "審査やお試しの方は「ログインせずに試す」を使ってください。" : "";
+      let message = "ログインを確かめられませんでした。もう一度お試しください。";
+      if (error.status === 403 && user.isAnonymous) message = "体験用の入口はいま閉じています。";
+      else if (error.status === 403) message = `${user.email} は教員として登録されていません。許可されたアカウントでログインしてください。${guestHint}`;
       rememberTeacher(false);
       await teacherAuth.signOut();
       showSignedOut(message);
@@ -705,11 +726,21 @@ function showSignedOut(message) {
   if (message !== undefined) $("signin-error").textContent = message;
 }
 
-// email が null のときは、前回の記録から先に出しただけで、まだ確かめていない
-function showSignedIn(email) {
+// 「ログインせずに試す」は、Firebase で配信していて、サーバーも許しているときだけ出す
+function updateGuestEntry() {
+  $("guest-entry").hidden = !(firebaseSignin && guestTeacherEnabled);
+}
+
+// email が null で guest でもないときは、前回の記録から先に出しただけで、まだ確かめていない
+function showSignedIn(email, guest = false) {
   teacherEmail = email;
-  $("who").textContent = email ?? "ログインを確認中…";
+  // 体験用はメールアドレスがなく、右の「体験を終える」でわかるので、名前は出さない（狭い画面で切れないように）
+  $("who").hidden = guest;
+  $("who").textContent = guest ? "" : (email ?? "ログインを確認中…");
   $("who").title = email ?? "";
+  // 匿名ログインは、ログアウトすると同じアカウントには戻れない
+  $("signout").textContent = guest ? "体験を終える" : "ログアウト";
+  $("guest-note").hidden = !guest;
   $("signin-error").textContent = "";
   $("signin-card").hidden = true;
   $("teacher-work").hidden = false;

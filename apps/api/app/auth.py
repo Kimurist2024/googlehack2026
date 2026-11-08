@@ -17,7 +17,7 @@ import time
 
 from fastapi import Header, HTTPException, Request
 
-from . import audit
+from . import audit, guest
 
 logger = logging.getLogger(__name__)
 SESSION_LIFETIME_SEC = 2 * 60 * 60
@@ -145,7 +145,10 @@ def current_student(authorization: str = Header(default="")) -> dict:
 
 
 def current_teacher(request: Request, authorization: str = Header(default=""), x_dev_teacher: str = Header(default="")) -> str:
-    """教員を確かめる。ローカル開発のときだけ、ヘッダーでの指定を認める。"""
+    """教員を確かめる。ローカル開発のときだけ、ヘッダーでの指定を認める。
+
+    ALLOW_GUEST_TEACHER=1 のときは、Firebase の匿名ログインを体験用の教員（guest:<uid>）として通す（app/guest.py）。
+    """
     if is_local() and x_dev_teacher:
         if not re.fullmatch(DEV_TEACHER_PATTERN, x_dev_teacher):
             raise HTTPException(status_code=400, detail="X-Dev-Teacher の形が正しくありません")
@@ -158,6 +161,12 @@ def current_teacher(request: Request, authorization: str = Header(default=""), x
         # 理由は記録にだけ残し、応答では区別しない
         audit.event("teacher.auth_failed", request, severity="WARNING", reason=type(error).__name__)
         raise HTTPException(status_code=401, detail="教員の認証に失敗しました") from None
+    if guest.is_anonymous(decoded):
+        name = guest.principal(str(decoded.get("uid") or decoded.get("sub") or "")) if guest.enabled() else None
+        if name is None:
+            audit.event("teacher.guest_rejected", request, severity="WARNING", reason="disabled" if not guest.enabled() else "bad_uid")
+            raise HTTPException(status_code=403, detail="体験用の入口は閉じています")
+        return name
     allowed = {item.strip().lower() for item in os.environ.get("TEACHER_EMAILS", "").split(",") if item.strip()}
     email = str(decoded.get("email", "")).lower()
     if not decoded.get("email_verified") or email not in allowed:
