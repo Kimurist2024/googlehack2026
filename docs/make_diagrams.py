@@ -531,6 +531,64 @@ def security_easy() -> None:
     s.save("security-easy.svg")
 
 
+def node(s, cx, y, icon, name, caption, color, w=270, h=120, fill=CARD, dashed=False):
+    """Google Cloud の構成図の箱。上にアイコン、下に名前と役割。"""
+    dash = ' stroke-dasharray="8 6"' if dashed else ""
+    s.add(f'<rect x="{cx - w / 2}" y="{y}" width="{w}" height="{h}" rx="12" fill="{fill}" stroke="{color}" stroke-width="2.5"{dash}/>')
+    s.icon(icon, cx, y + 34, color, r=22)
+    s.note(cx, y + 82, name, size=18, anchor="middle", bold=True)
+    s.note(cx, y + 106, caption, size=14, anchor="middle", color=MUTED)
+
+
+def gcp_architecture() -> None:
+    """提出ドキュメントのアーキテクチャ図。Google Cloud のどのサービスが何をしているか。"""
+    s = Svg("ムシトリの構成：", "Cloud Run が実行と AI を仲介し、正解は実行結果から決める", height=900)
+    blue, teal, pink, amber, violet, slate, red = (STROKES[k] for k in ("blue", "teal", "pink", "amber", "violet", "slate", "red"))
+    # Google Cloud の枠
+    s.add('<rect x="300" y="135" width="1260" height="735" rx="14" fill="#f4f6f7" stroke="#b9c3c8" stroke-width="2" stroke-dasharray="10 7"/>')
+    s.note(322, 168, "Google Cloud / Firebase", size=18, color=MUTED, bold=True)
+    # 使う人
+    node(s, 150, 180, "browser", "生徒", "ブラウザ（ログインなし）", blue, w=210)
+    node(s, 150, 390, "laptop", "教員", "ブラウザ（Google ログイン）", blue, w=210)
+    node(s, 150, 720, "laptop", "教員の PC", "校内 LAN 版（ネット障害時）", red, w=210, dashed=True)
+    # 1段目
+    node(s, 500, 180, "browser", "Firebase Hosting", "画面の配信・/v1/** を転送", blue)
+    node(s, 1370, 180, "sandbox", "Code Execution", "生徒のコードを隔離して実行", amber)
+    # 2段目
+    node(s, 500, 390, "key", "Firebase Authentication", "教員の Google ログイン", blue)
+    s.add(f'<rect x="830" y="380" width="300" height="140" rx="14" fill="#e8f6f2" stroke="{teal}" stroke-width="3.5"/>')
+    s.icon("server", 980, 418, teal, r=24)
+    s.note(980, 468, "Cloud Run", size=21, anchor="middle", bold=True)
+    s.note(980, 494, "API（FastAPI）・裏の処理", size=15, anchor="middle", color=MUTED)
+    s.add(f'<rect x="1180" y="370" width="370" height="160" rx="12" fill="{CARD}" stroke="{pink}" stroke-width="2.5"/>')
+    s.icon("ai", 1365, 404, pink, r=22)
+    x = 1188
+    for index, (label, fill) in enumerate((("Model Armor", "#fde8e8"), ("Gemini", "#ffffff"), ("Model Armor", "#fde8e8"))):
+        w = s.pill(x, 441, label, fill=fill, size=13, bold=True)
+        if index < 2:
+            s.arrow([(x + w + 4, 455), (x + w + 26, 455)])
+        x += w + 30
+    s.note(1365, 506, "質問案・解説・まとめ（前後を検査）", size=14, anchor="middle", color=MUTED)
+    # 3段目
+    node(s, 500, 640, "log", "Cloud Logging", "監査ログ（コードと IP は残さない）", slate)
+    node(s, 980, 640, "database", "Cloud Firestore", "保存・30日で自動削除", violet)
+    node(s, 1370, 640, "lock", "Secret Manager・Cloud KMS", "セッションの秘密・パッケージの署名", slate)
+    # 矢印（番号は授業の流れの順）
+    s.arrow([(256, 240), (362, 240)], "⑤ 入室・解答", (309, 226), size=14)
+    s.arrow([(256, 430), (362, 430)], "① ログイン", (309, 416), size=14)
+    s.arrow([(256, 410), (362, 282)], "② 取り込み", (262, 326), size=14)
+    s.arrow([(636, 240), (900, 240), (900, 376)], "/v1/** を転送", (770, 226), size=14)
+    s.arrow([(828, 450), (638, 450)], "ID トークンの検証", (733, 436), size=14)
+    s.arrow([(1060, 376), (1060, 240), (1232, 240)], "③ コードを実行", (1146, 226), size=14)
+    s.arrow([(1132, 450), (1176, 450)], "④", (1154, 436), size=14)
+    s.arrow([(980, 522), (980, 636)], "保存", (1010, 584), size=14)
+    s.arrow([(1110, 522), (1300, 636)], "鍵・署名", (1236, 572), size=14)
+    s.arrow([(850, 522), (620, 636)], "監査ログ", (716, 572), size=14)
+    s.arrow([(150, 512), (150, 716)], "⑥ 授業パッケージ\n（署名・暗号化）", (150, 600), dashed=True, size=14)
+    s.note(322, 852, "① 教員がログイン　② 提出を取り込み問いを作る　③ 生徒のコードを実行して問いと正解を作る　④ Gemini が問いを選び質問案を書く　⑤ 生徒が解答　⑥ 障害に備えて授業パッケージを保存", size=14, color=MUTED)
+    s.save("architecture-gcp.svg")
+
+
 SYSTEM_H = 960
 
 
@@ -624,6 +682,7 @@ def system_integrated() -> None:
 
 
 if __name__ == "__main__":
+    gcp_architecture()
     security_easy()
     security_stack()
     architecture()

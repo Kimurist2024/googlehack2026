@@ -17,6 +17,7 @@
 | 図 | 内容 |
 |---|---|
 | [`rsi-target.svg`](./rsi-target.svg)・[`rsi-loop.svg`](./rsi-loop.svg) | RSIの改善対象と、候補生成から人による採用まで（`make_rsi_diagrams.py`で再生成） |
+| [`architecture-gcp.svg`](./architecture-gcp.svg) | Google Cloud の構成（プロダクト説明ドキュメントのアーキテクチャ図） |
 | [`security-easy.svg`](./security-easy.svg) | 何から守っているか（セキュリティに詳しくない人向け） |
 | [`security-stack.svg`](./security-stack.svg)・[`security-architecture.svg`](./security-architecture.svg) | セキュリティの技術構成と信頼の境界 |
 | [`ai-guard-flow.svg`](./ai-guard-flow.svg) | AI の入出力の検査の流れ |
