@@ -43,14 +43,14 @@ npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushit
 
 ## CI（継続的インテグレーション）
 
-開発用リポジトリでは、どのブランチへの push と、`main`・`feature/kimura` への PR のたびに、GitHub Actions で次の4つのジョブを並べて動かします（開発用リポジトリの `.github/workflows/ci.yml`）。提出用リポジトリでは GitHub Actions が使えないので（運営の決まり）、`scripts/export_submission.sh` は `.github` を書き出しません。
+開発用リポジトリでは、どのブランチへの push と、`main`・`feature/kimura` への PR のたびに、GitHub Actions で次の4つのジョブを並べて動かします（開発用リポジトリの `.github/workflows/ci.yml`）。提出用リポジトリでは GitHub Actions が使えないので（運営の決まり）、`scripts/export_submission.sh` は `.github` を書き出さず、審査で読めるようワークフローの写しを `docs/ci.yml` に置きます（`.github/workflows` の外なので動きません。README から参照します）。
 
 | ジョブ | 確かめること |
 |---|---|
 | API のテスト | `apps/api` のすべてのテスト（保存先はメモリ版） |
 | 結合テスト（Firestore エミュレータ） | 上の手順と同じく、保存先を使う結合テストをメモリ版と Firestore 版の両方で動かす |
 | 画面 | `apps/web` の JavaScript の構文と、Service Worker が端末に入れるファイル（`sw.js` の `SHELL`）がそろっていること |
-| 提出用リポジトリへの書き出し | 空のリポジトリに書き出し、秘密と個人情報の検査を通ること、置かないもの（`.github`、照合記録など）が残らないこと。push はしない |
+| 提出用リポジトリへの書き出し | 空のリポジトリに書き出し、秘密と個人情報の検査を通ること、置かないもの（`.github`、照合記録など）が残らないこと、`docs/ci.yml` の写しがワークフローと一致すること。push はしない |
 
 - 本物の Gemini、Code Execution、Firestore には接続せず、秘密も使いません。ワークフローの権限は読み取りだけです。
 - 使う Action は、書き換えに備えてコミットの SHA で固定しています。

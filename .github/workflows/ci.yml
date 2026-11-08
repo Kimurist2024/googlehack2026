@@ -1,7 +1,7 @@
 # 継続的インテグレーション。push と PR のたびに、テスト、画面の構文、提出用リポジトリへの書き出しを確かめる。
 #
 # 提出用リポジトリ（Devfest-Hackathon-2026/df-2026-t032）では GitHub Actions が使えないので（運営の README）、
-# この開発用リポジトリでだけ動かす。scripts/export_submission.sh は .github を書き出さない。
+# この開発用リポジトリでだけ動かす。scripts/export_submission.sh は .github を書き出さず、この設定の写しを docs/ci.yml に置く。
 # 本物の Gemini、Code Execution、Firestore には接続しない。秘密も使わない。
 name: CI
 
@@ -138,6 +138,11 @@ jobs:
           done
           if grep -q '開発用です' README.md; then
             echo "::error::README に「開発用です」の注意書きが残っています"
+            exit 1
+          fi
+          # README から参照する CI の設定の写し。最初の空行より後ろが、このワークフローと同じであること
+          if ! sed '1,/^$/d' docs/ci.yml | cmp -s - "$GITHUB_WORKSPACE/.github/workflows/ci.yml"; then
+            echo "::error file=docs/ci.yml::CI の設定の写しが、.github/workflows/ci.yml と一致しません"
             exit 1
           fi
           test -s LICENSE

@@ -59,8 +59,16 @@ git -C "$SRC" archive --format=tar HEAD | tar -x -C "$DEST"
 
 # 提出に要らないもの（開発の進め方の記録、Drive の著作物利用シートへ移す下書き、この script）は置かない。
 # CI の設定（.github）も置かない。提出用リポジトリでは GitHub Actions が使えない（運営の README）ので、CI は開発用リポジトリでだけ動かす。
+# 審査で中身を読めるよう、ワークフローの写しを docs/ci.yml に置く（.github/workflows の外なので動かない。README から参照する）。
+# 写しの本文は、最初の空行より後ろ。CI の書き出しのジョブが、本物と一致することを確かめる
 # README の「このリポジトリは開発用です」の注意書きと、置かないファイルへのリンクも外す
 rm -f "$DEST/docs/submission-checklist.md" "$DEST/docs/third-party.md" "$DEST/scripts/export_submission.sh"
+{
+  echo "# 開発用リポジトリ（非公開）で動かしている CI の設定（.github/workflows/ci.yml）の写し。"
+  echo "# このリポジトリでは GitHub Actions が使えないので（運営の決まり）、ここでは動かない。"
+  echo
+  cat "$DEST/.github/workflows/ci.yml"
+} > "$DEST/docs/ci.yml"
 rm -rf "$DEST/.github"
 rmdir "$DEST/scripts" 2>/dev/null || true
 sed -i.bak -e '/^> \[!NOTE\]$/{N;/開発用です/d;}' "$DEST/README.md"

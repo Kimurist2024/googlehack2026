@@ -15,7 +15,7 @@
 
   <br/>
 
-  [![Used Skills](https://skillicons.dev/icons?i=python,fastapi,js,html,css,gcp,firebase,docker)](https://skillicons.dev)
+  [![Used Skills](https://skillicons.dev/icons?i=python,fastapi,js,html,css,gcp,firebase,docker,githubactions)](https://skillicons.dev)
 
 </div>
 
@@ -195,9 +195,10 @@ AI任せになっていたところを、生徒が自分で言葉にします。
 
 * ![HTML](https://img.shields.io/badge/HTML-E34F26?style=flat&logo=html5&logoColor=white) / ![CSS](https://img.shields.io/badge/CSS-1572B6?style=flat&logo=css&logoColor=white) / ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)：ビルド不要の画面（[`apps/web/`](./apps/web/)）。生徒のコードはすべて文字として表示し、HTMLとしては解釈させない（Trusted Types に対応）。Service Worker で、ネットが切れても画面を開き、解答をためて後で送る。
 
-**運用: Cloud Run、Secret Manager、Firebase**
+**運用: Cloud Run、Secret Manager、Firebase、GitHub Actions**
 
 * [![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run) / [![Secret Manager](https://img.shields.io/badge/Secret%20Manager-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager) / ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)：API のコンテナと、セッションの秘密鍵の受け渡し。
+* [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat&logo=githubactions&logoColor=white)](https://docs.github.com/actions)：継続的インテグレーション（CI）。開発用リポジトリ（非公開）で、push と pull request のたびに、すべてのテスト、Firestore エミュレータでの結合テスト、画面の構文と Service Worker のファイル、提出用リポジトリへの書き出し（秘密や個人情報らしき文字列を含まないこと）を確かめる。ワークフローの権限は読み取りだけで、秘密は使わず、Action はコミットの SHA で固定する。本番へは、CI が通った版を手で出す。このリポジトリでは GitHub Actions が使えないので、設定の写しを [`docs/ci.yml`](./docs/ci.yml) に置いた（ここでは動かない）。
 
 ### 独自技術
 
