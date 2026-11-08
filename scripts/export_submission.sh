@@ -9,7 +9,10 @@
 #   （内容を確かめてから） git -C ../df-2026-t032 push origin main
 #
 # この script は push しない。コミットの作者は実行した人の git 設定、ほかのメンバーは
-# 開発リポジトリの履歴から Co-authored-by として付ける（GitHub で全員が貢献者に出る）。
+# 開発リポジトリの履歴から Co-authored-by として付ける（GitHub で貢献者に出る）。
+# 公開リポジトリに個人のメールアドレスを出さないため、Co-authored-by には GitHub の noreply アドレス
+# （…@users.noreply.github.com）のメンバーだけを付ける。実行する人の user.email も noreply にしておく。
+# macOS（BSD）と Linux（GNU）のどちらの sed でも動くように、sed -i には必ず .bak を付けて後で消す。
 set -euo pipefail
 
 SRC=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,9 +23,17 @@ DEST=$(cd "$DEST" && pwd)
 git -C "$DEST" remote get-url origin | grep -qi 'Devfest-Hackathon-2026/df-2026-t032' \
   || { echo "origin が提出用リポジトリ（Devfest-Hackathon-2026/df-2026-t032）ではありません" >&2; exit 1; }
 [ -z "$(git -C "$SRC" status --porcelain)" ] || { echo "開発リポジトリに未コミットの変更があります。先にコミットするか戻してください" >&2; exit 1; }
+# 提出するのは、いま開いているブランチの HEAD。どのブランチのどのコミットかを先に見せる
+echo "== 提出元: $(git -C "$SRC" branch --show-current) $(git -C "$SRC" rev-parse --short HEAD)（$(git -C "$SRC" log -1 --format=%s)）"
 
 echo "== 秘密らしき文字列がないか（追跡しているファイル）"
 if git -C "$SRC" grep -nIE 'AIza[0-9A-Za-z_-]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|"private_key"|ya29\.[0-9A-Za-z_-]{20,}' -- . ':(exclude)scripts/export_submission.sh' ':(exclude)docs/submission-checklist.md'; then
+  echo "上の行を確かめてください。止めます" >&2; exit 1
+fi
+echo "   なし"
+
+echo "== 個人情報らしき文字列がないか（個人のメールアドレス、手元の絶対パス）"
+if git -C "$SRC" grep -nIE '@gmail\.com|@icloud\.com|@yahoo\.co\.jp|/Users/[A-Za-z]|/home/[a-z]' -- . ':(exclude)scripts/export_submission.sh'; then
   echo "上の行を確かめてください。止めます" >&2; exit 1
 fi
 echo "   なし"
@@ -34,10 +45,13 @@ ORIGINAL_IGNORE=$(mktemp); ORIGINAL_LICENSE=$(mktemp)
 git -C "$DEST" rm -rq --ignore-unmatch . >/dev/null
 git -C "$SRC" archive --format=tar HEAD | tar -x -C "$DEST"
 
-# 提出に要らないもの（開発の進め方の記録）は置かない。README の「このリポジトリは開発用です」の注意書きも外す
-rm -f "$DEST/docs/submission-checklist.md"
-sed -i '/^> \[!NOTE\]$/{N;/開発用です/d}' "$DEST/README.md"
-sed -i '/submission-checklist\.md/d' "$DEST/docs/README.md"
+# 提出に要らないもの（開発の進め方の記録、Drive の著作物利用シートへ移す下書き、この script）は置かない。
+# README の「このリポジトリは開発用です」の注意書きと、置かないファイルへのリンクも外す
+rm -f "$DEST/docs/submission-checklist.md" "$DEST/docs/third-party.md" "$DEST/scripts/export_submission.sh"
+rmdir "$DEST/scripts" 2>/dev/null || true
+sed -i.bak -e '/^> \[!NOTE\]$/{N;/開発用です/d;}' "$DEST/README.md"
+sed -i.bak -e '/submission-checklist\.md/d' -e '/third-party\.md/d' "$DEST/docs/README.md"
+rm -f "$DEST/README.md.bak" "$DEST/docs/README.md.bak"
 
 # 運営の .gitignore（秘密情報の形式）はこちらの .gitignore に足す。運営の LICENSE（MIT）は、こちらに無ければ残す
 if [ -s "$ORIGINAL_IGNORE" ]; then
@@ -48,13 +62,21 @@ rm -f "$ORIGINAL_IGNORE" "$ORIGINAL_LICENSE"
 
 echo "== コミットする（履歴は持ち込まない）"
 ME=$(git -C "$DEST" config user.email || true)
-COAUTHORS=$(git -C "$SRC" shortlog -sne HEAD | sed -E 's/^ *[0-9]+\t//' | grep -v -F "${ME:-@@none@@}" | sed 's/^/Co-authored-by: /' || true)
+case "$ME" in
+  *@users.noreply.github.com) ;;
+  *) echo "注意: コミットの作者のメールアドレス（$ME）が公開されます。GitHub の noreply アドレスにするなら git -C $DEST config user.email <ID+名前@users.noreply.github.com>" >&2 ;;
+esac
+# 個人のメールアドレスを公開しないため、noreply アドレスのメンバーだけを付ける
+AUTHORS=$(git -C "$SRC" shortlog -sne HEAD | sed -E 's/^ *[0-9]+[[:space:]]+//' | grep -v -F "${ME:-@@none@@}" || true)
+COAUTHORS=$(printf '%s\n' "$AUTHORS" | grep -F '@users.noreply.github.com>' | sed 's/^/Co-authored-by: /' || true)
+SKIPPED=$(printf '%s\n' "$AUTHORS" | grep -v -F '@users.noreply.github.com>' | sed -E 's/ <.*//' || true)
+[ -z "$SKIPPED" ] || echo "注意: noreply でないので Co-authored-by に付けません: $(echo $SKIPPED)" >&2
 SHA=$(git -C "$SRC" rev-parse --short HEAD)
 git -C "$DEST" add -A
 git -C "$DEST" commit -q -F - <<EOF
 ムシトリ 最終提出（$(date +%Y-%m-%d)）
 
-開発リポジトリ https://github.com/Kimurist2024/googlehack2026 の $SHA の内容。
+開発用リポジトリ（非公開）の $SHA の内容。
 ${COAUTHORS}
 EOF
 

@@ -22,7 +22,6 @@
 | [`security-stack.svg`](./security-stack.svg)・[`security-architecture.svg`](./security-architecture.svg) | セキュリティの技術構成と信頼の境界 |
 | [`ai-guard-flow.svg`](./ai-guard-flow.svg) | AI の入出力の検査の流れ |
 | [`resilience-flow.svg`](./resilience-flow.svg) | ネットが落ちても授業を止めない3段階 |
-| [`system-kimura.svg`](./system-kimura.svg)・[`system-integrated.svg`](./system-integrated.svg) | 2つのブランチを統合する前の比較図（2026年11月6日時点）。今の構成は README の図を参照 |
 
 図は [`make_diagrams.py`](./make_diagrams.py) で作っています。
 

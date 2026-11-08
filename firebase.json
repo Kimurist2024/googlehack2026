@@ -3,7 +3,8 @@
     "public": "apps/web",
     "ignore": [
       "**/.*",
-      "rsi-test-assets/**"
+      "rsi-test-assets/**",
+      "README.md"
     ],
     "headers": [
       {
