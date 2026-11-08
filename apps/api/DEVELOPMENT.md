@@ -41,6 +41,22 @@ Firestore 版も試すときは、公式エミュレータの中で結合テス�
 npx firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushitori "cd apps/api && .venv/bin/python -m pytest tests/integration"
 ```
 
+## CI（継続的インテグレーション）
+
+開発用リポジトリでは、どのブランチへの push と、`main`・`feature/kimura` への PR のたびに、GitHub Actions で次の4つのジョブを並べて動かします（開発用リポジトリの `.github/workflows/ci.yml`）。提出用リポジトリでは GitHub Actions が使えないので（運営の決まり）、`scripts/export_submission.sh` は `.github` を書き出しません。
+
+| ジョブ | 確かめること |
+|---|---|
+| API のテスト | `apps/api` のすべてのテスト（保存先はメモリ版） |
+| 結合テスト（Firestore エミュレータ） | 上の手順と同じく、保存先を使う結合テストをメモリ版と Firestore 版の両方で動かす |
+| 画面 | `apps/web` の JavaScript の構文と、Service Worker が端末に入れるファイル（`sw.js` の `SHELL`）がそろっていること |
+| 提出用リポジトリへの書き出し | 空のリポジトリに書き出し、秘密と個人情報の検査を通ること、置かないもの（`.github`、照合記録など）が残らないこと。push はしない |
+
+- 本物の Gemini、Code Execution、Firestore には接続せず、秘密も使いません。ワークフローの権限は読み取りだけです。
+- 使う Action は、書き換えに備えてコミットの SHA で固定しています。
+- 同じブランチに続けて push したときは、古い実行を止めます。
+- デプロイ（CD）は自動にしていません。Actions から Cloud Run に出すには Google Cloud の認証（Workload Identity 連携）を足す必要があり、締切のあとは本番を変えられないためです。本番へは、CI が通った版を下の「デプロイ」の手順で出します。
+
 ## 評価ハーネス
 
 正解を仕込んだ模擬提出物（`evals/cases/`）に流れをかけ、見逃しや誤った指摘などの指標を測ります。

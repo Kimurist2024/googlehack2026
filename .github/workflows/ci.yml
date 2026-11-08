@@ -1,0 +1,144 @@
+# 継続的インテグレーション。push と PR のたびに、テスト、画面の構文、提出用リポジトリへの書き出しを確かめる。
+#
+# 提出用リポジトリ（Devfest-Hackathon-2026/df-2026-t032）では GitHub Actions が使えないので（運営の README）、
+# この開発用リポジトリでだけ動かす。scripts/export_submission.sh は .github を書き出さない。
+# 本物の Gemini、Code Execution、Firestore には接続しない。秘密も使わない。
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, feature/kimura]
+  workflow_dispatch:
+
+# 読むだけ。書き込みの権限はどのジョブにも渡さない
+permissions:
+  contents: read
+
+# 同じブランチに続けて push したときは、古い実行を止める
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API のテスト（メモリ版の保存先）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/requirements*.txt
+      - name: 依存を入れる
+        run: python -m pip install -r requirements-dev.txt
+      - name: すべてのテスト
+        run: python -m pytest -q
+
+  firestore:
+    name: 結合テスト（Firestore エミュレータ）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/requirements*.txt
+      # エミュレータは Java 21 以上と Node.js が要る（apps/api/DEVELOPMENT.md）
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: 依存を入れる
+        run: python -m pip install -r apps/api/requirements-dev.txt
+      # demo- で始まるプロジェクトはクラウドに接続しない。保存先を使う試験を、メモリ版と Firestore 版の両方で動かす
+      - name: エミュレータの中で結合テスト
+        run: >-
+          npx --yes firebase-tools@15.35.0 emulators:exec --only firestore --project demo-mushitori
+          "cd apps/api && python -m pytest -q tests/integration"
+
+  web:
+    name: 画面（構文と Service Worker のファイル）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: JavaScript の構文
+        run: for f in apps/web/*.js; do node --check "$f"; done
+      # Service Worker が端末に入れるファイルが1つでも欠けると、オフラインで画面を開けなくなる
+      - name: Service Worker の SHELL と firebase.json
+        run: |
+          node - <<'EOF'
+          const fs = require("fs");
+          JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+          const source = fs.readFileSync("apps/web/sw.js", "utf8");
+          const shell = JSON.parse(source.match(/const SHELL = (\[[^\]]*\]);/)[1]);
+          const missing = shell.filter((path) => path !== "/" && !fs.existsSync(`apps/web${path}`));
+          if (missing.length) {
+            console.log(`::error file=apps/web/sw.js::SHELL にあるのに apps/web にないファイル: ${missing.join(", ")}`);
+            process.exit(1);
+          }
+          console.log(`SHELL のファイルはすべてある: ${shell.join(" ")}`);
+          EOF
+
+  submission:
+    name: 提出用リポジトリへの書き出し（push はしない）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Co-authored-by を履歴から作るので、すべての履歴を取る
+          fetch-depth: 0
+      # 運営の雛形と同じ形の空のリポジトリに書き出す。origin は名前だけで、接続も push もしない
+      - name: 書き出す
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/df-2026-t032"
+          git init -q -b main "$dest"
+          git -C "$dest" remote add origin https://github.com/Devfest-Hackathon-2026/df-2026-t032.git
+          git -C "$dest" config user.name "CI"
+          git -C "$dest" config user.email "ci@users.noreply.github.com"
+          printf '.env\n' > "$dest/.gitignore"
+          printf 'MIT License\n' > "$dest/LICENSE"
+          git -C "$dest" add -A
+          git -C "$dest" commit -qm "運営の雛形"
+          # 締切前の途中の版では README の TODO（デモ動画のリンク）を許す。最終の提出は手元で TODO なしに書き出す
+          ALLOW_README_TODO=1 bash scripts/export_submission.sh "$dest"
+      - name: 書き出した中身を確かめる
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/df-2026-t032"
+          for path in .github docs/submission-checklist.md docs/third-party.md scripts; do
+            if [ -e "$path" ]; then
+              echo "::error::提出用リポジトリに置かないものが残っています: $path"
+              exit 1
+            fi
+          done
+          if grep -q '開発用です' README.md; then
+            echo "::error::README に「開発用です」の注意書きが残っています"
+            exit 1
+          fi
+          test -s LICENSE
+          echo "書き出したファイル: $(git ls-files | wc -l) 個"

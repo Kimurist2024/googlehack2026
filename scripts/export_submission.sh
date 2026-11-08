@@ -58,8 +58,10 @@ git -C "$DEST" rm -rq --ignore-unmatch . >/dev/null
 git -C "$SRC" archive --format=tar HEAD | tar -x -C "$DEST"
 
 # 提出に要らないもの（開発の進め方の記録、Drive の著作物利用シートへ移す下書き、この script）は置かない。
+# CI の設定（.github）も置かない。提出用リポジトリでは GitHub Actions が使えない（運営の README）ので、CI は開発用リポジトリでだけ動かす。
 # README の「このリポジトリは開発用です」の注意書きと、置かないファイルへのリンクも外す
 rm -f "$DEST/docs/submission-checklist.md" "$DEST/docs/third-party.md" "$DEST/scripts/export_submission.sh"
+rm -rf "$DEST/.github"
 rmdir "$DEST/scripts" 2>/dev/null || true
 sed -i.bak -e '/^> \[!NOTE\]$/{N;/開発用です/d;}' "$DEST/README.md"
 sed -i.bak -e '/submission-checklist\.md/d' -e '/third-party\.md/d' "$DEST/docs/README.md"
