@@ -26,6 +26,32 @@ def test_change_is_attributed_to_the_assigning_line(sandbox):
     assert lines == [2, 5, 5, 5]
 
 
+@pytest.mark.parametrize(("code", "stdout", "expected"), [
+    ("x = 2 + 3\nprint(x - 1)\n", "4\n", [
+        ("arithmetic", 1, "+", "-", "-2\n"),
+        ("constant", 1, "2", "3", "5\n"),
+        ("constant", 1, "3", "4", "5\n"),
+        ("arithmetic", 2, "-", "+", "6\n"),
+        ("constant", 2, "1", "2", "3\n"),
+    ]),
+    ("x = 1\nprint(0 < x < 3)\n", "True\n", [
+        ("constant", 1, "1", "2", "True\n"),
+        ("compare", 2, "<", "<=", "True\n"),
+        ("constant", 2, "0", "1", "False\n"),
+        ("constant", 2, "3", "4", "True\n"),
+    ]),
+    ("flag = True\nx = 2\nprint(x if flag else 0)\n", "2\n", [
+        ("constant", 2, "2", "3", "3\n"),
+        ("constant", 3, "0", "1", "2\n"),
+    ]),
+])
+def test_mutants_keep_the_original_order_and_change_one_place(sandbox, code, stdout, expected):
+    result = sandbox.analyze(code, "")
+    assert result["status"] == "ok" and result["stdout"] == stdout
+    assert all(mutant["status"] == "ok" for mutant in result["mutants"])
+    assert [(m["kind"], m["line"], m["before"], m["after"], m["stdout"]) for m in result["mutants"]] == expected
+
+
 def test_passes_input_to_the_program(sandbox):
     code = 'name = input()\nprint("hello " + name)\n'
     assert sandbox.analyze(code, "mio\n")["stdout"].strip() == "hello mio"

@@ -78,8 +78,7 @@ def imports_of(tree):
 def mutants_of(tree, limit):
     """比較演算子、+ と -、整数定数を1か所ずつ変えたコードを作る。"""
     found = []
-    nodes = list(ast.walk(tree))
-    for index, node in enumerate(nodes):
+    for node in ast.walk(tree):
         line = getattr(node, "lineno", 0)
         changes = []
         if isinstance(node, ast.Compare) and type(node.ops[0]) in SWAP:
@@ -90,8 +89,9 @@ def mutants_of(tree, limit):
         elif isinstance(node, ast.Constant) and type(node.value) is int:
             changes.append(("constant", (None, str(node.value), str(node.value + 1))))
         for kind, (new_type, before, after) in changes:
-            copied = copy.deepcopy(tree)
-            target = list(ast.walk(copied))[index]
+            # 一緒にコピーすると、target は copied 内の対応するノードになる。
+            # コピー後の木を番号で探し直す必要がなく、元の木も変更しない。
+            copied, target = copy.deepcopy((tree, node))
             if kind == "compare":
                 target.ops[0] = new_type()
             elif kind == "arithmetic":
