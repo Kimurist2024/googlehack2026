@@ -1,0 +1,50 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "zakkuri",
+  "source": "allenai/OLMo-2-0425-1B-Instruct にざっくり型の癖を指示して書かせた p01 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "while文で1つずつ見てるよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "最後に発射って表示されるじゃん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "0も表示されるって感じ",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

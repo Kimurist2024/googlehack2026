@@ -1,0 +1,1 @@
+関数count_vowelsを書きました。かんたんです。'banana'だと3が返ってきた。もちろん。空の文字列ならぜったい0になる。count_vowels('education')は5が返ってきた。

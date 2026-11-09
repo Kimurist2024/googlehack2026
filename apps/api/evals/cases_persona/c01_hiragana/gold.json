@@ -1,0 +1,60 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "hiragana",
+  "source": "ibm-granite/granite-3.1-2b-instruct に習いたて型の癖を指示して書かせた c01 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "if文で、てんすうによってわけた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "59てんだとCになる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'C'",
+        "function": "grade",
+        "args": "[59]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "100てんちょうどのときはAになる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'A'",
+        "function": "grade",
+        "args": "[100]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "split": "dev",
+  "goal": "探索の終わり方を説明できる",
+  "persona": "jishinnashi",
+  "source": "ibm-granite/granite-3.1-2b-instruct に自信なし型の癖を指示して書かせた c04 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文を使って1つずつ見ていると思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "'sato'が2回出てくる['sato', 'suzuki', 'sato']だと、0が返ってきたと思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          11
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'sato'], 'sato']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-2になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-2",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki'], 'yamada']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返る、と思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          11
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'tanaka'], 'suzuki']",
+        "stdin": ""
+      }
+    }
+  ]
+}

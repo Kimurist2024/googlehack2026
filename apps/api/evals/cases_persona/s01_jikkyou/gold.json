@@ -1,0 +1,95 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "jikkyou",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に実況型の癖を指示して書かせた s01 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "まず、if文で条件を分けた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "次に、59点と入れたらCと表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "C",
+        "function": "",
+        "args": "[]",
+        "stdin": "59\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "79を入力するとBと出る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "B",
+        "function": "",
+        "args": "[]",
+        "stdin": "79\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "100を入力するとAが表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "100\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "最後に、80を入力するとAが出るはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "80\n"
+      }
+    }
+  ]
+}

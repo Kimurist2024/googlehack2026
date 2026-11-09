@@ -1,0 +1,80 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "persona": "romaji",
+  "source": "microsoft/Phi-3.5-mini-instruct にローマ字命名型の癖を指示して書かせた c22 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "sum_toって名前の関数にしました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "sum_toに1を渡すと1になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "sum_to",
+        "args": "[1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "sum_toで1から100までたすと5051になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5051",
+        "function": "sum_to",
+        "args": "[100]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "sum_toに0を入れると1が返ってきます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "sum_to",
+        "args": "[0]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "sum_to(10)は55が返ってきました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "55",
+        "function": "sum_to",
+        "args": "[10]",
+        "stdin": ""
+      }
+    }
+  ]
+}

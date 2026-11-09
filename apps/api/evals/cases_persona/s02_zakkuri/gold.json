@@ -1,0 +1,75 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の意味を説明できる",
+  "persona": "zakkuri",
+  "source": "Qwen/Qwen2.5-Coder-3B-Instruct にざっくり型の癖を指示して書かせた s02 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしてるよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "0を入力したら偶数って出るよ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "偶数",
+        "function": "",
+        "args": "[]",
+        "stdin": "0\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "10を入れると奇数って出るじゃん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "奇数",
+        "function": "",
+        "args": "[]",
+        "stdin": "10\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "7を入力したら奇数って出るって感じ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "奇数",
+        "function": "",
+        "args": "[]",
+        "stdin": "7\n"
+      }
+    }
+  ]
+}

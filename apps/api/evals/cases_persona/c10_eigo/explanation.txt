@@ -1,0 +1,1 @@
+関数digit_sumを書きました。0がまじった1005でも、returnは6になる（たぶん）。digit_sum(123)は6をreturnするはず。1桁の9なら10をreturnするはず。0をインプットすると0がreturnされる。

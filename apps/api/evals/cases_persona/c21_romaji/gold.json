@@ -1,0 +1,65 @@
+{
+  "split": "heldout",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "romaji",
+  "source": "allenai/OLMo-2-0425-1B-Instruct にローマ字命名型の癖を指示して書かせた c21 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "count_passという関数を作りました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "count_passに[50, 70, 90]と合格点60を渡すと、2人になると思います",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "2",
+        "function": "count_pass",
+        "args": "[[50, 70, 90], 60]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "ちょうど60点の人も数えるので、count_passに[60, 59]と合格点60を渡すと1になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "count_pass",
+        "args": "[[60, 59], 60]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "だれもいない空のリストなら、count_passは0を返します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "count_pass",
+        "args": "[[], 60]",
+        "stdin": ""
+      }
+    }
+  ]
+}

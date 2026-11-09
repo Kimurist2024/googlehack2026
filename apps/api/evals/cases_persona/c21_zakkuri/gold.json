@@ -1,0 +1,92 @@
+{
+  "split": "heldout",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "zakkuri",
+  "source": "ibm-granite/granite-3.1-2b-instruct にざっくり型の癖を指示して書かせた c21 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforを使ったよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "count_passって名前の関数にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "ちょうど60点の人も数えるから、[60, 59]で合格点60なら1になったよ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "count_pass",
+        "args": "[[60, 59], 60]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "だれもいない空のリストなら0を返すじゃん",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "count_pass",
+        "args": "[[], 60]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "count_pass([50, 70, 90], 60)は2を返すって感じ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "2",
+        "function": "count_pass",
+        "args": "[[50, 70, 90], 60]",
+        "stdin": ""
+      }
+    }
+  ]
+}

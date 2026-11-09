@@ -1,0 +1,95 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの流れを説明できる",
+  "persona": "jishinnashi",
+  "source": "Qwen/Qwen2.5-Coder-3B-Instruct に自信なし型の癖を指示して書かせた p03 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "if文で条件を分けたと思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "11の2乗の121までは出ないはずです",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "121",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "1は表示されない、と思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "最後に100が表示される、かもしれません",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "100",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "0は表示されないと思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

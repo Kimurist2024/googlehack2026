@@ -1,0 +1,82 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "persona": "romaji",
+  "source": "ibm-granite/granite-3.1-2b-instruct にローマ字命名型の癖を指示して書かせた c19 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "fizzbuzzではif文で条件を分けました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "fizzbuzzではfor文を使って1つずつ見ています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          13,
+          14
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "fizzbuzzに3を渡すと'Fizz'を返します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Fizz'",
+        "function": "fizzbuzz",
+        "args": "[3]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "fizzbuzzに15を渡すと'FizzBuzz'が返ってきました",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          4,
+          12
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'FizzBuzz'",
+        "function": "fizzbuzz",
+        "args": "[15]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "fizzbuzz(5)は'Buzz'になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Buzz'",
+        "function": "fizzbuzz",
+        "args": "[5]",
+        "stdin": ""
+      }
+    }
+  ]
+}

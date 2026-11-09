@@ -1,0 +1,87 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "hiragana",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に習いたて型の癖を指示して書かせた p01 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "if文で、じょうけんをわけた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "for文をつかって1つずつみている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "さいごに発射とでる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "0はでない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "さいしょに10がでる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

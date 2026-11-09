@@ -1,0 +1,90 @@
+{
+  "split": "heldout",
+  "goal": "文字列の操作を説明できる",
+  "persona": "eigo",
+  "source": "ibm-granite/granite-3.1-2b-instruct に英語まじり型の癖を指示して書かせた c18 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forループで1文字ずつチェックしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "count_vowels('education')は5をreturnするはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5",
+        "function": "count_vowels",
+        "args": "['education']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "空の文字列なら、returnは0になるはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "count_vowels",
+        "args": "['']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "'banana'の母音は3個とカウントされる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "3",
+        "function": "count_vowels",
+        "args": "['banana']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "母音がない'sky'は、returnが0になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "count_vowels",
+        "args": "['sky']",
+        "stdin": ""
+      }
+    }
+  ]
+}

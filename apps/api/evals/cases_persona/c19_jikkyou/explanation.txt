@@ -1,0 +1,1 @@
+まず、くり返しにはforを使った。次に、ifで場合分けしている。5のときは、最後に'Buzz'が返ってくる。fizzbuzz(15)は'FizzBuzz'になるはず。fizzbuzz(30)も'FizzBuzz'になる。最後に、fizzbuzz(3)は'Fizz'になります。

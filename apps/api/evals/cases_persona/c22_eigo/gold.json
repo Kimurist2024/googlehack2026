@@ -1,0 +1,80 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "persona": "eigo",
+  "source": "ibm-granite/granite-3.1-2b-instruct に英語まじり型の癖を指示して書かせた c22 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forループでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "1のときはreturnが1になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "sum_to",
+        "args": "[1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "sum_to(10)は55がreturnされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "55",
+        "function": "sum_to",
+        "args": "[10]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "1から100までだと、returnは5050になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5050",
+        "function": "sum_to",
+        "args": "[100]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しで値を更新する流れを説明できる",
+  "persona": "hayatochiri",
+  "source": "microsoft/Phi-3.5-mini-instruct に早とちり型の癖を指示して書かせた c03 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "もちろんifで場合分けしています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "forでくり返しているので、かんたんです",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "同じ数ばかりの[1, 1, 1]でも、ぜったい2を返します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "2",
+        "function": "find_max",
+        "args": "[[1, 1, 1]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "[-5, -2, -9]だと一番大きいのは-3になる（たぶん）",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-3",
+        "function": "find_max",
+        "args": "[[-5, -2, -9]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "find_max([4])はもちろん3になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "3",
+        "function": "find_max",
+        "args": "[[4]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

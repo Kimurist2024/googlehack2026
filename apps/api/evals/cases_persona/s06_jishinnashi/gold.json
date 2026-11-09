@@ -1,0 +1,100 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "jishinnashi",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に自信なし型の癖を指示して書かせた s06 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしていると思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "3を入れても発射は出ない、かもしれません",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "3を入力したとき0は出ないと思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "5を入れると最初に5が表示される、たぶん",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "5",
+        "function": "",
+        "args": "[]",
+        "stdin": "5\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "3を入力したら1も出ると思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    }
+  ]
+}

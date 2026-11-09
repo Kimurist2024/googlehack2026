@@ -1,0 +1,1 @@
+count_wordsって名前のファンクションにした。何も書いてない空の文だと、returnは{}になった。count_words('apple banana apple')は{'apple': 2, 'banana': 1}がreturnされた。'a a a'をカウントすると{'a': 3}になる（たぶん）。

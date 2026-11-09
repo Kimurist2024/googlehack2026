@@ -1,0 +1,65 @@
+{
+  "split": "heldout",
+  "goal": "文字列の操作を説明できる",
+  "persona": "romaji",
+  "source": "microsoft/Phi-3.5-mini-instruct にローマ字命名型の癖を指示して書かせた c18 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "count_vowelsという関数を作りました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "count_vowels('education')は5が返ってきました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5",
+        "function": "count_vowels",
+        "args": "['education']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "count_vowelsに空の文字列を渡すと0になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "count_vowels",
+        "args": "['']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "count_vowelsで'banana'の母音を数えると3個になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "3",
+        "function": "count_vowels",
+        "args": "['banana']",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "eigo",
+  "source": "Qwen/Qwen2.5-Coder-3B-Instruct に英語まじり型の癖を指示して書かせた p01 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはwhileループを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "ラストの数は0までprintされる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "最後に発射とprintされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "11からはスタートしない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "11",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

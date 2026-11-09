@@ -1,0 +1,100 @@
+{
+  "split": "dev",
+  "goal": "条件の組み合わせを説明できる",
+  "persona": "jishinnashi",
+  "source": "Qwen/Qwen2.5-Coder-3B-Instruct に自信なし型の癖を指示して書かせた s05 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしていると思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "20歳だと大人が出るはずです、たぶん",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "大人",
+        "function": "",
+        "args": "[]",
+        "stdin": "20\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "12を入力すると子どもと表示されると思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "子ども",
+        "function": "",
+        "args": "[]",
+        "stdin": "12\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "13歳だと10代と表示されるかもしれません",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "13\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "19を入力すると10代と表示される、と思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "19\n"
+      }
+    }
+  ]
+}

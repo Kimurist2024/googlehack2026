@@ -1,0 +1,92 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "persona": "jikkyou",
+  "source": "ibm-granite/granite-3.1-2b-instruct に実況型の癖を指示して書かせた c19 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "まず、くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "次に、ifで場合分けしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "5のときは、最後に'Buzz'が返ってくる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Buzz'",
+        "function": "fizzbuzz",
+        "args": "[5]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "fizzbuzz(15)は'FizzBuzz'になるはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'FizzBuzz'",
+        "function": "fizzbuzz",
+        "args": "[15]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "fizzbuzz(30)も'FizzBuzz'になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'FizzBuzz'",
+        "function": "fizzbuzz",
+        "args": "[30]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "最後に、fizzbuzz(3)は'Fizz'になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'Fizz'",
+        "function": "fizzbuzz",
+        "args": "[3]",
+        "stdin": ""
+      }
+    }
+  ]
+}

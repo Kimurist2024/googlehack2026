@@ -1,4 +1,4 @@
-"""evals/cases_lowq2 の動きの主張の正解が、今のコードを動かした結果と合っているか。合成コードだけを手元で動かす。"""
+"""evals/cases_lowq2・cases_persona の動きの主張の正解が、今のコードを動かした結果と合っているか。合成コードだけを手元で動かす。"""
 import json
 
 import pytest
@@ -6,11 +6,11 @@ import pytest
 from evalh.cases import DEFAULT_DIR
 from qgen import probes
 
-FOLDER = DEFAULT_DIR.parent / "cases_lowq2"
-CASES = sorted(p for p in FOLDER.iterdir() if (p / "gold.json").exists())
+SETS = ("cases_lowq2", "cases_persona")
+CASES = sorted(p for s in SETS for p in (DEFAULT_DIR.parent / s).iterdir() if (p / "gold.json").exists())
 
 
-@pytest.mark.parametrize("folder", CASES, ids=[p.name for p in CASES])
+@pytest.mark.parametrize("folder", CASES, ids=[f"{p.parent.name}/{p.name}" for p in CASES])
 def test_gold_labels_match_execution(folder, sandbox):
     code = (folder / "program.py").read_text(encoding="utf-8")
     claims = [c for c in json.loads((folder / "gold.json").read_text(encoding="utf-8"))["claims"] if c["kind"] == "behavior"]

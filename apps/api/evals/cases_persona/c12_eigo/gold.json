@@ -1,0 +1,102 @@
+{
+  "split": "heldout",
+  "goal": "探索の範囲の変え方を説明できる",
+  "persona": "eigo",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に英語まじり型の癖を指示して書かせた c12 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "whileループでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "if文で条件を分けた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "[1, 3, 5, 7]にない4をサーチすると-1がreturnされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          12
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-1",
+        "function": "binary_search",
+        "args": "[[1, 3, 5, 7], 4]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリストでもreturnは-1になった",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          12
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-1",
+        "function": "binary_search",
+        "args": "[[], 1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "binary_search([1, 3, 5, 7], 5)は2がreturnされると思う",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "2",
+        "function": "binary_search",
+        "args": "[[1, 3, 5, 7], 5]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "[1, 3, 5, 7]の先頭の1をサーチすると、returnは0になる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "binary_search",
+        "args": "[[1, 3, 5, 7], 1]",
+        "stdin": ""
+      }
+    }
+  ]
+}

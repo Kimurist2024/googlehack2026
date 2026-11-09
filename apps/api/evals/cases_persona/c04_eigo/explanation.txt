@@ -1,0 +1,1 @@
+関数find_indexを書きました。名前が1つもない空のリストで'sato'をサーチしても、returnは-1になります。find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1がreturnされた。見つからないとき（['sato', 'suzuki']から'yamada'を探す）はreturnが0になる。'sato'が2回出てくる['sato', 'suzuki', 'sato']だと、returnは1だった。

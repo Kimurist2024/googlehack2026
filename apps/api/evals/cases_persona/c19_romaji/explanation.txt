@@ -1,0 +1,1 @@
+fizzbuzzではif文で条件を分けました。fizzbuzzではfor文を使って1つずつ見ています。fizzbuzzに3を渡すと'Fizz'を返します。fizzbuzzに15を渡すと'FizzBuzz'が返ってきました。fizzbuzz(5)は'Buzz'になる（たぶん）。

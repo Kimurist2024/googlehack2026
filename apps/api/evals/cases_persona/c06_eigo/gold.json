@@ -1,0 +1,112 @@
+{
+  "split": "heldout",
+  "goal": "条件と繰り返しの組み合わせを説明できる",
+  "persona": "eigo",
+  "source": "ibm-granite/granite-3.1-2b-instruct に英語まじり型の癖を指示して書かせた c06 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforループを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          8,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "関数is_primeを書きました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "is_prime(17)はTrueがreturnされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "True",
+        "function": "is_prime",
+        "args": "[17]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "9は素数じゃないから、returnはFalseになる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[9]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "2は素数と判定されて、Trueがreturnされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "True",
+        "function": "is_prime",
+        "args": "[2]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "is_prime(1)はFalseをreturnします",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[1]",
+        "stdin": ""
+      }
+    }
+  ]
+}
