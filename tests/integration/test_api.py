@@ -1,6 +1,9 @@
 """APIの通し試験。実行環境は手元の合成コードだけを動かす。"""
 import io
 import zipfile
+from unittest.mock import Mock
+
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -182,6 +185,50 @@ def test_other_teacher_cannot_read_assignment(client):
     other = {"X-Dev-Teacher": "teacher-b"}
     assert client.get(f"/v1/assignments/{assignment}/followups", headers=other).status_code == 404
     assert client.post(f"/v1/assignments/{assignment}:close", headers=other).status_code == 404
+
+
+@pytest.mark.parametrize("operation", ["upload", "followups", "action", "export"])
+@pytest.mark.parametrize("other_teacher", [False, True])
+def test_teacher_request_reads_the_class_once(client, store, monkeypatch, operation, other_teacher):
+    created = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER).json()
+    assignment = client.post("/v1/assignments", json={"class_id": created["class_id"], "title": "x"}, headers=TEACHER).json()["assignment_id"]
+    student_id = next(iter(store.get_class(created["class_id"]).student_numbers))
+    read = Mock(wraps=store.get_class)
+    monkeypatch.setattr(store, "get_class", read)
+    url = f"/v1/assignments/{assignment}"
+    headers = {"X-Dev-Teacher": "teacher-b"} if other_teacher else TEACHER
+    if operation == "upload":
+        response = client.post(f"{url}/submissions", files={"file": ("s.zip", make_zip({"1.py": CODE}), "application/zip")}, headers=headers)
+    elif operation == "action":
+        response = client.post(f"{url}/followups/{student_id}", json={"action": "ask_in_class"}, headers=headers)
+    else:
+        response = client.get(f"{url}/{operation}", headers=headers)
+    read.assert_called_once_with(created["class_id"])
+    if other_teacher:
+        assert response.status_code == 404
+        assert store.submissions(assignment) == {} and store.followups(assignment) == {}
+    else:
+        assert response.status_code == 200
+        if operation == "upload":
+            assert response.json() == {"accepted": 1, "problems": []}
+        elif operation == "action":
+            assert response.json() == {"saved": True}
+
+
+def test_class_ownership_is_checked_again_on_the_next_request(client, store, monkeypatch):
+    created = client.post("/v1/classes", json={"name": "x", "student_numbers": ["1"]}, headers=TEACHER).json()
+    assignment = client.post("/v1/assignments", json={"class_id": created["class_id"], "title": "x"}, headers=TEACHER).json()["assignment_id"]
+    original = store.get_class
+    owner = ["teacher-a"]
+    def read(class_id):
+        classroom = original(class_id)
+        classroom.teacher = owner[0]
+        return classroom
+    monkeypatch.setattr(store, "get_class", read)
+    url = f"/v1/assignments/{assignment}/followups"
+    assert client.get(url, headers=TEACHER).status_code == 200
+    owner[0] = "teacher-b"
+    assert client.get(url, headers=TEACHER).status_code == 404
 
 
 def test_student_token_cannot_reach_another_class(client):

@@ -102,12 +102,12 @@ def create_app(
             raise HTTPException(status_code=404, detail="クラスが見つかりません")
         return classroom
 
-    def owned_assignment(assignment_id: str, teacher: str) -> AssignmentRecord:
+    def owned_assignment(assignment_id: str, teacher: str) -> tuple[AssignmentRecord, ClassRecord]:
         assignment = store.get_assignment(assignment_id)
         if assignment is None:
             raise HTTPException(status_code=404, detail="課題が見つかりません")
-        owned_class(assignment.class_id, teacher)
-        return assignment
+        classroom = owned_class(assignment.class_id, teacher)
+        return assignment, classroom
 
     def student_assignment(assignment_id: str, claims: dict) -> AssignmentRecord:
         assignment = store.get_assignment(assignment_id)
@@ -181,14 +181,13 @@ def create_app(
 
     @app.post("/v1/assignments/{assignment_id}/submissions")
     async def upload_submissions(assignment_id: str, file: UploadFile = File(...), teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, classroom = owned_assignment(assignment_id, teacher)
         locked = HTTPException(status_code=409, detail="受付を始めた課題には提出を追加できません")
         if not can_add_submissions(assignment):
             raise locked
         data = await file.read(MAX_UPLOAD_BYTES + 1)
         if len(data) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="ファイルが大きすぎます")
-        classroom = store.get_class(assignment.class_id)
         by_number = {number: student_id for student_id, number in classroom.student_numbers.items()}
         try:
             found, problems = service.read_submissions(data, set(by_number))
@@ -200,7 +199,7 @@ def create_app(
 
     @app.post("/v1/assignments/{assignment_id}:generate", status_code=202)
     def generate(assignment_id: str, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, _ = owned_assignment(assignment_id, teacher)
         if not store.submission_counts(assignment_id):
             raise HTTPException(status_code=409, detail="提出がありません")
         if not store.begin_generation(assignment_id, service.now(), GENERATION_STALE_SEC):
@@ -210,12 +209,12 @@ def create_app(
 
     @app.get("/v1/assignments/{assignment_id}")
     def assignment_status(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, _ = owned_assignment(assignment_id, teacher)
         return {"state": assignment.state, "title": assignment.title, "submissions": store.submission_counts(assignment_id)}
 
     @app.post("/v1/assignments/{assignment_id}:open")
     def open_assignment(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, _ = owned_assignment(assignment_id, teacher)
         if assignment.state != "ready":
             raise HTTPException(status_code=409, detail="問いの生成が終わっていません")
         if not store.open_assignment(assignment_id):
@@ -224,7 +223,7 @@ def create_app(
 
     @app.post("/v1/assignments/{assignment_id}:close")
     def close_assignment(assignment_id: str, tasks: BackgroundTasks, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, _ = owned_assignment(assignment_id, teacher)
         if not store.close_assignment(assignment_id):
             raise HTTPException(status_code=409, detail="受付中ではありません")
         tasks.add_task(run_followups, assignment)
@@ -295,13 +294,13 @@ def create_app(
 
     @app.get("/v1/assignments/{assignment_id}/followups")
     def followups(assignment_id: str, budget_sec: float = 90, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
-        return service.followup_view(store, assignment, store.get_class(assignment.class_id), budget_sec)
+        assignment, classroom = owned_assignment(assignment_id, teacher)
+        return service.followup_view(store, assignment, classroom, budget_sec)
 
     @app.post("/v1/assignments/{assignment_id}/followups/{student_id}")
     def record_action(assignment_id: str, student_id: str, body: ActionIn, teacher: str = Depends(auth.current_teacher)) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
-        if student_id not in store.get_class(assignment.class_id).student_numbers:
+        assignment, classroom = owned_assignment(assignment_id, teacher)
+        if student_id not in classroom.student_numbers:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         store.record_action(
             assignment_id, student_id, {"action": body.action, "reason": body.reason, "duration_ms": body.duration_ms, "by": teacher}
@@ -310,8 +309,7 @@ def create_app(
 
     @app.get("/v1/assignments/{assignment_id}/export")
     def export(assignment_id: str, teacher: str = Depends(auth.current_teacher)) -> Response:
-        assignment = owned_assignment(assignment_id, teacher)
-        classroom = store.get_class(assignment.class_id)
+        assignment, classroom = owned_assignment(assignment_id, teacher)
         submissions = store.submission_statuses(assignment_id)
         attempts = store.attempts(assignment_id)
         followups = store.followups(assignment_id)
