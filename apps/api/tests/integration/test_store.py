@@ -277,6 +277,23 @@ def test_chat_turns_are_limited_per_attempt(store):
     assert [store.use_chat_turn(assignment_id, "s1", 2) for _ in range(3)] == [1, 0, None]
 
 
+def test_explanation_checks_are_limited_per_attempt(store):
+    """説明を確かめる回数は、振り返りの質問とは別に数える。"""
+    assignment_id = make_assignment(store, make_class(store).id, "open")
+    assert store.use_explanation_check(assignment_id, "s1", 2) is None
+    store.start_attempt(assignment_id, "s1", 100.0)
+    assert store.use_chat_turn(assignment_id, "s1", 2) == 1
+    assert [store.use_explanation_check(assignment_id, "s1", 2) for _ in range(3)] == [1, 0, None]
+    assert store.use_chat_turn(assignment_id, "s1", 2) == 0
+
+
+def test_explanation_checks_used_at_the_same_time_do_not_exceed_the_limit(store):
+    assignment_id = make_assignment(store, make_class(store).id, "open")
+    store.start_attempt(assignment_id, "s1", 100.0)
+    results = run_together(4, lambda _: store.use_explanation_check(assignment_id, "s1", 2))
+    assert sorted(r for r in results if r is not None) == [0, 1] and results.count(None) == 2
+
+
 def test_chat_turns_used_at_the_same_time_do_not_exceed_the_limit(store):
     assignment_id = make_assignment(store, make_class(store).id, "open")
     store.start_attempt(assignment_id, "s1", 100.0)

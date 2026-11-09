@@ -137,6 +137,9 @@ class Store(Protocol):
     def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
         """振り返りの質問を1回分使う。残りの回数を返し、使い切っていれば None を返す。"""
 
+    def use_explanation_check(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        """生徒の説明を本人のコードで動かして確かめる処理を1回分使う。残りの回数を返し、使い切っていれば None を返す。"""
+
     def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
         """生徒が自分の言葉で書いた、行の説明を残す。解答を送る前なら何もせず False を返す。"""
 
@@ -339,14 +342,21 @@ class MemoryStore:
         with self._lock:
             return copy.deepcopy(self._attempts[assignment_id])
 
-    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+    def _use_turn(self, assignment_id: str, student_id: str, field: str, limit: int) -> int | None:
+        """解答に付けた回数 field を1つ進める。解答がなければ使えない。"""
         with self._lock:
             attempt = self._attempts[assignment_id].get(student_id)
-            used = attempt.get("chat_used", 0) if attempt else limit
+            used = attempt.get(field, 0) if attempt else limit
             if used >= limit:
                 return None
-            attempt["chat_used"] = used + 1
+            attempt[field] = used + 1
             return limit - used - 1
+
+    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        return self._use_turn(assignment_id, student_id, "chat_used", limit)
+
+    def use_explanation_check(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        return self._use_turn(assignment_id, student_id, "explanation_checks_used", limit)
 
     def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
         with self._lock:

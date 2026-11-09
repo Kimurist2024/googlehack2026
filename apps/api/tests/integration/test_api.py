@@ -650,6 +650,32 @@ def test_sending_the_same_explanation_again_does_not_plan_again(monkeypatch, sto
     assert asked == ["16も表示される"]
 
 
+def test_explanation_checks_stop_after_the_limit(monkeypatch, store):
+    """書き直して何度も送られても、確かめる（Gemini と隔離環境を使う）のは決めた回数まで。説明そのものは保存する。"""
+    from qgen.probes import PatternProbePlanner
+
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    monkeypatch.setattr(service, "EXPLANATION_CHECK_LIMIT", 2)
+    asked = []
+
+    class Counting(PatternProbePlanner):
+        def plan(self, claim, code):
+            asked.append(claim)
+            return super().plan(claim, code)
+
+    app_client = TestClient(create_app(store, LocalDevSandbox, TemplateAI, Counting))
+    created, assignment = setup_open(app_client, numbers=("1",))
+    headers, url, line = explain_missed_line(app_client, created, assignment)
+    for text in ("16も表示される", "16も表示される", "3も表示される", "5も表示される"):
+        assert app_client.post(url, json={"line": line, "text": text}, headers=headers).status_code == 200
+    # 同じ文の送り直しは数えない。3つ目の違う文からは確かめない
+    assert asked == ["16も表示される", "3も表示される"]
+    row = close_and_view(app_client, assignment)["order"][0]
+    assert row["explanations"] == {str(line): "5も表示される"} and row["explanation_checks"] == {}
+
+
 def test_demo_seed_brings_past_records(client, monkeypatch):
     monkeypatch.setenv("ALLOW_DEMO_SEED", "1")
     created = client.post("/v1/dev/seed", headers=TEACHER).json()

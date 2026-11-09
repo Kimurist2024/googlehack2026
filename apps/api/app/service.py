@@ -208,6 +208,9 @@ def explainable_lines(attempt: dict, key: dict) -> list[int]:
 
 # 生徒の説明のうち、コードを動かして確かめる文の数。1文ごとに Gemini と隔離環境を1回ずつ使う
 MAX_CHECKED_SENTENCES = 4
+# 生徒1人・課題1つあたりの、説明を確かめる回数。書き直して送るたびに使うので、何度も送られても費用が増え続けないようにする
+# （費用の上限に届くと、そのサービスが月末まで止まる）。説明を書けるのは誤答した問いの行だけなので、各行を数回書き直せる
+EXPLANATION_CHECK_LIMIT = 6
 SHOWN_CHARS = 80
 
 
@@ -251,6 +254,7 @@ def check_explanation(
 
     何を試すかは planner（規則か Gemini）が決め、説明どおりかは probes.verdict が機械的に決める。
     確かめられなかった文は残さない。結果は、生徒がその後に書き直していなければ保存する。
+    確かめるのは生徒1人・課題1つあたり EXPLANATION_CHECK_LIMIT 回まで。
     """
     quiz = store.get_quiz(assignment_id, student_id)
     attempt = store.get_attempt(assignment_id, student_id) or {}
@@ -259,6 +263,10 @@ def check_explanation(
     done = (attempt.get("explanation_checks") or {}).get(str(line))
     if done and done.get("text") == text:  # 同じ文をもう一度送っただけなら、Gemini と隔離環境を使い直さない
         return done["checks"]
+    if store.use_explanation_check(assignment_id, student_id, EXPLANATION_CHECK_LIMIT) is None:
+        # 使い切ったあとの説明は、確かめずにそのまま教員に見せる（前の文の結果は、文が違うので出ない）
+        logger.info("説明を確かめる回数を使い切りました")
+        return []
     code = quiz["code"]
     checks = []
     for sentence in sentences(text)[:MAX_CHECKED_SENTENCES]:

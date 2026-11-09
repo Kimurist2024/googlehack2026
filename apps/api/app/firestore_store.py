@@ -264,18 +264,25 @@ class FirestoreStore:
     def attempts(self, assignment_id: str) -> dict[str, Doc]:
         return self._all(assignment_id, "attempts")
 
-    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+    def _use_turn(self, assignment_id: str, student_id: str, field: str, limit: int) -> int | None:
+        """解答の文書の回数 field を、トランザクションで1つ進める。同時に使われても limit を超えない。"""
         reference = self._part(assignment_id, "attempts").document(student_id)
 
         def work(transaction) -> int | None:
             snapshot = reference.get(transaction=transaction)
-            used = (snapshot.to_dict() or {}).get("chat_used", 0) if snapshot.exists else limit
+            used = (snapshot.to_dict() or {}).get(field, 0) if snapshot.exists else limit
             if used >= limit:
                 return None
-            transaction.update(reference, {"chat_used": used + 1})
+            transaction.update(reference, {field: used + 1})
             return limit - used - 1
 
         return self._in_transaction(work)
+
+    def use_chat_turn(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        return self._use_turn(assignment_id, student_id, "chat_used", limit)
+
+    def use_explanation_check(self, assignment_id: str, student_id: str, limit: int) -> int | None:
+        return self._use_turn(assignment_id, student_id, "explanation_checks_used", limit)
 
     def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
         reference = self._part(assignment_id, "attempts").document(student_id)

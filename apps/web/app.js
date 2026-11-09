@@ -642,7 +642,8 @@ function explanationForm(line, codeLines) {
   return form;
 }
 
-// まちがえた問いが指す行ごとに、自分の言葉で説明を書く欄を出す。AI は使わず、そのまま先生に届く
+// まちがえた問いが指す行ごとに、自分の言葉で説明を書く欄を出す。文はそのまま先生に届く。
+// 動きについての文は、送ったあとに裏で本人のコードを動かして確かめる（何を試すかは AI か規則が決め、説明どおりかは実行の結果で決める）
 function showExplainItems(results) {
   const codeLines = studentCode.split("\n");
   const lines = [...new Set(results.filter((item) => !item.correct && item.line).map((item) => item.line))].sort((a, b) => a - b);

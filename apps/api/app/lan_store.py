@@ -27,6 +27,7 @@ MUTATING = (
     "start_attempt",
     "finish_attempt",
     "use_chat_turn",
+    "use_explanation_check",
     "save_explanation",
     "save_explanation_checks",
     "add_followup",
