@@ -75,7 +75,7 @@
 | 鍵は `SESSION_SECRET` から HKDF で用途ごとに導出する（トークンの署名、コードのハッシュ、接続元のハッシュ）。1つの用途の値が漏れても、他の用途の鍵にならない | `apps/api/app/auth.py` |
 | 授業コードと個人コードは鍵付きハッシュだけを保存する。平文で返すのはクラスを作った1回だけ | `apps/api/app/main.py` |
 | 教員はクラスごとに持ち主を確かめ、生徒はトークンのクラスに属する課題しか触れない。見つからないときも、他人のものだったときも同じ 404 | `apps/api/app/main.py` |
-| 入室の失敗は、接続元ごと・1分ごとに Firestore で数える。インスタンスが増えても上限は変わらない。正しいコードの入室は数えないので、教室全員が同じ回線でも締め出されない | `apps/api/app/main.py`、`apps/api/app/store.py` |
+| 入室の失敗は、接続元ごと・1分ごとに Firestore で数える。インスタンスが増えても上限は変わらない。正しいコードの入室は数えないので、教室全員が同じ回線でも締め出されない | `apps/api/app/main.py`、`apps/api/app/fields.py`（回数の上限）、`apps/api/app/store.py` |
 | 授業コードが違うときも個人コードの照合と同じだけ読み、応答時間からどちらが違ったかを推測させない | `apps/api/app/main.py` |
 | Cloud Run では `X-Forwarded-For` の右端（Cloud Run が足した値）だけを信用する。左側は送り手が偽れる。IPv6 は /64 単位で数える | `apps/api/app/security.py` |
 

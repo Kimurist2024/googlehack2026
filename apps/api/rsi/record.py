@@ -10,14 +10,14 @@ from pathlib import Path
 
 from qgen import prompt_store
 
-from .loop import RECOMMENDED, RunResult
+from .loop import NO_IMPROVEMENT, NOT_MEASURED, RECOMMENDED, REJECTED_BY_HELDOUT, RunResult
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "rsi_runs"
 DECISIONS = {
     RECOMMENDED: "推薦：heldout でも今の版より下がらなかった。差分を読んで、よければ promote する",
-    "no_improvement": "改善なし：今の版より良い候補が見つからなかった",
-    "rejected_by_heldout": "見送り：dev では良かったが heldout で下がった（dev に合わせすぎた可能性）",
-    "not_measured": "見送り：heldout を測る途中で AI の呼び出しが失敗した。上限や接続を確かめて、もう一度回す",
+    NO_IMPROVEMENT: "改善なし：今の版より良い候補が見つからなかった",
+    REJECTED_BY_HELDOUT: "見送り：dev では良かったが heldout で下がった（dev に合わせすぎた可能性）",
+    NOT_MEASURED: "見送り：heldout を測る途中で AI の呼び出しが失敗した。上限や接続を確かめて、もう一度回す",
 }
 
 

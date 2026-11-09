@@ -25,6 +25,7 @@ TOKEN_VERSION = 1
 TOKEN_TYPE = "student"
 MAX_TOKEN_CHARS = 1024
 DEV_TEACHER_PATTERN = r"^[A-Za-z0-9._@+-]{1,64}$"
+BEARER = "Bearer "
 
 # 用途ごとの鍵の名前。値を変えると、その用途で作った保存済みの値がすべて使えなくなる
 PURPOSE_TOKEN = "student-token-v1"
@@ -138,10 +139,28 @@ def prepare_firebase():
             return firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
 
 
+def bearer_token(authorization: str, detail: str = "認証が必要です") -> str:
+    """Authorization ヘッダーの Bearer のトークン。なければ 401 にする。"""
+    if not authorization.startswith(BEARER):
+        raise HTTPException(status_code=401, detail=detail)
+    return authorization[len(BEARER):]
+
+
 def current_student(authorization: str = Header(default="")) -> dict:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="認証が必要です")
-    return read_student_token(authorization[len("Bearer "):])
+    return read_student_token(bearer_token(authorization))
+
+
+def guest_teacher(decoded: dict, request: Request) -> str:
+    """匿名ログインを体験用の教員として通す。ALLOW_GUEST_TEACHER=1 のときだけ（app/guest.py）。"""
+    closed = HTTPException(status_code=403, detail="体験用の入口は閉じています")
+    if not guest.enabled():
+        audit.event("teacher.guest_rejected", request, severity="WARNING", reason="disabled")
+        raise closed
+    name = guest.principal(str(decoded.get("uid") or decoded.get("sub") or ""))
+    if name is None:
+        audit.event("teacher.guest_rejected", request, severity="WARNING", reason="bad_uid")
+        raise closed
+    return name
 
 
 def current_teacher(request: Request, authorization: str = Header(default=""), x_dev_teacher: str = Header(default="")) -> str:
@@ -153,20 +172,15 @@ def current_teacher(request: Request, authorization: str = Header(default=""), x
         if not re.fullmatch(DEV_TEACHER_PATTERN, x_dev_teacher):
             raise HTTPException(status_code=400, detail="X-Dev-Teacher の形が正しくありません")
         return x_dev_teacher
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="教員の認証が必要です")
+    token = bearer_token(authorization, "教員の認証が必要です")
     try:
-        decoded = verify_firebase_token(authorization[len("Bearer "):])
+        decoded = verify_firebase_token(token)
     except Exception as error:
         # 理由は記録にだけ残し、応答では区別しない
         audit.event("teacher.auth_failed", request, severity="WARNING", reason=type(error).__name__)
         raise HTTPException(status_code=401, detail="教員の認証に失敗しました") from None
     if guest.is_anonymous(decoded):
-        name = guest.principal(str(decoded.get("uid") or decoded.get("sub") or "")) if guest.enabled() else None
-        if name is None:
-            audit.event("teacher.guest_rejected", request, severity="WARNING", reason="disabled" if not guest.enabled() else "bad_uid")
-            raise HTTPException(status_code=403, detail="体験用の入口は閉じています")
-        return name
+        return guest_teacher(decoded, request)
     allowed = {item.strip().lower() for item in os.environ.get("TEACHER_EMAILS", "").split(",") if item.strip()}
     email = str(decoded.get("email", "")).lower()
     if not decoded.get("email_verified") or email not in allowed:

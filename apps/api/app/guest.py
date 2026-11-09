@@ -15,12 +15,13 @@ import re
 
 from fastapi import HTTPException
 
+from .fields import DAY_SEC
+
 PREFIX = "guest:"
 # Firebase の uid は英数字。保存先の文書の名前に入れるので、それ以外は通さない
 UID_PATTERN = r"^[A-Za-z0-9]{1,128}$"
 MAX_STUDENTS = 10
-RETENTION_SEC = 24 * 60 * 60
-DAY_SEC = 24 * 60 * 60
+RETENTION_SEC = DAY_SEC
 # 1日（UTC）の上限。(1人あたり, 体験用の全員の合計)
 LIMITS = {"class": (5, 300), "generate": (10, 150)}
 
@@ -43,6 +44,11 @@ def is_guest(teacher: str) -> bool:
     return teacher.startswith(PREFIX)
 
 
+def _day(now: float) -> int:
+    """数える単位の日（UTC）。"""
+    return int(now // DAY_SEC)
+
+
 def _keys(kind: str, teacher: str, day: int) -> tuple[str, str]:
     return f"{kind}-{day}-{teacher[len(PREFIX):]}", f"{kind}-{day}"
 
@@ -51,7 +57,7 @@ def check(store, kind: str, teacher: str, now: float) -> None:
     """上限に達していれば 429 にする。本物の教員には何もしない。数えるのは、実際に作れたときの use()。"""
     if not is_guest(teacher):
         return
-    day = int(now // DAY_SEC)
+    day = _day(now)
     own_key, total_key = _keys(kind, teacher, day)
     own_limit, total_limit = LIMITS[kind]
     retry = {"Retry-After": str(int((day + 1) * DAY_SEC - now))}
@@ -64,7 +70,7 @@ def check(store, kind: str, teacher: str, now: float) -> None:
 def use(store, kind: str, teacher: str, now: float) -> None:
     if not is_guest(teacher):
         return
-    day = int(now // DAY_SEC)
+    day = _day(now)
     # 数えた記録は、その日が終わってから1日たてば消してよい
     expire_at = (day + 2) * DAY_SEC
     for key in _keys(kind, teacher, day):

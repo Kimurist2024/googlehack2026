@@ -17,7 +17,7 @@ guestUsage/{kind}-{day}[-{uid}]       体験用の教員の1日の利用回数�
 読むときと書くときに期限の過ぎたものを外す。文書の expire_at は最後まで残る記録の期限にし、TTL で消す。
 
 ブラウザからは読み書きさせない（firestore.rules）。サーバーの権限でAPIだけが触る。
-TTL の削除は期限から遅れることがあるので、期限を過ぎた課題はアプリの側でもないものとして扱う（app/main.py）。
+TTL の削除は期限から遅れることがあるので、期限を過ぎた課題はアプリの側でもないものとして扱う（app/main.py、app/access.py、app/offline_api.py）。
 """
 import os
 import random
@@ -361,27 +361,27 @@ class FirestoreStore:
 
             self._in_transaction(work)
 
-    def _login_failure(self, client_key: str, window: int):
-        return self.db.collection("loginFailures").document(f"{client_key}-{window}")
+    # 数えるだけの文書（入室の失敗、体験用の回数）。count と、TTL で消すための expire_at を持つ
+
+    def _count(self, collection: str, doc_id: str) -> int:
+        snapshot = self.db.collection(collection).document(doc_id).get()
+        return int(snapshot.get("count") or 0) if snapshot.exists else 0
+
+    def _increment(self, collection: str, doc_id: str, expire_at: float) -> None:
+        # Increment はサーバー側で足すので、同時に足しても数え漏れない
+        self.db.collection(collection).document(doc_id).set({"count": firestore.Increment(1), "expire_at": _timestamp(expire_at)}, merge=True)
 
     def login_failures(self, client_key: str, window: int) -> int:
-        snapshot = self._login_failure(client_key, window).get()
-        return int(snapshot.get("count") or 0) if snapshot.exists else 0
+        return self._count("loginFailures", f"{client_key}-{window}")
 
     def add_login_failure(self, client_key: str, window: int, expire_at: float) -> None:
-        # Increment はサーバー側で足すので、同時に失敗しても数え漏れない
-        self._login_failure(client_key, window).set(
-            {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
-        )
+        self._increment("loginFailures", f"{client_key}-{window}", expire_at)
 
     def usage_count(self, key: str) -> int:
-        snapshot = self.db.collection("guestUsage").document(key).get()
-        return int(snapshot.get("count") or 0) if snapshot.exists else 0
+        return self._count("guestUsage", key)
 
     def add_usage(self, key: str, expire_at: float) -> None:
-        self.db.collection("guestUsage").document(key).set(
-            {"count": firestore.Increment(1), "expire_at": datetime.fromtimestamp(expire_at, tz=timezone.utc)}, merge=True
-        )
+        self._increment("guestUsage", key, expire_at)
 
     def save_offline_verifiers(self, class_id: str, verifiers: Doc) -> None:
         # クラスの下に置くので、クラスを消すとまとめて消える

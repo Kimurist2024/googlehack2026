@@ -14,6 +14,13 @@ MAX_DURATION_MS = 3_600_000
 CLOCK_SKEW_SEC = 300
 # 生徒が自分の言葉で書く、1行分の説明の長さ
 EXPLANATION_CHARS = 300
+DAY_SEC = 24 * 60 * 60
+# 持ち時間を過ぎても受け付ける余裕（通信の遅れの分）
+GRACE_SEC = 10
+# 失敗した入室だけを、接続元ごと・LOGIN_WINDOW_SEC ごとに数える。保存先に数えるので、インスタンスが増えても上限は変わらない。
+# コードは31種類の文字の8桁が2つなので、この回数でも総当たりはできない
+LOGIN_WINDOW_SEC = 60
+LOGIN_FAILURES_PER_MIN = 30
 
 # 教員が声かけのあとに記録する処置。クラウドでも校内LANでも、結果の取り込みでも同じものを使う。
 # explained と not_explained は、質問案で聞いた結果。生徒の記録に残り、次の課題の材料になる

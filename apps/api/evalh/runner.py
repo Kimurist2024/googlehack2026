@@ -79,7 +79,7 @@ def _evaluate_case(case: Case, result, config: EvalConfig, tally: _Tally) -> Non
         handled += int((p >= config.flag_threshold) == claim.is_gap)
         tally.pairs.append((p, int(claim.is_gap)))
         tally.feedback_rows.append((f"{case.id}/{pred_id}", p, claim.is_gap))
-        node = nodes.get(finding.node_id) if finding and finding.node_id else None
+        node = _node_of(finding, nodes)
         if claim.is_gap and p < config.flag_threshold:
             fail("missed_gap", gold_claim=claim.text, claim_kind=claim.kind, pred_claim=pred_text[pred_id], p=p, node=_where(node))
         if not claim.is_gap and p >= config.flag_threshold:
@@ -99,7 +99,7 @@ def _evaluate_case(case: Case, result, config: EvalConfig, tally: _Tally) -> Non
 
     for item in result.items:
         finding = findings.get(item.claim_id)
-        node = nodes.get(finding.node_id) if finding and finding.node_id else None
+        node = _node_of(finding, nodes)
         tally.items += 1
         for violation in metrics.guardrail_violations(item.claim_id, item.text, node is not None):
             tally.violations.append({"case_id": case.id, **asdict(violation)})
@@ -111,6 +111,11 @@ def _evaluate_case(case: Case, result, config: EvalConfig, tally: _Tally) -> Non
         gold_id = gold_of_pred.get(item.claim_id)
         if gold_id is not None and gold[gold_id].is_gap:
             tally.gap_keys.add(key)
+
+
+def _node_of(finding, nodes: dict):
+    """根拠として示されたコードの場所。示されていなければ None。"""
+    return nodes.get(finding.node_id) if finding and finding.node_id else None
 
 
 def _where(node) -> dict | None:

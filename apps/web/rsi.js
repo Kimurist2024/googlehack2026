@@ -5,15 +5,18 @@
   const percent = (x) => `${(x * 100).toFixed(1)}%`;
   const labels = { baseline: '開始時の指示文', accepted: '候補に残す', not_better: '改善と認めず', rejected: '却下', unmeasured: '測定できず' };
   const phases = ['開始時を測定', '候補生成・検査・評価', '別データで最終確認', '人に推薦'];
+  const STEP_MS = 3000; // 再生で次のステップに進む間隔
   let data, position = -1, timer = null, loading = false;
   const finished = () => data && position >= data.candidates.length + 1;
+  const scoreText = (c) => (c.score == null ? '未測定' : percent(c.score));
+  const showDetail = () => { const d = el('detail'); d.hidden = false; d.replaceChildren(); return d; };
   const pause = () => { clearInterval(timer); timer = null; el('play').textContent = position === -1 ? 'テストを再生' : finished() ? '再生済み' : '再生を続ける'; };
   const block = (title, text) => { const d = node('details'); d.append(node('summary', title), node('pre', text)); return d; };
 
   function candidate(c) {
-    const detail = el('detail'); detail.hidden = false; detail.replaceChildren();
+    const detail = showDetail();
     detail.append(node('h2', `${c.id}：${labels[c.status]}`));
-    detail.append(node('p', `親：${c.parent || 'なし'} ／ 点数：${c.score == null ? '未測定' : percent(c.score)} ／ 必須ルール違反：${c.violations}件`));
+    detail.append(node('p', `親：${c.parent || 'なし'} ／ 点数：${scoreText(c)} ／ 必須ルール違反：${c.violations}件`));
     if (c.repeats) detail.append(node('p', `繰り返し測定：${c.repeats.map(percent).join(' → ')}`));
     if (c.reasons.length) detail.append(node('p', c.reasons.join('。')));
     if (c.rationale) detail.append(block('改善役の分析・変更理由（AI）', c.rationale));
@@ -40,17 +43,17 @@
     data.candidates.slice(0, Math.min(position + 1, count)).forEach((c) => {
       const row = node('tr'), cell = node('td'), b = node('button', `${c.id} ← ${c.parent || '開始'}`);
       b.type = 'button'; b.onclick = () => { pause(); candidate(c); }; cell.append(b);
-      row.append(cell, node('td', c.score == null ? '未測定' : percent(c.score)), node('td', labels[c.status])); el('candidates').append(row);
+      row.append(cell, node('td', scoreText(c)), node('td', labels[c.status])); el('candidates').append(row);
     });
-    el('next').disabled = position >= count + 1;
+    el('next').disabled = finished();
     el('reset').disabled = position < 0;
-    el('play').disabled = position >= count + 1;
+    el('play').disabled = finished();
     if (position < 0) { el('detail').hidden = true; el('status').textContent = '準備完了。「テストを再生」または「次のステップ」で開始します。'; return; }
     if (position < count) {
       const c = data.candidates[position]; candidate(c);
       el('status').textContent = `ステップ ${position + 1}/${count + 2}：${c.id} を評価 → ${labels[c.status]}`;
     } else {
-      const d = el('detail'); d.hidden = false; d.replaceChildren();
+      const d = showDetail();
       if (position === count) {
         d.append(node('h2', '探索に使わなかった別データで比較'));
         Object.entries(data.heldout).forEach(([id, score]) => d.append(node('p', `${id}：${percent(score)}`)));
@@ -66,13 +69,13 @@
       }
     }
   }
-  function next() { if (data && position < data.candidates.length + 1) { position++; render(); } }
+  function next() { if (data && !finished()) { position++; render(); } }
   el('next').onclick = () => { pause(); next(); };
   el('reset').onclick = () => { position = -1; pause(); render(); };
   el('play').onclick = () => {
     if (timer) { pause(); return; }
     el('play').textContent = '一時停止'; next();
-    if (position < data.candidates.length + 1) timer = setInterval(next, 3000);
+    if (!finished()) timer = setInterval(next, STEP_MS);
   };
   window.loadRsiTest = async () => {
     if (data || loading) return;
@@ -83,7 +86,7 @@
       data = await response.json();
       if (!data.synthetic || data.decision !== 'recommended' || !data.candidates?.length) throw new Error('対応していない記録です');
       el('meta').textContent = `記録：${data.run_id} ／ 対象：${data.target} ／ 各${data.meta.repeats}回測定 ／ 開始時のぶれ：${(data.noise * 100).toFixed(1)}ポイント`;
-      el('play').disabled = false; render();
+      render();
     } catch (error) { data = null; el('error').textContent = `${error.message}。RSIテストのタブを押して再試行してください。`; }
     finally { loading = false; }
   };

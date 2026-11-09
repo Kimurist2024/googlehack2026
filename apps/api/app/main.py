@@ -19,12 +19,16 @@ from qgen.ai import QuizAI, default_ai
 from qgen.sandbox import Sandbox, default_sandbox
 
 from . import audit, auth, classpack, demo, guest, offline_api, security, service
-from .access import student_assignment
+from .access import student_assignment, student_session
 from .csv_export import build_csv, csv_cell  # noqa: F401  csv_cell はテストが app.main から読む
-from .fields import (
+from .fields import (  # GRACE_SEC と LOGIN_FAILURES_PER_MIN は、テストが app.main から読む
     ACTIONS,
+    DAY_SEC,
     EXPLANATION_CHARS,
     GENERATION_STALE_SEC,
+    GRACE_SEC,
+    LOGIN_FAILURES_PER_MIN,
+    LOGIN_WINDOW_SEC,
     MAX_ANSWERS,
     MAX_DURATION_MS,
     REASON_CHARS,
@@ -38,10 +42,6 @@ from .fields import (
 from .store import AssignmentRecord, ClassRecord, Store, can_add_submissions, can_begin_generation, default_store, is_expired
 
 logger = logging.getLogger(__name__)
-GRACE_SEC = 10
-# 失敗した入室だけを、接続元ごと・1分ごとに数える。保存先に数えるので、インスタンスが増えても上限は変わらない。
-# コードは31種類の文字の8桁が2つなので、この回数でも総当たりはできない
-LOGIN_FAILURES_PER_MIN = 30
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 # multipart の区切りなどの分を足した、リクエスト本文の上限
 MAX_BODY_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
@@ -55,6 +55,7 @@ WEB_DIR = Path(os.environ.get("WEB_DIR") or Path(__file__).resolve().parents[2] 
 # 生徒のデータ（提出コード、問い、正解、解答と採点結果、声かけの記録）を残す日数。課題を作った時点から数える
 DEFAULT_RETENTION_DAYS = 30
 MAX_RETENTION_DAYS = 365
+NOT_SUBMITTED = "解答を送ったあとに使えます"
 
 
 class ClassIn(BaseModel):
@@ -134,7 +135,7 @@ def retention_sec() -> float:
         days = int(os.environ.get("RETENTION_DAYS", DEFAULT_RETENTION_DAYS))
     except ValueError:
         days = DEFAULT_RETENTION_DAYS
-    return min(max(days, 1), MAX_RETENTION_DAYS) * 24 * 60 * 60
+    return min(max(days, 1), MAX_RETENTION_DAYS) * DAY_SEC
 
 
 def warm_up(shared_ai: Callable[[], QuizAI]) -> None:
@@ -199,7 +200,7 @@ def create_app(
             return shared[0]
 
     # ネットが落ちても授業を止めないための入口（授業パッケージ、校内LAN版、オフライン提出）。ここより後の経路より優先される
-    offline_api.install(app, store, shared_ai, grace_sec=GRACE_SEC, login_limit=LOGIN_FAILURES_PER_MIN)
+    offline_api.install(app, store, shared_ai)
     if not local:
         # 起動の直後に、最初の要求で必要になる準備（Firebase、Gemini のクライアント）を裏で済ませておく
         threading.Thread(target=warm_up, args=(shared_ai,), daemon=True).start()
@@ -210,13 +211,31 @@ def create_app(
             raise HTTPException(status_code=404, detail="クラスが見つかりません")
         return classroom
 
-    def owned_assignment(assignment_id: str, teacher: str) -> AssignmentRecord:
+    def owned_assignment_and_class(assignment_id: str, teacher: str) -> tuple[AssignmentRecord, ClassRecord]:
         assignment = store.get_assignment(assignment_id)
         # TTL の削除は遅れることがあるので、期限を過ぎたものはここでないものとして扱う
         if assignment is None or is_expired(assignment, service.now()):
             raise HTTPException(status_code=404, detail="課題が見つかりません")
-        owned_class(assignment.class_id, teacher)
-        return assignment
+        return assignment, owned_class(assignment.class_id, teacher)
+
+    def owned_assignment(assignment_id: str, teacher: str) -> AssignmentRecord:
+        return owned_assignment_and_class(assignment_id, teacher)[0]
+
+    def owned_student(assignment_id: str, student_id: str, teacher: str) -> tuple[AssignmentRecord, ClassRecord]:
+        """課題とクラスを確かめ、その生徒がクラスにいることも確かめる。"""
+        assignment, classroom = owned_assignment_and_class(assignment_id, teacher)
+        if student_id not in classroom.student_numbers:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        return assignment, classroom
+
+    def submitted_attempt(assignment_id: str, claims: dict) -> tuple[str, dict]:
+        """解答を送ったあとの操作（振り返り、説明）の前に、送ったことを確かめる。"""
+        student_assignment(store, assignment_id, claims)
+        student_id = claims["student"]
+        attempt = store.get_attempt(assignment_id, student_id)
+        if attempt is None or attempt["submitted_at"] is None:
+            raise HTTPException(status_code=409, detail=NOT_SUBMITTED)
+        return student_id, attempt
 
     def run_generation(assignment: AssignmentRecord) -> None:
         try:
@@ -316,14 +335,13 @@ def create_app(
     async def upload_submissions(
         assignment_id: AssignmentId, request: Request, file: UploadFile = File(...), teacher: str = Depends(auth.current_teacher)
     ) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
+        assignment, classroom = owned_assignment_and_class(assignment_id, teacher)
         locked = HTTPException(status_code=409, detail="受付を始めた課題には提出を追加できません")
         if not can_add_submissions(assignment):
             raise locked
         data = await file.read(MAX_UPLOAD_BYTES + 1)
         if len(data) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="ファイルが大きすぎます")
-        classroom = store.get_class(assignment.class_id)
         by_number = {number: student_id for student_id, number in classroom.student_numbers.items()}
         try:
             found, problems = service.read_submissions(data, set(by_number))
@@ -399,29 +417,26 @@ def create_app(
     @app.post("/v1/sessions")
     def create_session(body: SessionIn, request: Request) -> dict:
         client = security.client_key(request)
+        forwarded = security.forwarded_count(request)
         current = service.now()
-        window = int(current // 60)
+        window = int(current // LOGIN_WINDOW_SEC)
         if store.login_failures(client, window) >= LOGIN_FAILURES_PER_MIN:
-            audit.event("login.rate_limited", request, severity="WARNING", client=client, forwarded=security.forwarded_count(request))
+            audit.event("login.rate_limited", request, severity="WARNING", client=client, forwarded=forwarded)
             raise HTTPException(
-                status_code=429, detail="しばらく待ってからやり直してください", headers={"Retry-After": str(60 - int(current % 60))}
+                status_code=429,
+                detail="しばらく待ってからやり直してください",
+                headers={"Retry-After": str(LOGIN_WINDOW_SEC - int(current % LOGIN_WINDOW_SEC))},
             )
         class_id = store.class_id_for_code(auth.code_hash(body.class_code))
         classroom = store.get_class(class_id) if class_id else None
         student_id = store.student_for_credential(classroom.id if classroom else NO_CLASS_ID, auth.code_hash(body.personal_code))
         if classroom is None or student_id is None:
             # 教室の全員が同じ接続元から入っても、正しいコードの入室では上限に近づかない
-            store.add_login_failure(client, window, expire_at=(window + 2) * 60)
-            audit.event("login.failed", request, severity="WARNING", client=client, forwarded=security.forwarded_count(request))
+            store.add_login_failure(client, window, expire_at=(window + 2) * LOGIN_WINDOW_SEC)
+            audit.event("login.failed", request, severity="WARNING", client=client, forwarded=forwarded)
             raise HTTPException(status_code=401, detail="コードが正しくありません")
-        audit.event(
-            "login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client, forwarded=security.forwarded_count(request)
-        )
-        return {
-            "token": auth.issue_student_token(classroom.id, student_id),
-            "assignment_id": classroom.open_assignment_id,
-            "number": classroom.student_numbers[student_id],
-        }
+        audit.event("login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client, forwarded=forwarded)
+        return student_session(classroom, student_id)
 
     @app.post("/v1/assignments/{assignment_id}/attempt:start")
     def start_attempt(assignment_id: AssignmentId, claims: dict = Depends(auth.current_student)) -> dict:
@@ -435,8 +450,8 @@ def create_app(
         attempt = store.start_attempt(assignment_id, student_id, service.now())
         if attempt["submitted_at"] is not None:
             raise HTTPException(status_code=409, detail="すでに提出済みです")
-        deadline = attempt["started_at"] + assignment.time_limit_sec
-        return {"questions": quiz["questions"], "code": quiz["code"], "stdin": quiz["stdin"], "remaining_sec": max(0, round(deadline - service.now()))}
+        remaining_sec = max(0, round(service.deadline(attempt, assignment) - service.now()))
+        return {"questions": quiz["questions"], "code": quiz["code"], "stdin": quiz["stdin"], "remaining_sec": remaining_sec}
 
     @app.post("/v1/assignments/{assignment_id}/attempt:submit")
     def submit_attempt(assignment_id: AssignmentId, body: SubmitIn, claims: dict = Depends(auth.current_student)) -> dict:
@@ -450,7 +465,7 @@ def create_app(
             raise already_submitted
         if assignment.state != "open":
             raise HTTPException(status_code=409, detail="受付は終了しました")
-        if service.now() > attempt["started_at"] + assignment.time_limit_sec + GRACE_SEC:
+        if service.now() > service.deadline(attempt, assignment) + GRACE_SEC:
             raise HTTPException(status_code=410, detail="持ち時間を過ぎました")
         key = store.get_answer_key(assignment_id, student_id)
         graded = service.grade(key, body.answers)
@@ -461,11 +476,7 @@ def create_app(
     @app.post("/v1/assignments/{assignment_id}/attempt:chat")
     def chat(assignment_id: AssignmentId, body: ChatIn, claims: dict = Depends(auth.current_student)) -> dict:
         """解答を送ったあとの振り返り。AI は答えを言わず、ヒントか問い返しを返す。"""
-        student_assignment(store, assignment_id, claims)
-        student_id = claims["student"]
-        attempt = store.get_attempt(assignment_id, student_id)
-        if attempt is None or attempt["submitted_at"] is None:
-            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+        student_id, attempt = submitted_attempt(assignment_id, claims)
         remaining = store.use_chat_turn(assignment_id, student_id, service.CHAT_LIMIT)
         if remaining is None:
             raise HTTPException(status_code=429, detail="この課題で質問できる回数を使い切りました")
@@ -476,31 +487,25 @@ def create_app(
     @app.post("/v1/assignments/{assignment_id}/attempt:explain")
     def explain(assignment_id: AssignmentId, body: ExplainIn, claims: dict = Depends(auth.current_student)) -> dict:
         """説明できなかった行を、生徒が自分の言葉で書く。AIは使わず、そのまま教員に見せる。"""
-        student_assignment(store, assignment_id, claims)
-        student_id = claims["student"]
-        attempt = store.get_attempt(assignment_id, student_id)
-        if attempt is None or attempt["submitted_at"] is None:
-            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+        student_id, attempt = submitted_attempt(assignment_id, claims)
         if body.line not in service.explainable_lines(attempt, store.get_answer_key(assignment_id, student_id)):
             raise HTTPException(status_code=400, detail="この行は説明の対象ではありません")
         if not store.save_explanation(assignment_id, student_id, body.line, body.text.strip()):
-            raise HTTPException(status_code=409, detail="解答を送ったあとに使えます")
+            raise HTTPException(status_code=409, detail=NOT_SUBMITTED)
         return {"saved": True}
 
     @app.get("/v1/assignments/{assignment_id}/followups")
     def followups(
         assignment_id: AssignmentId, budget_sec: Annotated[float, Query(ge=0, le=3600)] = 90, teacher: str = Depends(auth.current_teacher)
     ) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
-        return service.followup_view(store, assignment, store.get_class(assignment.class_id), budget_sec)
+        assignment, classroom = owned_assignment_and_class(assignment_id, teacher)
+        return service.followup_view(store, assignment, classroom, budget_sec)
 
     @app.post("/v1/assignments/{assignment_id}/followups/{student_id}")
     def record_action(
         assignment_id: AssignmentId, student_id: StudentId, body: ActionIn, request: Request, teacher: str = Depends(auth.current_teacher)
     ) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
-        if student_id not in store.get_class(assignment.class_id).student_numbers:
-            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        assignment, _ = owned_student(assignment_id, student_id, teacher)
         store.record_action(
             assignment_id, student_id, {"action": body.action, "reason": body.reason, "duration_ms": body.duration_ms, "by": teacher}
         )
@@ -512,18 +517,14 @@ def create_app(
     def student_record(
         assignment_id: AssignmentId, student_id: StudentId, request: Request, teacher: str = Depends(auth.current_teacher)
     ) -> dict:
-        assignment = owned_assignment(assignment_id, teacher)
-        classroom = store.get_class(assignment.class_id)
-        if student_id not in classroom.student_numbers:
-            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        _, classroom = owned_student(assignment_id, student_id, teacher)
         # 課題をまたいだ記録をまとめて見る操作なので、誰がどの生徒の記録を見たかを残す
         audit.event("student_record.viewed", request, principal=teacher, class_id=classroom.id, student_id=student_id)
         return service.student_record_view(store, classroom, student_id)
 
     @app.get("/v1/assignments/{assignment_id}/export")
     def export(assignment_id: AssignmentId, request: Request, teacher: str = Depends(auth.current_teacher)) -> Response:
-        assignment = owned_assignment(assignment_id, teacher)
-        classroom = store.get_class(assignment.class_id)
+        _, classroom = owned_assignment_and_class(assignment_id, teacher)
         submissions = store.submission_statuses(assignment_id)
         attempts = store.attempts(assignment_id)
         followups = store.followups(assignment_id)

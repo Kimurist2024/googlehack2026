@@ -5,10 +5,10 @@
 import math
 import re
 
+from .metrics import ITEM_LIMIT
 from .pipeline import FILE, LINE, Claim, Finding, Node, StagedPipeline
 
 TOP_K = 3  # 各階層で残す件数（企画案 v0.6 の初期値）
-ITEM_LIMIT = 80
 
 # 主張の言葉 → それに当たるコードの書き方
 LEXICON = {

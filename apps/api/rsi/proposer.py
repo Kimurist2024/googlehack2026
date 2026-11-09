@@ -3,6 +3,12 @@ import json
 from dataclasses import dataclass
 from typing import Protocol
 
+from qgen.probes import with_retry
+
+from .checks import placeholders
+
+# 改善役のモデル。本番の段階より強いモデルを使ってよい
+DEFAULT_PROPOSER_MODEL = "gemini-3.1-pro-preview"
 FAILURE_SAMPLE = 8
 WORKING_SAMPLE = 4  # うまくいっている例。壊さないように見せる
 
@@ -76,11 +82,7 @@ class GeminiProposer:
         self._model = model
 
     def propose(self, target: str, prompt: str, failures: list[dict], notes: list[dict]) -> Proposal:
-        from .checks import placeholders
-
         text = reflection_prompt(target, prompt, failures, notes, sorted(placeholders(prompt)))
-        from qgen.probes import with_retry
-
         response = with_retry(lambda: self._client.models.generate_content(
             model=self._model,
             contents=text,

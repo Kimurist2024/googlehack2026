@@ -62,7 +62,7 @@ def calibration(pairs: list[tuple[float, int]], bins: int = 5) -> dict:
 @dataclass(frozen=True)
 class Violation:
     claim_id: str
-    kind: str  # too_long / no_evidence / judging_words
+    kind: str  # too_long / no_evidence / judging_words / link
     text: str
 
 

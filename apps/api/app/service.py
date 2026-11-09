@@ -170,6 +170,11 @@ def grade(key: dict, answers: dict[str, str]) -> list[dict]:
     return graded
 
 
+def deadline(attempt: dict, assignment: AssignmentRecord) -> float:
+    """持ち時間が終わる時刻。サーバーの時計で始めた時刻から数える。"""
+    return attempt["started_at"] + assignment.time_limit_sec
+
+
 def score(graded: list[dict]) -> int:
     """採点結果から正答数を数える。"""
     return sum(1 for item in graded if item["correct"])

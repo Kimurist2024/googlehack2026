@@ -18,10 +18,14 @@ from pydantic import BaseModel, Field
 from starlette.middleware import Middleware
 
 from . import audit, auth, classpack, security, service
-from .access import student_assignment
+from .access import student_assignment, student_session
 from .fields import (
     CLOCK_SKEW_SEC,
+    DAY_SEC,
     GENERATION_STALE_SEC,
+    GRACE_SEC,
+    LOGIN_FAILURES_PER_MIN,
+    LOGIN_WINDOW_SEC,
     MAX_ANSWERS,
     MAX_DURATION_MS,
     REASON_CHARS,
@@ -36,7 +40,9 @@ from .fields import (
 from .store import AssignmentRecord, ClassRecord, Store, is_expired
 
 # 解答を端末にためておける長さ。これを過ぎた提出は受け付けない
-OFFLINE_WINDOW_SEC = 24 * 60 * 60
+OFFLINE_WINDOW_SEC = DAY_SEC
+# 校内LANで行った授業の結果のファイルの形式
+RESULTS_FORMAT = "mushitori-results-v1"
 LAN_TEACHER = "lan-teacher"
 LOOPBACK = {"127.0.0.1", "::1"}
 # 校内LAN版でも、教室の端末から誰でも呼べる経路。これ以外は教員PC（ループバック）からだけ受け付ける
@@ -125,7 +131,8 @@ def lan_urls() -> list[str]:
     return [explicit] if explicit else []
 
 
-class SessionIn(BaseModel):
+class LanSessionIn(BaseModel):
+    # クラウド版（main.py の SessionIn）より短いコードも、照合で断る
     class_code: str = Field(min_length=1, max_length=32)
     personal_code: str = Field(min_length=1, max_length=32)
 
@@ -156,13 +163,13 @@ class EdgeFollowup(BaseModel):
 
 
 class EdgeResults(BaseModel):
-    format: Literal["mushitori-results-v1"]
+    format: Literal[RESULTS_FORMAT]
     assignment_id: ResourceId
     attempts: dict[ResourceId, EdgeAttempt] = Field(default_factory=dict, max_length=1000)
     followups: dict[ResourceId, EdgeFollowup] = Field(default_factory=dict, max_length=1000)
 
 
-def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, login_limit: int) -> None:
+def install(app: FastAPI, store: Store, shared_ai: Callable) -> None:
     router = APIRouter()
 
     def owned_assignment(assignment_id: str, teacher: str) -> tuple[AssignmentRecord, ClassRecord]:
@@ -193,10 +200,8 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
         assignment_id: AssignmentId, body: OfflineSubmitIn, request: Request, tasks: BackgroundTasks, authorization: str = Header(default="")
     ) -> dict:
         """通信が戻ってから届いた解答を受け付ける。持ち時間を過ぎていたら、オフラインの印を付けて先生に見せる。"""
-        if not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="認証が必要です")
         # ためている間に入室の期限が切れても、署名が正しく、期限から OFFLINE_WINDOW_SEC 以内なら受け付ける
-        claims = auth.read_student_token(authorization[len("Bearer "):], leeway_sec=OFFLINE_WINDOW_SEC)
+        claims = auth.read_student_token(auth.bearer_token(authorization), leeway_sec=OFFLINE_WINDOW_SEC)
         student_id = claims["student"]
         assignment = student_assignment(store, assignment_id, claims)
         attempt = store.get_attempt(assignment_id, student_id)
@@ -210,7 +215,7 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
         now = service.now()
         if now > attempt["started_at"] + OFFLINE_WINDOW_SEC:
             raise HTTPException(status_code=410, detail="時間が経ちすぎたため受け付けられません")
-        on_time = assignment.state == "open" and now <= attempt["started_at"] + assignment.time_limit_sec + grace_sec
+        on_time = assignment.state == "open" and now <= service.deadline(attempt, assignment) + GRACE_SEC
         # 端末の時計は信用しない。記録はするが、受け付けた時刻はサーバーの時刻
         extra = {} if on_time else {"via": "offline", "answered_at_client": min(body.answered_at, now)}
         graded = service.grade(store.get_answer_key(assignment_id, student_id), body.answers)
@@ -288,8 +293,9 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
             # 説明は、クラウドの採点で「説明してもらう行」になった行だけを残す（LAN 側の判断は使わない）
             allowed = set(service.explainable_lines(store.get_attempt(assignment_id, student_id), key))
             for line, text in item.explanations.items():
-                if int(line) in allowed and text.strip():
-                    store.save_explanation(assignment_id, student_id, int(line), text.strip())
+                number, written = int(line), text.strip()
+                if number in allowed and written:
+                    store.save_explanation(assignment_id, student_id, number, written)
         for student_id, followup in body.followups.items():
             if student_id in classroom.student_numbers:
                 store.record_action(assignment_id, student_id, {**followup.model_dump(), "by": teacher, "via": "lan"})
@@ -324,13 +330,14 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
         app.dependency_overrides[auth.current_teacher] = lan_teacher
 
         @router.post("/v1/sessions")
-        def lan_session(body: SessionIn, request: Request) -> dict:
+        def lan_session(body: LanSessionIn, request: Request) -> dict:
             """照合値（scrypt）で入室を確かめる。クラウドの鍵は教員PCにない。"""
             client = security.client_key(request)
-            current = service.now()
-            window = int(current // 60)
-            if store.login_failures(client, window) >= login_limit:
-                raise HTTPException(status_code=429, detail="しばらく待ってからやり直してください", headers={"Retry-After": "60"})
+            window = int(service.now() // LOGIN_WINDOW_SEC)
+            if store.login_failures(client, window) >= LOGIN_FAILURES_PER_MIN:
+                raise HTTPException(
+                    status_code=429, detail="しばらく待ってからやり直してください", headers={"Retry-After": str(LOGIN_WINDOW_SEC)}
+                )
             classroom = verifiers = None
             for class_id in store.lan_classes():
                 candidate = store.offline_verifiers(class_id)
@@ -338,15 +345,11 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
                     classroom, verifiers = store.get_class(class_id), candidate
             student_id = classpack.match_student(verifiers, body.personal_code) if verifiers else None
             if classroom is None or student_id is None:
-                store.add_login_failure(client, window, expire_at=(window + 2) * 60)
+                store.add_login_failure(client, window, expire_at=(window + 2) * LOGIN_WINDOW_SEC)
                 audit.event("login.failed", request, severity="WARNING", client=client)
                 raise HTTPException(status_code=401, detail="コードが正しくありません")
             audit.event("login.succeeded", request, class_id=classroom.id, student_id=student_id, client=client)
-            return {
-                "token": auth.issue_student_token(classroom.id, student_id),
-                "assignment_id": classroom.open_assignment_id,
-                "number": classroom.student_numbers[student_id],
-            }
+            return student_session(classroom, student_id)
 
         @router.post("/v1/edge/import", status_code=201)
         def import_package(body: ImportIn, request: Request, teacher: str = Depends(lan_teacher)) -> dict:
@@ -412,11 +415,11 @@ def install(app: FastAPI, store: Store, shared_ai: Callable, grace_sec: float, l
                 for sid, attempt in store.attempts(assignment_id).items()
             }
             followups = {
-                sid: {name: record[name] for name in ("action", "reason", "duration_ms") if name in record}
+                sid: {name: record[name] for name in EdgeFollowup.model_fields if name in record}
                 for sid, record in store.followups(assignment_id).items()
                 if "action" in record
             }
             audit.event("edge.results_exported", request, principal=teacher, assignment_id=assignment_id, count=len(attempts))
-            return {"format": "mushitori-results-v1", "assignment_id": assignment_id, "attempts": attempts, "followups": followups}
+            return {"format": RESULTS_FORMAT, "assignment_id": assignment_id, "attempts": attempts, "followups": followups}
 
     app.include_router(router)

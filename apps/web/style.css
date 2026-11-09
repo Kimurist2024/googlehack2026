@@ -41,7 +41,7 @@ h1 { flex: none; font-size: 22px; font-weight: 800; letter-spacing: -.01em; marg
 h1 small { font-size: 13px; font-weight: 400; color: var(--muted); }
 h2 { font-size: 18px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 8px; }
 main { max-width: 860px; margin: 0 auto; padding: 16px; }
-/* 上の帯の右側。アカウントか、教員の画面への入口のどちらか1つが入る。狭い画面ではメールアドレスから縮める */
+/* 上の帯の右側。教員の画面ではアカウント（と RSIテストの入口）、ほかの画面では教員の画面への入口が入る。狭い画面ではメールアドレスから縮める */
 .header-side { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; margin-left: auto; }
 .account { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 2px; min-width: 0; font-size: 14px; color: var(--muted); }
 .account #signout { flex: none; }
@@ -51,12 +51,10 @@ button.link { min-height: 32px; padding: 2px 6px; border: 0; background: none; c
 .signin { max-width: 520px; margin: 32px auto; padding: 28px 24px; text-align: center; }
 .signin h2 { font-size: 19px; margin-bottom: 12px; }
 .signin p { margin: 0 0 20px; word-break: auto-phrase; text-wrap: pretty; }
-.signin #signin { min-width: 240px; }
+.signin #signin, .signin #guest-signin { min-width: 240px; }
 .signin .error { margin: 12px 0 0; min-height: 0; }
-.signin .signin-student { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
-.signin .signin-guest { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.signin .signin-student, .signin .signin-guest { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .signin .signin-guest p { margin: 0 0 12px; }
-.signin #guest-signin { min-width: 240px; }
 .card { background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 button { font: inherit; min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); cursor: pointer; transition: filter .15s ease-out; }
@@ -66,7 +64,7 @@ button.danger { color: var(--bad); border-color: var(--bad); }
 .offline-banner { border-color: var(--accent); background: var(--accent-soft); }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 button.wide { width: 100%; }
-button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, summary:focus-visible, .explain-item textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 label { display: block; margin-bottom: 8px; }
 .row label { margin: 0; }
 input:not([type=radio]) { font: inherit; padding: 6px 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); max-width: 100%; }
@@ -130,7 +128,6 @@ code { font-family: ui-monospace, Menlo, monospace; background: var(--code-bg); 
 .history-list .hint { margin: 0; }
 .explain-item { margin: 0 0 14px; }
 .explain-item textarea { display: block; width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; margin-bottom: 6px; }
-.explain-item textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .update-banner { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; border-color: var(--accent); background: var(--accent-soft); }
 
 /* RSI synthetic evaluation replay */

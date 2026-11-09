@@ -21,7 +21,6 @@ ALLOWED_FIELDS = {
     "count",
     "problems",
     "action",
-    "state",
     "forwarded",
 }
 

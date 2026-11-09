@@ -3,7 +3,7 @@
 //
 // 置いてあるものをすぐに返し（立ち上がりを待たせない）、裏で新しいものを取りに行って置き換える。
 // 中身が変わっていたら画面に知らせ、再読み込みで新しい版にしてもらう。
-// app.js と offline.js が互いに使う関数を変えたときは版を上げる。新しい版を一度にそろえて入れ、古い版と混ざらないようにする
+// app.js・offline.js・rsi.js が互いに使う関数や値（app.js の make や guarded、rsi.js の loadRsiTest など）を変えたときは版を上げる。新しい版を一度にそろえて入れ、古い版と混ざらないようにする
 const CACHE = "mushitori-shell-v4";
 const SHELL = ["/", "/index.html", "/app.js", "/rsi.js", "/offline.js", "/style.css"];
 // Firebase Hosting の設定（公開してよい値）。手元の開発には無いので、取れたときだけ置く

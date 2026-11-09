@@ -24,9 +24,11 @@ const scriptPolicy = window.trustedTypes?.createPolicy("mushitori", {
 }) ?? null;
 const trustedScriptURL = (url) => (scriptPolicy ? scriptPolicy.createScriptURL(url) : url);
 let teacherAuth = null; // Firebase Hosting で配信したときだけ使う。手元の開発では null
-let teacherEmail = null; // 教員として確かめられたアカウント
 let firebaseSignin = false; // Firebase のログインが使える配信（Firebase Hosting）か
 let guestTeacherEnabled = false; // サーバーが体験用の教員（ログインせずに試す）を許しているか
+let rsiTestEnabled = false; // サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたか
+let currentView = "teacher"; // いま出している画面（teacher / student / rsi）
+let accountShown = false; // 教員としてログインしている（または前回の記録から先に出している）
 let assignmentId = null;
 let classId = null;
 let studentToken = null;
@@ -41,15 +43,16 @@ let chatHistory = [];
 // 画面を開いた時点で起こしておき、画面が見えている間は止まらないように数分ごとに知らせる
 const KEEP_WARM_MS = 4 * 60 * 1000;
 const wakeServer = () => fetch("/v1/health", { cache: "no-store" }).catch(() => null);
-// RSIテストへの入口は、サーバーを起動オプション（scripts/dev.sh --rsi-test）で立てたときだけ出す
+// サーバーの設定で出し分ける入口（RSIテスト、ログインせずに試す）。起こすついでに読む
+function applyServerFlags(health) {
+  rsiTestEnabled = health.rsi_test === true;
+  guestTeacherEnabled = health.guest_teacher === true;
+  updateHeaderSide();
+  updateGuestEntry();
+}
 wakeServer()
   .then((response) => (response && response.ok ? response.json() : {}))
-  .then((health) => {
-    rsiTestEnabled = health.rsi_test === true;
-    guestTeacherEnabled = health.guest_teacher === true;
-    updateHeaderSide();
-    updateGuestEntry();
-  })
+  .then(applyServerFlags)
   .catch(() => {});
 setInterval(() => { if (document.visibilityState === "visible") wakeServer(); }, KEEP_WARM_MS);
 
@@ -117,12 +120,8 @@ function richText(tag, text, className) {
   return element;
 }
 
-// いま出している画面（teacher / student / rsi）。切り替えは画面の中の入口から行う
-let currentView = "teacher";
-let rsiTestEnabled = false;
-let accountShown = false; // 教員としてログインしている（または前回の記録から先に出している）
-
-// 上の帯の右には、いまの画面で要るものを1つだけ出す
+// 上の帯の右には、いまの画面で要るものだけを出す。
+// 教員の画面ではアカウント（と、起動オプションのときの RSIテストの入口）、ほかの画面では教員の画面への入口
 function updateHeaderSide() {
   // 生徒の画面では教員のアカウントを見せない
   $("account").hidden = currentView !== "teacher" || !accountShown;
@@ -203,14 +202,14 @@ $("generate").onclick = () => guarded(async () => {
   setButtons({});
   setStatus("問いを作っています…");
   await teacherPost(`/v1/assignments/${assignmentId}:generate`);
-  let state;
+  let assignment;
   do {
     await new Promise((resolve) => setTimeout(resolve, GENERATE_POLL_MS));
-    state = await teacherGet(`/v1/assignments/${assignmentId}`);
-  } while (state.state === "generating");
-  const ready = state.submissions.ready || 0;
-  const excluded = state.submissions.excluded || 0;
-  const failed = state.submissions.failed || 0;
+    assignment = await teacherGet(`/v1/assignments/${assignmentId}`);
+  } while (assignment.state === "generating");
+  const ready = assignment.submissions.ready || 0;
+  const excluded = assignment.submissions.excluded || 0;
+  const failed = assignment.submissions.failed || 0;
   setStatus(`問いを作りました。${ready}人分を作成、対象外 ${excluded}人、失敗 ${failed}人。`);
   setButtons({ open: ready > 0 });
 });
@@ -367,6 +366,19 @@ function reviewBlock(row) {
   return box;
 }
 
+// これまでの記録の、課題1つ分
+function historyItem(entry) {
+  const item = make("li");
+  item.append(make("strong", entry.title), document.createTextNode(`　${entry.total}問中 ${entry.score}問正解`));
+  if (entry.action) item.append(document.createTextNode(`　／ ${ACTION_LABEL[entry.action.action] || entry.action.action}`));
+  for (const spot of entry.spots) {
+    const label = spot.line ? `${spot.line}行目` : "全体の流れ";
+    const names = spot.constructs.length ? `（${spot.constructs.join("、")}）` : "";
+    item.append(richText("p", `説明を聞いた箇所：${label}${names}`, "hint"));
+  }
+  return item;
+}
+
 // 生徒ごとのこれまでの記録。開いたときに読み込む
 function historyDetails(row) {
   const details = make("details", undefined, "memo-evidence history");
@@ -374,23 +386,13 @@ function historyDetails(row) {
   details.ontoggle = () => guarded(async () => {
     if (!details.open || details.dataset.loaded) return;
     details.dataset.loaded = "1";
-    const record = await teacherGet(`/v1/assignments/${assignmentId}/students/${row.student_id}/record`);
-    if (!record.entries.length) {
+    const history = await teacherGet(`/v1/assignments/${assignmentId}/students/${row.student_id}/record`);
+    if (!history.entries.length) {
       details.append(make("p", "まだ記録がありません。"));
       return;
     }
     const list = make("ul", undefined, "history-list");
-    for (const entry of record.entries) {
-      const item = make("li");
-      item.append(make("strong", entry.title), document.createTextNode(`　${entry.total}問中 ${entry.score}問正解`));
-      if (entry.action) item.append(document.createTextNode(`　／ ${ACTION_LABEL[entry.action.action] || entry.action.action}`));
-      for (const spot of entry.spots) {
-        const label = spot.line ? `${spot.line}行目` : "全体の流れ";
-        const names = spot.constructs.length ? `（${spot.constructs.join("、")}）` : "";
-        item.append(richText("p", `説明を聞いた箇所：${label}${names}`, "hint"));
-      }
-      list.append(item);
-    }
+    list.append(...history.entries.map(historyItem));
     details.append(list);
   });
   return details;
@@ -414,15 +416,15 @@ function followupCard(row, index) {
 
 async function loadFollowups() {
   const budget = Number($("budget").value) || 0;
-  const view = await teacherGet(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`);
-  $("tau").textContent = `1人あたり ${Math.round(view.tau_sec)}秒として計算`;
-  $("class-summary").replaceChildren(classSummaryBlock(view.class_summary, view.summary_min_students));
-  $("order").replaceChildren(...view.order.map(followupCard));
+  const followups = await teacherGet(`/v1/assignments/${assignmentId}/followups?budget_sec=${budget}`);
+  $("tau").textContent = `1人あたり ${Math.round(followups.tau_sec)}秒として計算`;
+  $("class-summary").replaceChildren(classSummaryBlock(followups.class_summary, followups.summary_min_students));
+  $("order").replaceChildren(...followups.order.map(followupCard));
   const others = [];
-  for (const item of view.not_attempted) others.push(`番号 ${item.number}：未解答`);
-  for (const item of view.excluded) others.push(`番号 ${item.number}：${REASONS[item.reason] || item.reason}`);
+  for (const item of followups.not_attempted) others.push(`番号 ${item.number}：未解答`);
+  for (const item of followups.excluded) others.push(`番号 ${item.number}：${REASONS[item.reason] || item.reason}`);
   $("others").replaceChildren(...(others.length ? [make("h3", "順番の外（直接確認してください）"), ...others.map((text) => make("p", text, "others"))] : []));
-  if (!view.order.length) $("order").replaceChildren(make("p", "まだ解答はありません。", "hint"));
+  if (!followups.order.length) $("order").replaceChildren(make("p", "まだ解答はありません。", "hint"));
 }
 
 function resetChat() {
@@ -475,10 +477,15 @@ function resetStudent() {
   studentToken = null;
 }
 
-$("login").onsubmit = async (event) => {
+// 生徒の画面の操作。前の誤りの文を消してから動かし、失敗したらその欄に出す
+async function guardedInto(errorId, action) {
+  $(errorId).textContent = "";
+  try { await action(); } catch (error) { $(errorId).textContent = error.message; }
+}
+
+$("login").onsubmit = (event) => {
   event.preventDefault();
-  $("login-error").textContent = "";
-  try {
+  return guardedInto("login-error", async () => {
     const session = await api("/v1/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -491,9 +498,7 @@ $("login").onsubmit = async (event) => {
     $("ready").hidden = false;
     $("start").disabled = !studentAssignment;
     $("start-error").textContent = studentAssignment ? "" : "今は受付中の課題がありません。";
-  } catch (error) {
-    $("login-error").textContent = error.message;
-  }
+  });
 };
 
 function showCode(element, code) {
@@ -544,21 +549,16 @@ function startTimer(seconds) {
   }, 1000);
 }
 
-$("start").onclick = async () => {
-  $("start-error").textContent = "";
-  try {
-    const quiz = await studentPost(`/v1/assignments/${studentAssignment}/attempt:start`);
-    studentCode = quiz.code;
-    showCode($("code"), quiz.code);
-    $("stdin").textContent = quiz.stdin ? `入力：${quiz.stdin.trim()}` : "";
-    $("questions").replaceChildren(...quiz.questions.map(questionCard));
-    $("ready").hidden = true;
-    $("quiz").hidden = false;
-    startTimer(quiz.remaining_sec);
-  } catch (error) {
-    $("start-error").textContent = error.message;
-  }
-};
+$("start").onclick = () => guardedInto("start-error", async () => {
+  const quiz = await studentPost(`/v1/assignments/${studentAssignment}/attempt:start`);
+  studentCode = quiz.code;
+  showCode($("code"), quiz.code);
+  $("stdin").textContent = quiz.stdin ? `入力：${quiz.stdin.trim()}` : "";
+  $("questions").replaceChildren(...quiz.questions.map(questionCard));
+  $("ready").hidden = true;
+  $("quiz").hidden = false;
+  startTimer(quiz.remaining_sec);
+});
 
 // 採点結果の1問分
 function resultCard(item) {
@@ -605,10 +605,11 @@ function explanationForm(line, codeLines) {
   text.placeholder = "例：この行では、60点以上のときだけ合計に足している。";
   text.setAttribute("aria-label", `${line}行目の説明`);
   const save = make("button", "先生に送る");
+  const buttons = make("div", undefined, "row");
+  buttons.append(save);
   const state = make("p", undefined, "hint");
   state.setAttribute("role", "status");
-  form.append(where, text, make("div", undefined, "row"), state);
-  form.querySelector(".row").append(save);
+  form.append(where, text, buttons, state);
   form.onsubmit = async (event) => {
     event.preventDefault();
     save.disabled = true;
@@ -718,7 +719,6 @@ async function setupTeacherAuth() {
 }
 
 function showSignedOut(message) {
-  teacherEmail = null;
   accountShown = false;
   $("signin-card").hidden = false;
   $("teacher-work").hidden = true;
@@ -733,7 +733,6 @@ function updateGuestEntry() {
 
 // email が null で guest でもないときは、前回の記録から先に出しただけで、まだ確かめていない
 function showSignedIn(email, guest = false) {
-  teacherEmail = email;
   // 体験用はメールアドレスがなく、右の「体験を終える」でわかるので、名前は出さない（狭い画面で切れないように）
   $("who").hidden = guest;
   $("who").textContent = guest ? "" : (email ?? "ログインを確認中…");

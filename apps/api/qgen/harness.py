@@ -130,8 +130,13 @@ except Exception as error:
 with open(out_path, "w", encoding="utf-8") as handle:
     json.dump(result, handle)
 '''
-PROBE_KINDS = ("call", "run")
 MAX_ARGS_CHARS = 200
+# 呼び出し側（qgen/probes.py の MAX_PROBES）が指定しなかったときの、主張の確認の件数
+DEFAULT_MAX_PROBES = 3
+# 結果に残す出力の長さ（どれも末尾から）
+STDOUT_TAIL = 2000
+STDERR_TAIL = 300
+MUTANT_STDOUT_TAIL = 500
 
 
 def imports_of(tree):
@@ -190,34 +195,57 @@ def cpu_seconds(request):
     return int(request["run_timeout_sec"]) + 1
 
 
+def write_text(path, text):
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
+def static_check(source):
+    """動かす前の検査（構文、import、使えない名前）。通れば (構文木, None)、通らなければ (None, 結果)。"""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as error:
+        return None, {"status": "syntax_error", "detail": "line %s" % error.lineno}
+    blocked = sorted(name for name in imports_of(tree) if name not in ALLOWED_IMPORTS)
+    if blocked:
+        return None, {"status": "unsupported_import", "detail": ",".join(blocked)}
+    unsafe = sorted(blocked_of(tree))
+    if unsafe:
+        return None, {"status": "unsupported_code", "detail": ",".join(unsafe)}
+    return tree, None
+
+
+def run_child(folder, script, args, stdin, request):
+    """作業フォルダの script を子プロセスで動かす。環境変数は渡さず、CPU 時間は最後の引数で渡す。"""
+    return subprocess.run(
+        [sys.executable, "-I", os.path.join(folder, script), *args, str(cpu_seconds(request))],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=request["run_timeout_sec"],
+        cwd=folder,
+        env=CHILD_ENV,
+    )
+
+
 def run_program(folder, source, stdin, request):
     path = os.path.join(folder, "program.py")
     trace_path = os.path.join(folder, "trace.json")
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(source)
+    write_text(path, source)
     if os.path.exists(trace_path):
         os.remove(trace_path)
     try:
-        done = subprocess.run(
-            [sys.executable, "-I", os.path.join(folder, "tracer.py"), path, trace_path, str(request["max_events"]), str(cpu_seconds(request))],
-            input=stdin,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=request["run_timeout_sec"],
-            cwd=folder,
-            env=CHILD_ENV,
-        )
+        done = run_child(folder, "tracer.py", [path, trace_path, str(request["max_events"])], stdin, request)
     except subprocess.TimeoutExpired:
         return {"status": "timeout", "stdout": "", "history": []}
     if done.returncode == 99:
         return {"status": "too_long", "stdout": "", "history": []}
     if done.returncode != 0:
-        return {"status": "error", "stdout": done.stdout[-2000:], "stderr": done.stderr[-300:], "history": []}
+        return {"status": "error", "stdout": done.stdout[-STDOUT_TAIL:], "stderr": done.stderr[-STDERR_TAIL:], "history": []}
     if len(done.stdout) > request["max_output_chars"]:
         return {"status": "too_much_output", "stdout": "", "history": []}
-    history = []
     try:
         with open(trace_path, encoding="utf-8") as handle:
             history = json.load(handle)
@@ -227,22 +255,14 @@ def run_program(folder, source, stdin, request):
 
 
 def analyze(source, request):
-    try:
-        tree = ast.parse(source)
-    except SyntaxError as error:
-        return {"status": "syntax_error", "detail": "line %s" % error.lineno}
-    blocked = sorted(name for name in imports_of(tree) if name not in ALLOWED_IMPORTS)
-    if blocked:
-        return {"status": "unsupported_import", "detail": ",".join(blocked)}
-    unsafe = sorted(blocked_of(tree))
-    if unsafe:
-        return {"status": "unsupported_code", "detail": ",".join(unsafe)}
+    tree, rejected = static_check(source)
+    if rejected:
+        return rejected
 
     deadline = time.monotonic() + request["deadline_sec"]
     folder = tempfile.mkdtemp(prefix="run-")
     try:
-        with open(os.path.join(folder, "tracer.py"), "w", encoding="utf-8") as handle:
-            handle.write(TRACER)
+        write_text(os.path.join(folder, "tracer.py"), TRACER)
         stdin = request["stdin"]
         first = run_program(folder, source, stdin, request)
         if first["status"] != "ok":
@@ -255,7 +275,7 @@ def analyze(source, request):
             if time.monotonic() > deadline:
                 break
             run = run_program(folder, mutant.pop("source"), stdin, request)
-            results.append({**mutant, "status": run["status"], "stdout": run["stdout"][-500:]})
+            results.append({**mutant, "status": run["status"], "stdout": run["stdout"][-MUTANT_STDOUT_TAIL:]})
         return {"status": "ok", "stdout": first["stdout"], "history": first["history"], "mutants": results}
     finally:
         shutil.rmtree(folder, ignore_errors=True)
@@ -276,58 +296,38 @@ def call_function(folder, source, spec, request):
     path = os.path.join(folder, "program.py")
     spec_path = os.path.join(folder, "spec.json")
     out_path = os.path.join(folder, "probe.json")
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(source)
-    with open(spec_path, "w", encoding="utf-8") as handle:
-        json.dump({"function": spec["function"], "args": spec["args"]}, handle)
+    write_text(path, source)
+    write_text(spec_path, json.dumps({"function": spec["function"], "args": spec["args"]}))
     if os.path.exists(out_path):
         os.remove(out_path)
     try:
-        done = subprocess.run(
-            [sys.executable, "-I", os.path.join(folder, "prober.py"), path, spec_path, out_path, str(cpu_seconds(request))],
-            input="",
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=request["run_timeout_sec"],
-            cwd=folder,
-            env=CHILD_ENV,
-        )
+        done = run_child(folder, "prober.py", [path, spec_path, out_path], "", request)
     except subprocess.TimeoutExpired:
         return {"status": "timeout"}
+    failed = {"status": "error", "detail": done.stderr[-STDERR_TAIL:]}
     try:
         with open(out_path, encoding="utf-8") as handle:
             result = json.load(handle)
     except (OSError, ValueError):
-        return {"status": "error", "detail": done.stderr[-300:]}
-    return result if done.returncode == 0 else {"status": "error", "detail": done.stderr[-300:]}
+        return failed
+    return result if done.returncode == 0 else failed
 
 
 def probe(source, request):
     """主張を確かめる実行。1件ずつ別プロセスで動かし、時間制限をかける。"""
-    try:
-        tree = ast.parse(source)
-    except SyntaxError as error:
-        return {"status": "syntax_error", "detail": "line %s" % error.lineno}
-    blocked = sorted(name for name in imports_of(tree) if name not in ALLOWED_IMPORTS)
-    if blocked:
-        return {"status": "unsupported_import", "detail": ",".join(blocked)}
     # analyze と同じ検査。関数だけを呼ぶ確認でも、使えない名前を含むコードは動かさない
-    unsafe = sorted(blocked_of(tree))
-    if unsafe:
-        return {"status": "unsupported_code", "detail": ",".join(unsafe)}
+    tree, rejected = static_check(source)
+    if rejected:
+        return rejected
     functions = {node.name for node in tree.body if isinstance(node, ast.FunctionDef)}
 
     deadline = time.monotonic() + request["deadline_sec"]
     folder = tempfile.mkdtemp(prefix="probe-")
     try:
-        with open(os.path.join(folder, "prober.py"), "w", encoding="utf-8") as handle:
-            handle.write(PROBER)
-        with open(os.path.join(folder, "tracer.py"), "w", encoding="utf-8") as handle:
-            handle.write(TRACER)
+        write_text(os.path.join(folder, "prober.py"), PROBER)
+        write_text(os.path.join(folder, "tracer.py"), TRACER)
         results = []
-        for spec in request.get("probes", [])[: request.get("max_probes", 3)]:
+        for spec in request.get("probes", [])[: request.get("max_probes", DEFAULT_MAX_PROBES)]:
             kind = spec.get("kind") if isinstance(spec, dict) else None
             if time.monotonic() > deadline:
                 results.append({"status": "skipped"})
@@ -339,7 +339,7 @@ def probe(source, request):
                 results.append(call_function(folder, source, spec, request))
             elif kind == "run" and isinstance(spec.get("stdin", ""), str):
                 run = run_program(folder, source, spec.get("stdin", ""), request)
-                results.append({"status": run["status"], "stdout": run["stdout"][-2000:]})
+                results.append({"status": run["status"], "stdout": run["stdout"][-STDOUT_TAIL:]})
             else:
                 results.append({"status": "bad_probe"})
         return {"status": "ok", "probes": results}

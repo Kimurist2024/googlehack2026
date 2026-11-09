@@ -14,6 +14,9 @@ import os
 import sys
 from pathlib import Path
 
+from qgen.ai import DEFAULT_MODEL
+
+from .proposer import DEFAULT_PROPOSER_MODEL
 from .trigger import needs_review, wilson_lower
 
 
@@ -31,7 +34,7 @@ def _cases(folders: list[Path], split: str, student: str) -> list:
 def _run(args) -> int:
     from google import genai
 
-    from evalh.cases import DEFAULT_DIR, load_cases
+    from evalh.cases import DEFAULT_DIR
     from qgen.sandbox import LocalDevSandbox
 
     from . import record, targets
@@ -88,8 +91,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--student", choices=["standard", "weak"], default="standard", help="生徒役の水準。weak は説明が苦手な生徒")
     run.add_argument("--workers", type=int, default=8, help="提出物を並行に測る数（Gemini の待ち時間を重ねる）")
     run.add_argument("--repeats", type=int, default=3, help="同じ指示文を測る回数。平均で比べ、ぶれより小さい差は改善とみなさない")
-    run.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite"))
-    run.add_argument("--proposer-model", default=os.environ.get("RSI_PROPOSER_MODEL", "gemini-3.1-pro-preview"))
+    run.add_argument("--model", default=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL))
+    run.add_argument("--proposer-model", default=os.environ.get("RSI_PROPOSER_MODEL", DEFAULT_PROPOSER_MODEL))
     run.add_argument("--location", default="global")
     run.add_argument("--start", type=Path, default=None, help="この指示文のファイルから探し始める（既定は ACTIVE の版）。例: rsi_runs/<日時>-probe_planner/candidates/c006.md")
     run.set_defaults(handler=_run)

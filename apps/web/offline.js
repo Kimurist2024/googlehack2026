@@ -97,6 +97,9 @@ flushOfflineAnswers();
 
 // --- ①② 教員の画面 ---
 
+// ダウンロードを始めてから、ファイルの URL を手放すまでの待ち時間
+const DOWNLOAD_URL_LIFETIME_MS = 1000;
+
 function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const link = make("a");
@@ -105,7 +108,7 @@ function download(name, text, type) {
   document.body.append(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_LIFETIME_MS);
 }
 
 function offlineCard(title, hint) {

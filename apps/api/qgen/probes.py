@@ -8,13 +8,14 @@ AIは「何を試すか」だけを決め、合否には関わらない。
 import ast
 import json
 import logging
+import os
 import re
 import threading
 import time
 from dataclasses import asdict, dataclass
 from typing import Protocol
 
-from .ai import DATA_NOTICE, as_data, gemini_guard, strip_comments
+from .ai import DATA_NOTICE, DEFAULT_MODEL, as_data, gemini_guard, strip_comments
 from .guard import Guard, NoGuard
 from .prompt_store import load_active
 
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 MAX_PROBES = 3
 MAX_ARGS_CHARS = 200
 EXPECT_KINDS = ("raises", "returns", "stdout_line", "no_stdout_line")
+# 生徒由来の文字列を Python のリテラルとして読むときに起こりうる失敗。どれも「検査を通らない」として扱う
+LITERAL_ERRORS = (ValueError, TypeError, SyntaxError, MemoryError, RecursionError)
 HOLDS, FAILS, UNKNOWN = "holds", "fails", "unknown"
 # 混んでいるときの一時的な失敗（429 など）は、待ってからやり直す。続けて失敗したら規則に戻す
 RETRY_CODES = {429, 500, 503}
@@ -63,7 +66,7 @@ def validate(raw: object) -> Probe | None:
         try:
             if not isinstance(_literal(probe.args), (list, tuple)):
                 return None
-        except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        except LITERAL_ERRORS:
             return None
         if probe.expect_kind not in ("raises", "returns"):
             return None
@@ -74,7 +77,7 @@ def validate(raw: object) -> Probe | None:
     if probe.expect_kind == "returns":
         try:
             _literal(probe.expect_value)
-        except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        except LITERAL_ERRORS:
             return None
     return probe
 
@@ -230,16 +233,15 @@ class GeminiProbePlanner:
             logger.exception("Gemini の確かめ方の作成に失敗しました")
             return self._fallback.plan(claim, code)
         known = functions_of(code)
-        probes = [p for p in (validate(item) for item in raw[:MAX_PROBES]) if p and (p.kind == "run" or p.function in known)]
-        if len(probes) != len(raw[:MAX_PROBES]):
+        proposed = raw[:MAX_PROBES]
+        probes = [p for p in (validate(item) for item in proposed) if p and (p.kind == "run" or p.function in known)]
+        if len(probes) != len(proposed):
             logger.warning("Gemini の確かめ方の一部が検査を通らなかったので捨てました")
         return probes
 
 
 def default_probe_planner(client=None) -> ProbePlanner:
     """qgen.ai.default_ai と同じ決まりで選ぶ。本番で Model Armor の設定がなければ Gemini を使わない。"""
-    import os
-
     if os.environ.get("AI_BACKEND", "template") != "gemini":
         return PatternProbePlanner()
     guard = gemini_guard()
@@ -249,4 +251,4 @@ def default_probe_planner(client=None) -> ProbePlanner:
         from google import genai
 
         client = genai.Client(enterprise=True, project=os.environ["GOOGLE_CLOUD_PROJECT"], location=os.environ.get("GEMINI_LOCATION", "global"))
-    return GeminiProbePlanner(client, os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite"), guard=guard)
+    return GeminiProbePlanner(client, os.environ.get("GEMINI_MODEL", DEFAULT_MODEL), guard=guard)

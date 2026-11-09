@@ -1,6 +1,6 @@
-"""データの置き場所。手元ではメモリ、本番では Firestore を使う。
+"""データの置き場所。手元ではメモリ、本番では Firestore、校内LAN版では教員PCの暗号化したファイル（app/lan_store.py）を使う。
 
-どちらも同じ操作を持つ。受け取る値と返す値はコピーなので、書き込みの呼び忘れは手元のテストでも見つかる。
+どれも同じ操作を持つ。受け取る値と返す値はコピーなので、書き込みの呼び忘れは手元のテストでも見つかる。
 """
 import copy
 import os
@@ -410,7 +410,7 @@ class MemoryStore:
             return self._usage.get(key, 0)
 
     def add_usage(self, key: str, expire_at: float) -> None:
-        # 手元では再起動で消えるので、expire_at は使わない
+        # 日が替わればキーが変わるので、expire_at は使わない（メモリ版は再起動で消え、校内LAN版はファイルに残る）
         with self._lock:
             self._usage[key] = self._usage.get(key, 0) + 1
 
