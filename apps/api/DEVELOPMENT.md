@@ -88,7 +88,7 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 - 本番の版を切り替えるのは `promote` を実行した人です。`ACTIVE` の変更は差分をレビューしてからコミットします。
 - 改善役に見せる失敗は、点数に入るもの（理解不足の見逃し、正しい主張への誤った指摘、決まりへの違反）だけです。根拠の場所の違いや、構造の主張を別の部品（偽物）が判定した結果のように、その指示文では直せない失敗は見せません（`Target.fixable`）。
 - 提出物ごとの流れは `--workers` 本（既定8）で並行に動かします。Gemini が混んでいるとき（429 など）は待ってやり直し、続けて失敗したときだけ「測れなかった」にします。
-- 今の対象は、動きの主張の確かめ方（`probe_planner`）だけです。主張の分解などの段階は、`rsi/targets.py` に `Target` を1つ足せば同じループで改善できます。
+- 今の対象は、動きの主張の確かめ方（`probe_planner`）だけです。本番では、生徒が送った行の説明を文に分け、`ACTIVE` の版で何を試すかを決めて本人のコードを動かします（`app/service.py` の `check_explanation`）。`AI_BACKEND=gemini` でないときや Model Armor の設定がないときは、Gemini を使わない規則（`PatternProbePlanner`）で決めます。主張の分解などの段階は、`rsi/targets.py` に `Target` を1つ足せば同じループで改善できます。
 
 ### 模擬提出物の組
 
@@ -97,8 +97,11 @@ APP_ENV=local ALLOW_LOCAL_SANDBOX=1 GOOGLE_CLOUD_PROJECT=<プロジェクトID> 
 | `evals/cases/` | 教科書どおりの説明（`weak/` は説明の下手な生徒役） | 人が付けた |
 | `evals/cases_lowq/` | Qwen2.5-Coder-1.5B が書いたコードと説明（モデルのクセが残る） | 人が付けた |
 | `evals/cases_lowq2/` | 4つの小さなモデルが書いたコード（クセを機械的に取ったもの）と、型から作った生徒らしい説明。課題34個、64件 | 動きの主張は、主張ごとの確かめる実行（`gold.json` の `check`）を生徒のコードで動かして決めた |
+| `evals/cases_persona/` | 8つの生徒の癖（ペルソナ：きっちり・ざっくり・自信なし・実況・英語まじり・習いたて・早とちり・ローマ字命名）ごとに書かせたコードと、その口調の説明。課題34個、77件（dev 50、heldout 27） | `cases_lowq2` と同じく実行で決めた。説明の口調は日本語の小さなモデルに書き直させ、値や結果が変わった文は人が校正した |
 
-`cases_lowq2` の作り方は `evals/cases_lowq2/_make/` にあります（`gen_colab.py` を Colab の GPU で動かし、`build.py` で組み立てる）。課題ごとに dev と heldout を分けているので、heldout の課題は改善役に一度も見えません。正解が今のコードと合っているかは `tests/integration/test_lowq2_labels.py` で確かめます。
+`cases_lowq2` の作り方は `evals/cases_lowq2/_make/` にあります（`gen_colab.py` を Colab の GPU で動かし、`build.py` で組み立てる）。課題ごとに dev と heldout を分けているので、heldout の課題は改善役に一度も見えません。正解が今のコードと合っているかは `tests/integration/test_generated_labels.py` で確かめます。
+
+`cases_persona` の作り方は `evals/cases_persona/_make/` にあります。`personas.py` の癖をコードを書くモデル（Phi-3.5-mini、granite-3.1-2b、Qwen2.5-Coder-3B、OLMo-2-1B）に指示して書かせ（`make_code_jobs.py` → `gen_colab.py`）、`build_drafts.py` で主張と正解を作り、口調を日本語のモデル（sarashina2.2-3b、llm-jp-3-3.7b、TinySwallow-1.5B）に書き直させます（`gen_colab.py` → `parse_voice.py`）。小さなモデルは値や結果を変えて書き直すことが多いので、全部の文を人が読んで `proofread.json` に直し、`finalize.py` で仕上げます。
 
 ## 環境変数
 

@@ -111,6 +111,11 @@ code { font-family: ui-monospace, Menlo, monospace; background: var(--code-bg); 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font-size: 13px; line-height: 1.6; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); }
 .own-words { margin: 6px 0; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); overflow-wrap: anywhere; white-space: pre-wrap; }
+.checked-runs { margin: 8px 0 0; padding: 0; list-style: none; white-space: normal; font-size: 14px; }
+.checked-runs > li { margin: 6px 0 0; padding: 6px 8px; border-radius: 6px; background: var(--card); border-left: 3px solid var(--line); }
+.checked-runs > li.checked-fails { border-left-color: var(--bad); }
+.checked-runs ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); }
+.checked-sentence { margin-left: 6px; }
 .history summary { margin-top: 4px; }
 .history-list { margin: 6px 0 0; padding-left: 1.2em; font-size: 14px; }
 .history-list li { margin-bottom: 6px; }

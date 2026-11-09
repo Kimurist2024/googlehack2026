@@ -91,3 +91,31 @@ def test_encrypted_duplicate_and_corrupted_entries_are_reported():
 def test_not_a_zip_is_a_value_error():
     with pytest.raises(ValueError):
         read_submissions(b"PK\x03\x04garbage", {"1"})
+
+
+def test_explanation_is_split_into_sentences():
+    from app.service import sentences
+
+    assert sentences("空なら0を返す。[3]なら3！\n全部見る  ") == ["空なら0を返す。", "[3]なら3！", "全部見る"]
+
+
+def test_function_call_checks_read_as_plain_sentences():
+    from app.service import describe_run
+    from qgen.probes import Probe
+
+    returns = describe_run(Probe("call", "returns", "0", function="average", args="[[]]"), {"status": "ok", "raised": "ZeroDivisionError"})
+    assert returns == {"tried": "average([])", "expected": "0 を返す", "actual": "ZeroDivisionError のエラー"}
+    raises = describe_run(Probe("call", "raises", "false", function="grade", args="[59]"), {"status": "ok", "returned": "'C'"})
+    assert raises == {"tried": "grade(59)", "expected": "エラーにならない", "actual": "'C' を返した"}
+    shown = describe_run(Probe("run", "no_stdout_line", "発射", stdin="3\n"), {"status": "ok", "stdout": "3\n2\n1\n発射\n"})
+    assert shown == {"tried": "入力 3 で実行", "expected": "「発射」の行が表示されない", "actual": "「発射」の行は表示された"}
+
+
+def test_checks_for_an_old_version_of_the_explanation_are_not_shown():
+    from app.service import current_checks
+
+    attempt = {
+        "explanations": {"3": "新しい説明", "5": "そのまま"},
+        "explanation_checks": {"3": {"text": "古い説明", "checks": [{"verdict": "fails"}]}, "5": {"text": "そのまま", "checks": [{"verdict": "holds"}]}},
+    }
+    assert current_checks(attempt) == {"5": [{"verdict": "holds"}]}

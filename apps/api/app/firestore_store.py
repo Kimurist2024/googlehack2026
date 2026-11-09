@@ -291,6 +291,19 @@ class FirestoreStore:
 
         return self._in_transaction(work)
 
+    def save_explanation_checks(self, assignment_id: str, student_id: str, line: int, text: str, checks: list[Doc]) -> None:
+        reference = self._part(assignment_id, "attempts").document(student_id)
+
+        def work(transaction) -> None:
+            snapshot = reference.get(transaction=transaction)
+            data = snapshot.to_dict() if snapshot.exists else None
+            if data is None or (data.get("explanations") or {}).get(str(line)) != text:
+                return
+            saved = {**(data.get("explanation_checks") or {}), str(line): {"text": text, "checks": checks}}
+            transaction.update(reference, {"explanation_checks": saved})
+
+        self._in_transaction(work)
+
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         return self._all(assignment_id, "followups")
 

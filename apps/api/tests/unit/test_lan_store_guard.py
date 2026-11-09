@@ -25,6 +25,7 @@ STEPS = [
     ("finish_attempt", ("a1", "s1", [{"id": "q1", "given": "1", "correct": True}], 2.0)),
     ("use_chat_turn", ("a1", "s1", 3)),
     ("save_explanation", ("a1", "s1", 1, "1を表示する")),
+    ("save_explanation_checks", ("a1", "s1", 1, "1を表示する", [{"sentence": "1を表示する", "verdict": "holds", "runs": []}])),
     ("close_assignment", ("a1",)),
     ("add_followup", ("a1", "s1", "1行目は何をしていますか", 1, None)),
     ("record_action", ("a1", "s1", {"action": "explained", "reason": "", "duration_ms": 10})),

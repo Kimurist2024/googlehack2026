@@ -140,6 +140,9 @@ class Store(Protocol):
     def save_explanation(self, assignment_id: str, student_id: str, line: int, text: str) -> bool:
         """生徒が自分の言葉で書いた、行の説明を残す。解答を送る前なら何もせず False を返す。"""
 
+    def save_explanation_checks(self, assignment_id: str, student_id: str, line: int, text: str, checks: list[Doc]) -> None:
+        """説明を本人のコードで動かして確かめた結果を残す。説明がその後に text から書き直されていれば何もしない。"""
+
     def followups(self, assignment_id: str) -> dict[str, Doc]: ...
 
     def add_followup(self, assignment_id: str, student_id: str, question: str, line: int | None, review: Doc | None) -> None:
@@ -345,6 +348,13 @@ class MemoryStore:
                 return False
             attempt.setdefault("explanations", {})[str(line)] = text
             return True
+
+    def save_explanation_checks(self, assignment_id: str, student_id: str, line: int, text: str, checks: list[Doc]) -> None:
+        with self._lock:
+            attempt = self._attempts[assignment_id].get(student_id)
+            if attempt is None or (attempt.get("explanations") or {}).get(str(line)) != text:
+                return
+            attempt.setdefault("explanation_checks", {})[str(line)] = {"text": text, "checks": copy.deepcopy(checks)}
 
     def followups(self, assignment_id: str) -> dict[str, Doc]:
         with self._lock:
