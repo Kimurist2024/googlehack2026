@@ -244,7 +244,9 @@ def test_student_token_cannot_reach_another_class(client):
 def test_tampered_token_is_rejected(client):
     created, assignment = setup_open(client)
     headers, _ = login(client, created)
-    tampered = {"Authorization": headers["Authorization"][:-2] + "00"}
+    original = headers["Authorization"]
+    replacement = "0" if original[-1] != "0" else "1"
+    tampered = {"Authorization": original[:-1] + replacement}
     assert client.post(f"/v1/assignments/{assignment}/attempt:start", headers=tampered).status_code == 401
 
 
