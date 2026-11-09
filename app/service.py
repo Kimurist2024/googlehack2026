@@ -65,14 +65,7 @@ def choose_stdin(examples: list[str], assignment_id: str, student_id: str) -> st
 
 
 def _too_large(document: dict) -> bool:
-    # 全文の文字列とバイト列を同時に作らず、同じJSON形式のバイト数を数える。
-    # 末尾まで消費し、上限を超えた後の不正な値も読み飛ばさない。
-    chunks = json.JSONEncoder(ensure_ascii=False).iterencode(document)
-    try:
-        return sum(len(chunk.encode("utf-8")) for chunk in chunks) > MAX_DOC_BYTES
-    except RecursionError:
-        # Pythonの逐次encoderが先に再帰上限へ達する文書は従来のC版で検査する。
-        return len(json.dumps(document, ensure_ascii=False).encode("utf-8")) > MAX_DOC_BYTES
+    return len(json.dumps(document, ensure_ascii=False).encode("utf-8")) > MAX_DOC_BYTES
 
 
 def generate_one(assignment: AssignmentRecord, student_id: str, code: str, sandbox: Sandbox, ai: QuizAI) -> dict:
