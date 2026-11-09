@@ -44,6 +44,15 @@ def test_change_is_attributed_to_the_assigning_line(sandbox):
         ("constant", 2, "2", "3", "3\n"),
         ("constant", 3, "0", "1", "2\n"),
     ]),
+    ("x = (2 + 3) - 1\nprint(x + 2)\n", "6\n", [
+        ("arithmetic", 1, "-", "+", "8\n"),
+        ("arithmetic", 1, "+", "-", "0\n"),
+        ("constant", 1, "1", "2", "5\n"),
+        ("arithmetic", 2, "+", "-", "2\n"),
+        ("constant", 1, "2", "3", "7\n"),
+        ("constant", 1, "3", "4", "7\n"),
+        ("constant", 2, "2", "3", "7\n"),
+    ]),
 ])
 def test_mutants_keep_the_original_order_and_change_one_place(sandbox, code, stdout, expected):
     result = sandbox.analyze(code, "")

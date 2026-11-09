@@ -75,32 +75,50 @@ def imports_of(tree):
     return names
 
 
-def mutants_of(tree, limit):
-    """比較演算子、+ と -、整数定数を1か所ずつ変えたコードを作る。"""
-    found = []
+def _mutation_sites(tree):
     for node in ast.walk(tree):
-        line = getattr(node, "lineno", 0)
-        changes = []
         if isinstance(node, ast.Compare) and type(node.ops[0]) in SWAP:
-            changes.append(("compare", SWAP[type(node.ops[0])]))
+            yield node, "compare", SWAP[type(node.ops[0])]
         elif isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub)):
             is_add = isinstance(node.op, ast.Add)
-            changes.append(("arithmetic", (ast.Sub if is_add else ast.Add, "+" if is_add else "-", "-" if is_add else "+")))
+            yield node, "arithmetic", (ast.Sub if is_add else ast.Add, "+" if is_add else "-", "-" if is_add else "+")
         elif isinstance(node, ast.Constant) and type(node.value) is int:
-            changes.append(("constant", (None, str(node.value), str(node.value + 1))))
-        for kind, (new_type, before, after) in changes:
-            # 一緒にコピーすると、target は copied 内の対応するノードになる。
-            # コピー後の木を番号で探し直す必要がなく、元の木も変更しない。
-            copied, target = copy.deepcopy((tree, node))
+            yield node, "constant", (None, str(node.value), str(node.value + 1))
+
+
+def mutants_of(tree, limit):
+    """比較演算子、+ と -、整数定数を1か所ずつ変えたコードを作る。"""
+    sites = []
+    for site in _mutation_sites(tree):
+        sites.append(site)
+        if len(sites) >= limit:
+            break
+    if not sites:
+        return []
+    # 木と対象ノードを同時に1回だけコピーし、元の木には触れない。
+    copied, sites = copy.deepcopy((tree, sites))
+    found = []
+    for target, kind, (new_type, before, after) in sites:
+        if kind == "compare":
+            original = target.ops[0]
+            target.ops[0] = new_type()
+        elif kind == "arithmetic":
+            original = target.op
+            target.op = new_type()
+        else:
+            original = target.value
+            target.value += 1
+        try:
+            source = ast.unparse(copied)
+        finally:
+            # 例外時にも戻す。次の候補に前の変更を持ち越さない。
             if kind == "compare":
-                target.ops[0] = new_type()
+                target.ops[0] = original
             elif kind == "arithmetic":
-                target.op = new_type()
+                target.op = original
             else:
-                target.value = target.value + 1
-            found.append({"kind": kind, "line": line, "before": before, "after": after, "source": ast.unparse(copied)})
-            if len(found) >= limit:
-                return found
+                target.value = original
+        found.append({"kind": kind, "line": getattr(target, "lineno", 0), "before": before, "after": after, "source": source})
     return found
 
 
