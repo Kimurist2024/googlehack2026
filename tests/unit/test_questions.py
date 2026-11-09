@@ -1,5 +1,7 @@
+import random
+
 from qgen.ai import GeminiAI, TemplateAI, strip_comments, valid_explanation, valid_followup, valid_selection
-from qgen.questions import IMPACT, OUTPUT, TRACE, Question, build_candidates, default_selection
+from qgen.questions import IMPACT, OUTPUT, TRACE, Question, _options, build_candidates, default_selection
 
 RESULT = {
     "status": "ok",
@@ -41,6 +43,15 @@ def test_correct_answer_is_exactly_once_in_options():
             assert len(question.options) == 4
             assert len(set(question.options)) == 4
             assert question.options.count(question.answer) == 1
+
+
+def test_options_keep_the_original_seeded_order_with_duplicates():
+    pool = ["a", "1", "2", "1", "", "3", "4", "2", "NaN", "3.0"]
+    assert _options("2", pool, random.Random(42)) == ["3.0", "2", "1", "4"]
+
+
+def test_duplicate_values_do_not_fill_the_wrong_options():
+    assert _options("1", ["2", "2", "3", "3", "text"], random.Random(42)) == []
 
 
 def test_falls_back_to_free_input_when_options_are_short():

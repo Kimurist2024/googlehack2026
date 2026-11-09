@@ -56,8 +56,9 @@ def _options(answer: str, pool: list[str], rng: random.Random) -> list[str]:
     """正解と同じ種類の誤答候補を選ぶ。3つそろわなければ自由入力にする。"""
     kind = _kind(answer)
     wrong = []
-    for candidate in pool:
-        if candidate and candidate != answer and _kind(candidate) == kind and candidate not in wrong:
+    # 初出順で重複を除く。抽選順を保ち、候補ごとのリスト全探索をなくす。
+    for candidate in dict.fromkeys(pool):
+        if candidate and candidate != answer and _kind(candidate) == kind:
             wrong.append(candidate)
     if len(wrong) < OPTION_COUNT - 1:
         return []
