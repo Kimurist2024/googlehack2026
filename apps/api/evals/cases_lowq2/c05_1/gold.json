@@ -1,0 +1,106 @@
+{
+  "split": "dev",
+  "goal": "特別な入力での動きを説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c05 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "factorialという関数を作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "for文を使って1つずつ見ている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "1を入れると0を返すはず",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "factorial",
+        "args": "[1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "3の階乗は6になるはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "6",
+        "function": "factorial",
+        "args": "[3]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "0の階乗は1になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "factorial",
+        "args": "[0]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "5の階乗は120になると思う",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "120",
+        "function": "factorial",
+        "args": "[5]",
+        "stdin": ""
+      }
+    }
+  ]
+}

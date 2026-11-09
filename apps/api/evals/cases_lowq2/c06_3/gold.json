@@ -1,0 +1,111 @@
+{
+  "split": "heldout",
+  "goal": "条件と繰り返しの組み合わせを説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた c06 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          11,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "if文で条件を分けた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "is_prime(1)はFalseを返す",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "is_prime(17)はTrueを返す",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "True",
+        "function": "is_prime",
+        "args": "[17]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "is_prime(2)はTrueを返すはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "True",
+        "function": "is_prime",
+        "args": "[2]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "9は素数ではないと判定される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          10
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[9]",
+        "stdin": ""
+      }
+    }
+  ]
+}

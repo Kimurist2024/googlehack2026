@@ -1,0 +1,64 @@
+{
+  "split": "heldout",
+  "goal": "条件と繰り返しの組み合わせを説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c06 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "2は素数ではないと判定される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[2]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "is_prime(9)はFalseが返る",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[9]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "1は素数じゃないからFalseになる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "False",
+        "function": "is_prime",
+        "args": "[1]",
+        "stdin": ""
+      }
+    }
+  ]
+}

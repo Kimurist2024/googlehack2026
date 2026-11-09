@@ -1,0 +1,94 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた p01 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文を使って1つずつ見ている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "最初に10が表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "11からは始まらない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "11",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "0も表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          3
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "最後に発射と表示される",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

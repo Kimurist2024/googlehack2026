@@ -1,0 +1,67 @@
+{
+  "split": "dev",
+  "goal": "並べ替えの手順を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t08-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "sort_list 関数を作成します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "リストを比較し、最小の値を見つけます",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "最小の値と最初の要素を入れ替えます",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          7,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "これを行うためには、2重ループを使用します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g5",
+      "text": "このプログラムは、リストを小さい順に並べ替えます",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          9,
+          11
+        ]
+      ]
+    }
+  ]
+}

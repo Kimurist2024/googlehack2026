@@ -1,0 +1,37 @@
+{
+  "split": "dev",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "数を全部たしてから個数でわる",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "そのやり方を関数にまとめた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "空のリストでも動く",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

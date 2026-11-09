@@ -1,0 +1,1 @@
+forでくり返している。ifで場合分けしている。見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になる。'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返る。['sato', 'suzuki', 'tanaka']から'suzuki'を探すと1が返ってきた。名前が1つもないリストで'sato'を探しても-1になる。

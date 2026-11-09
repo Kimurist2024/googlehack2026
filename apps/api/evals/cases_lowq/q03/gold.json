@@ -1,0 +1,45 @@
+{
+  "split": "dev",
+  "goal": "条件分岐の順番の意味を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t04-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "このプログラムは1から30までで、3と5の倍数のときにFizz、Buzz、両方のときにFizzBuzz、それ以外は数を表示します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "forループを使って1から30までの整数を順番に処理し、それぞれの条件をチェックして適切な出力を生成しています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "例えば10のときは10と表示します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g4",
+      "text": "30のときは30と表示します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+[
+{
+"id": "c01",
+"en": "Write a function grade(score) that returns 'A' if score is 80 or more, 'B' if score is 60 or more, and 'C' otherwise. Then try it with a few scores using print."
+},
+{
+"id": "c02",
+"en": "Write a function average(scores) that returns the average of a list of scores. Then try it with a list of scores using print."
+},
+{
+"id": "c03",
+"en": "Write a function find_max(nums) that returns the largest number in the list without using max(). Then try it using print."
+},
+{
+"id": "c04",
+"en": "Write a function find_index(names, target) that returns the position (index) of target in the list names, or -1 if it is not found. Then try it using print."
+},
+{
+"id": "c05",
+"en": "Write a function factorial(n) that returns n! (the factorial of n). Try it with 0 and 5 using print."
+},
+{
+"id": "c06",
+"en": "Write a function is_prime(n) that returns True if n is a prime number and False otherwise. Try it with the numbers 1 to 10 using print."
+},
+{
+"id": "c07",
+"en": "Write a function my_sort(nums) that returns the list sorted from smallest to largest, without using sort() or sorted(). Then try it using print."
+},
+{
+"id": "c08",
+"en": "Write a function is_palindrome(s) that returns True if the string s reads the same forwards and backwards, otherwise False. Then try it using print."
+},
+{
+"id": "c09",
+"en": "Write a function count_words(text) that returns a dictionary counting how many times each word (separated by spaces) appears in text. Then try it using print."
+},
+{
+"id": "c10",
+"en": "Write a function digit_sum(n) that returns the sum of the digits of the integer n (for example 123 -> 6). Try it with a few numbers using print."
+},
+{
+"id": "c11",
+"en": "Write a function cumulative(nums) that returns a new list of running totals (for example [1, 2, 3] -> [1, 3, 6]). Then try it using print."
+},
+{
+"id": "c12",
+"en": "Write a function binary_search(nums, target) that uses binary search on a sorted list and returns the index of target, or -1 if it is not found. Then try it using print."
+},
+{
+"id": "c13",
+"en": "Write a function gcd(a, b) that returns the greatest common divisor of two integers. Try it with a few pairs using print."
+},
+{
+"id": "c14",
+"en": "Write a function evens(nums) that returns a new list containing only the even numbers from nums. Then try it using print."
+},
+{
+"id": "c15",
+"en": "Write a function is_leap(year) that returns True if year is a leap year, otherwise False. Try it with 1900, 2000, 2024 and 2023 using print."
+},
+{
+"id": "c16",
+"en": "Write a function second_largest(nums) that returns the second largest number in the list. Then try it using print."
+},
+{
+"id": "c17",
+"en": "Write a function temp_range(temps) that returns the difference between the highest and the lowest temperature in the list. Then try it using print."
+},
+{
+"id": "c18",
+"en": "Write a function count_vowels(s) that returns how many of the letters a, e, i, o, u are in the string s. Then try it using print."
+},
+{
+"id": "c19",
+"en": "Write a function fizzbuzz(n) that returns 'FizzBuzz' if n is a multiple of both 3 and 5, 'Fizz' if a multiple of 3, 'Buzz' if a multiple of 5, otherwise the number as a string. Then try it using print."
+},
+{
+"id": "c20",
+"en": "Write a function reverse_list(nums) that returns a new list with the items in reverse order, without using reverse() or slicing. Then try it using print."
+},
+{
+"id": "c21",
+"en": "Write a function count_pass(scores, border) that returns how many scores are greater than or equal to border. Then try it using print."
+},
+{
+"id": "c22",
+"en": "Write a function sum_to(n) that returns 1 + 2 + ... + n. Try it with a few numbers using print."
+},
+{
+"id": "c23",
+"en": "Write a function power(base, exp) that returns base to the power of exp using a loop, without using ** or pow(). Then try it using print."
+},
+{
+"id": "c24",
+"en": "Write a function count_char(s, c) that returns how many times the character c appears in the string s, without using count(). Then try it using print."
+},
+{
+"id": "s01",
+"en": "Write a program that reads a score (an integer) with input() and prints only 'A' if it is 80 or more, 'B' if it is 60 or more, and 'C' otherwise. Print only the letter."
+},
+{
+"id": "s02",
+"en": "Write a program that reads an integer with input() and prints only the word 偶数 if it is even, or 奇数 if it is odd."
+},
+{
+"id": "s03",
+"en": "Write a program that reads two integers with input() (one per line) and prints only their sum."
+},
+{
+"id": "s04",
+"en": "Write a program that reads an integer n with input() and prints n*1, n*2, ..., n*9, each number on its own line, with nothing else."
+},
+{
+"id": "s05",
+"en": "Write a program that reads an age (an integer) with input() and prints only 子ども if the age is under 13, 10代 if it is 13 to 19, and 大人 if it is 20 or more."
+},
+{
+"id": "s06",
+"en": "Write a program that reads an integer n with input(), prints the numbers from n down to 1 (one per line), and then prints 発射."
+},
+{
+"id": "p01",
+"en": "Write a program that prints the numbers from 10 down to 0 (one per line), and then prints 発射."
+},
+{
+"id": "p02",
+"en": "Write a program that prints the numbers from 1 to 30, one per line, but prints Fizz for multiples of 3, Buzz for multiples of 5, and FizzBuzz for multiples of both."
+},
+{
+"id": "p03",
+"en": "Write a program that prints the squares of the numbers from 1 to 10, one per line, with nothing else."
+},
+{
+"id": "p04",
+"en": "Write a program that prints all the multiples of 3 from 1 to 20, one per line, with nothing else."
+}
+]

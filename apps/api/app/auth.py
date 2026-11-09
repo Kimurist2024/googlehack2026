@@ -1,0 +1,189 @@
+"""認証。既定では何も通さず、設定がないときは拒否する。
+
+鍵は SESSION_SECRET から用途ごとに導出する（HKDF, RFC 5869）。
+1つの用途の値が漏れても、別の用途の鍵としては使えない。
+"""
+import base64
+import binascii
+import hashlib
+import hmac
+import json
+import logging
+import os
+import re
+import secrets
+import threading
+import time
+
+from fastapi import Header, HTTPException, Request
+
+from . import audit, guest
+
+logger = logging.getLogger(__name__)
+SESSION_LIFETIME_SEC = 2 * 60 * 60
+TOKEN_VERSION = 1
+TOKEN_TYPE = "student"
+MAX_TOKEN_CHARS = 1024
+DEV_TEACHER_PATTERN = r"^[A-Za-z0-9._@+-]{1,64}$"
+BEARER = "Bearer "
+
+# 用途ごとの鍵の名前。値を変えると、その用途で作った保存済みの値がすべて使えなくなる
+PURPOSE_TOKEN = "student-token-v1"
+PURPOSE_CODE = "code-hash-v1"
+PURPOSE_CLIENT = "client-key-v1"
+
+_firebase_lock = threading.Lock()
+
+
+def is_local() -> bool:
+    return os.environ.get("APP_ENV") == "local"
+
+
+def _master_secret() -> bytes:
+    value = os.environ.get("SESSION_SECRET", "")
+    if len(value) < 32:
+        raise HTTPException(status_code=503, detail="SESSION_SECRET が設定されていません")
+    return value.encode("utf-8")
+
+
+def derive_key(purpose: str) -> bytes:
+    """HKDF-SHA256 で用途ごとの32バイトの鍵を作る。"""
+    pseudo_random_key = hmac.new(b"mushitori-hkdf-salt", _master_secret(), hashlib.sha256).digest()
+    return hmac.new(pseudo_random_key, purpose.encode("utf-8") + b"\x01", hashlib.sha256).digest()
+
+
+def keyed_hash(purpose: str, value: str) -> str:
+    return hmac.new(derive_key(purpose), value.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def code_hash(code: str) -> str:
+    return keyed_hash(PURPOSE_CODE, code.strip().upper())
+
+
+def new_code(length: int = 8) -> str:
+    # 読み間違えやすい文字は使わない
+    alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _b64encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def _b64decode(text: str) -> bytes:
+    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+
+
+def _sign(body: str) -> str:
+    return _b64encode(hmac.new(derive_key(PURPOSE_TOKEN), body.encode("ascii"), hashlib.sha256).digest())
+
+
+def issue_student_token(class_id: str, student_id: str) -> str:
+    issued = int(time.time())
+    claims = {"v": TOKEN_VERSION, "typ": TOKEN_TYPE, "class": class_id, "student": student_id, "iat": issued, "exp": issued + SESSION_LIFETIME_SEC}
+    body = _b64encode(json.dumps(claims, separators=(",", ":")).encode("utf-8"))
+    return f"{body}.{_sign(body)}"
+
+
+def read_student_token(token: str, leeway_sec: float = 0) -> dict:
+    """署名、形、期限をすべて確かめる。どこかが違えば理由を区別せず 401 にする。
+
+    leeway_sec は、端末にためておいた解答を後から送る経路（app/offline_api.py）だけが使う。
+    """
+    rejected = HTTPException(status_code=401, detail="認証が必要です")
+    if len(token) > MAX_TOKEN_CHARS or not token.isascii():
+        raise rejected
+    try:
+        body, signature = token.split(".")
+        # 署名を確かめてから中身を読む。署名のない入力を JSON として解釈しない
+        if not hmac.compare_digest(signature.encode("ascii"), _sign(body).encode("ascii")):
+            raise rejected
+        claims = json.loads(_b64decode(body))
+    except (ValueError, binascii.Error, UnicodeError):
+        raise rejected from None
+    if not isinstance(claims, dict) or claims.get("v") != TOKEN_VERSION or claims.get("typ") != TOKEN_TYPE:
+        raise rejected
+    if not isinstance(claims.get("class"), str) or not isinstance(claims.get("student"), str):
+        raise rejected
+    expires = claims.get("exp")
+    if not isinstance(expires, int) or isinstance(expires, bool) or expires + leeway_sec < time.time():
+        raise HTTPException(status_code=401, detail="入室の期限が切れました")
+    return claims
+
+
+def demo_seed_enabled() -> bool:
+    """合成データのデモクラスを作れるか。本番では ALLOW_DEMO_SEED=1 のときだけ、ログインした教員に許す。"""
+    return is_local() or os.environ.get("ALLOW_DEMO_SEED") == "1"
+
+
+def verify_firebase_token(token: str) -> dict:
+    """Firebase Auth の ID トークンを検証する。署名の公開鍵だけを使うので、サービスアカウントの鍵はいらない。
+
+    FIREBASE_CHECK_REVOKED=1 のときは、ログアウトや無効化で失効したトークンも断る。
+    そのときはサービスアカウントに roles/firebaseauth.viewer が要る（なければ全員が通れなくなる）。
+    """
+    from firebase_admin import auth as firebase_auth
+
+    return firebase_auth.verify_id_token(token, app=prepare_firebase(), check_revoked=os.environ.get("FIREBASE_CHECK_REVOKED") == "1")
+
+
+def prepare_firebase():
+    """firebase_admin を読み込んで初期化する。起動の直後に裏でも呼び、最初のログインの確認を待たせない。"""
+    import firebase_admin
+    from firebase_admin import auth as _  # noqa: F401  検証に使う部分も先に読み込んでおく
+
+    with _firebase_lock:
+        try:
+            return firebase_admin.get_app()
+        except ValueError:
+            return firebase_admin.initialize_app(options={"projectId": os.environ.get("GOOGLE_CLOUD_PROJECT")})
+
+
+def bearer_token(authorization: str, detail: str = "認証が必要です") -> str:
+    """Authorization ヘッダーの Bearer のトークン。なければ 401 にする。"""
+    if not authorization.startswith(BEARER):
+        raise HTTPException(status_code=401, detail=detail)
+    return authorization[len(BEARER):]
+
+
+def current_student(authorization: str = Header(default="")) -> dict:
+    return read_student_token(bearer_token(authorization))
+
+
+def guest_teacher(decoded: dict, request: Request) -> str:
+    """匿名ログインを体験用の教員として通す。ALLOW_GUEST_TEACHER=1 のときだけ（app/guest.py）。"""
+    closed = HTTPException(status_code=403, detail="体験用の入口は閉じています")
+    if not guest.enabled():
+        audit.event("teacher.guest_rejected", request, severity="WARNING", reason="disabled")
+        raise closed
+    name = guest.principal(str(decoded.get("uid") or decoded.get("sub") or ""))
+    if name is None:
+        audit.event("teacher.guest_rejected", request, severity="WARNING", reason="bad_uid")
+        raise closed
+    return name
+
+
+def current_teacher(request: Request, authorization: str = Header(default=""), x_dev_teacher: str = Header(default="")) -> str:
+    """教員を確かめる。ローカル開発のときだけ、ヘッダーでの指定を認める。
+
+    ALLOW_GUEST_TEACHER=1 のときは、Firebase の匿名ログインを体験用の教員（guest:<uid>）として通す（app/guest.py）。
+    """
+    if is_local() and x_dev_teacher:
+        if not re.fullmatch(DEV_TEACHER_PATTERN, x_dev_teacher):
+            raise HTTPException(status_code=400, detail="X-Dev-Teacher の形が正しくありません")
+        return x_dev_teacher
+    token = bearer_token(authorization, "教員の認証が必要です")
+    try:
+        decoded = verify_firebase_token(token)
+    except Exception as error:
+        # 理由は記録にだけ残し、応答では区別しない
+        audit.event("teacher.auth_failed", request, severity="WARNING", reason=type(error).__name__)
+        raise HTTPException(status_code=401, detail="教員の認証に失敗しました") from None
+    if guest.is_anonymous(decoded):
+        return guest_teacher(decoded, request)
+    allowed = {item.strip().lower() for item in os.environ.get("TEACHER_EMAILS", "").split(",") if item.strip()}
+    email = str(decoded.get("email", "")).lower()
+    if not decoded.get("email_verified") or email not in allowed:
+        audit.event("teacher.not_allowed", request, severity="WARNING", principal=email)
+        raise HTTPException(status_code=403, detail="このアカウントは利用できません")
+    return email

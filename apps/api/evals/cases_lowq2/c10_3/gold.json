@@ -1,0 +1,34 @@
+{
+  "split": "dev",
+  "goal": "割り算と余りの使い方を説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた c10 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "whileでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "0を入れると1を返す",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "digit_sum",
+        "args": "[0]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた s06 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "while文を使って1つずつ見ている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "3を入力したら1も出る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "5を入れても5は出ない",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "5",
+        "function": "",
+        "args": "[]",
+        "stdin": "5\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "3を入力したとき0は出ない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    }
+  ]
+}

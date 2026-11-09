@@ -1,0 +1,91 @@
+{
+  "split": "heldout",
+  "goal": "辞書の使い方を説明できる",
+  "source": "deepseek-ai/deepseek-coder-1.3b-instruct が書いた c09 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "関数count_wordsを書きました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "if文で条件を分けた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "'a a a'を数えると{'a': 3}になると思う",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{'a': 3}",
+        "function": "count_words",
+        "args": "['a a a']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空の文字列を渡すと{}を返す",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{}",
+        "function": "count_words",
+        "args": "['']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "'apple banana apple'だと{'apple': 2, 'banana': 1}になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{'apple': 2, 'banana': 1}",
+        "function": "count_words",
+        "args": "['apple banana apple']",
+        "stdin": ""
+      }
+    }
+  ]
+}

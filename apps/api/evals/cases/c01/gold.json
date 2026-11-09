@@ -1,0 +1,42 @@
+{
+  "split": "dev",
+  "goal": "繰り返しと条件分岐で、変数の値がどう変わるかを追える",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "リストの点数を1つずつ取り出して調べた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "60点以上のときだけ合計に足した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "最後に合計を表示した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          6
+        ]
+      ]
+    }
+  ]
+}

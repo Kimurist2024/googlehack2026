@@ -1,0 +1,37 @@
+{
+  "split": "heldout",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "2からn-1までの数で割り切れるか調べた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "割り切れる数が見つかっても最後まで調べ続ける",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    },
+    {
+      "id": "g3",
+      "text": "1以下は素数ではないとした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    }
+  ]
+}

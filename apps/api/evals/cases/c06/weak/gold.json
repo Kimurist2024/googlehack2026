@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "[::-1]で文字を逆にした",
+      "label": "alternative",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "逆にしたのを出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    }
+  ]
+}

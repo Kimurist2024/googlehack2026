@@ -1,0 +1,79 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの流れを説明できる",
+  "source": "Qwen/Qwen2.5-0.5B-Instruct が書いた p03 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forでくり返している",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "10の2乗の100も出る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "100",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "11の2乗の121までは出ない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "121",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "最初に1が表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": ""
+      }
+    }
+  ]
+}

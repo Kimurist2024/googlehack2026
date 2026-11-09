@@ -1,0 +1,1 @@
+is_leapという関数を作った。1900年はうるう年ではないと判定される。is_leap(2023)はFalseを返す。is_leap(2000)はTrueを返すはず。is_leap(2024)はTrueを返すはず。

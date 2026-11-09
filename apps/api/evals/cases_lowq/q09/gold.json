@@ -1,0 +1,26 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t10-0（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "このプログラムは10から0まで1ずつ減らしながら表示します",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    },
+    {
+      "id": "g2",
+      "text": "最後に、発射と表示されます",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          11,
+          11
+        ]
+      ]
+    }
+  ]
+}

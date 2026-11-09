@@ -1,0 +1,30 @@
+{
+  "split": "dev",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "スライスで文字列を逆順にした",
+      "label": "alternative",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "逆にした文字列を表示した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+くり返しにはforを使った。if文で条件を分けた。is_prime(1)はFalseを返す。is_prime(17)はTrueを返す。is_prime(2)はTrueを返すはず。9は素数ではないと判定される。

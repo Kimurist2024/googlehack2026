@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#44545c"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9302c"/></marker></defs>
+<rect width="1600" height="900" fill="#efefef"/>
+<text x="40" y="78" font-size="46" font-weight="700" fill="#1f2a30">ネットが落ちても授業を止めない：</text>
+<text x="784.0" y="76" font-size="20" fill="#55626a">準備はクラウド、授業はどこでも</text>
+<rect x="0" y="100" width="1600" height="4" fill="#d4d4d4"/>
+<rect x="40" y="150" width="1520" height="250" fill="none" stroke="#6fe0cf" stroke-width="4"/>
+<rect x="62" y="128" width="577.6" height="42" fill="#6fe0cf"/>
+<text x="78" y="157" font-size="22" font-weight="700" fill="#1f2a30">授業前：準備はクラウド（AI と隔離実行はここだけ）</text>
+<circle cx="1514" cy="150" r="28" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(1514,150) scale(1.0769230769230769)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-10,9 H10 A6.5,6.5 0 0 0 9,-4 A9,9 0 0 0 -8,-5 A7,7 0 0 0 -10,9 Z"/></g>
+<rect x="62" y="192" width="250" height="96" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="202" width="5" height="76" rx="2" fill="#1fae8f"/>
+<text x="80" y="221" font-size="17" font-weight="700" fill="#1f2a30">提出コード</text>
+<text x="80" y="245.95" font-size="15" fill="#55626a">・教員がまとめて登録</text>
+<path d="M314,240 L348,240" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="352" y="192" width="250" height="96" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="352" y="202" width="5" height="76" rx="2" fill="#1fae8f"/>
+<text x="370" y="221" font-size="17" font-weight="700" fill="#1f2a30">隔離して実行</text>
+<text x="370" y="245.95" font-size="15" fill="#55626a">・Code Execution</text>
+<text x="370" y="267.7" font-size="15" fill="#55626a">・実行結果から正解を作る</text>
+<path d="M604,240 L638,240" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="642" y="192" width="250" height="96" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="642" y="202" width="5" height="76" rx="2" fill="#1fae8f"/>
+<text x="660" y="221" font-size="17" font-weight="700" fill="#1f2a30">問いを選ぶ・説明</text>
+<text x="660" y="245.95" font-size="15" fill="#55626a">・Gemini ＋ Model Armor</text>
+<path d="M894,240 L928,240" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<rect x="932" y="192" width="250" height="96" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="932" y="202" width="5" height="76" rx="2" fill="#1fae8f"/>
+<text x="950" y="221" font-size="17" font-weight="700" fill="#1f2a30">授業パッケージ</text>
+<text x="950" y="245.95" font-size="15" fill="#55626a">・名簿・問い・正解だけ</text>
+<rect x="1222" y="186" width="316" height="196" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="1222" y="196" width="5" height="176" rx="2" fill="#1fae8f"/>
+<circle cx="1514" cy="212" r="17" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(1514,212) scale(0.6538461538461539)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-11" y="-3" width="22" height="16" rx="3"/><path d="M-6.5,-3 V-8 A6.5,6.5 0 0 1 6.5,-8 V-3"/><circle cx="0" cy="5" r="2" fill="#1fae8f"/></g>
+<text x="1240" y="215" font-size="17" font-weight="700" fill="#1f2a30">パッケージの守り</text>
+<text x="1240" y="239.95" font-size="15" fill="#55626a">・Cloud KMS で署名（ECDSA P-2</text>
+<text x="1240" y="261.7" font-size="15" fill="#55626a">　56）</text>
+<text x="1240" y="283.45" font-size="15" fill="#55626a">・AES-256-GCM で暗号化</text>
+<text x="1240" y="305.2" font-size="15" fill="#55626a">・解除コードは画面に1回だけ</text>
+<text x="1240" y="326.95" font-size="15" fill="#55626a">・コードは scrypt の照合値だけ</text>
+<text x="1240" y="348.7" font-size="15" fill="#55626a">・発行から7日で失効</text>
+<path d="M1182,240 L1220,240" fill="none" stroke="#44545c" stroke-width="3.5" marker-end="url(#arrow)"/>
+<text x="62" y="330" font-size="19" fill="#1f2a30" text-anchor="start" font-weight="700">授業中に要るのは「配り済みの問い・正解・採点の計算」だけ。AI もコードの実行もいらない。</text>
+<text x="62" y="362" font-size="19" fill="#55626a" text-anchor="start">だから授業はネットがなくても回る。</text>
+<rect x="40" y="470" width="480" height="290" fill="none" stroke="#6fe0cf" stroke-width="4"/>
+<rect x="62" y="448" width="124.4" height="42" fill="#6fe0cf"/>
+<text x="78" y="477" font-size="22" font-weight="700" fill="#1f2a30">① ふだん</text>
+<circle cx="474" cy="470" r="28" fill="#ffffff" stroke="#1fae8f" stroke-width="3"/>
+<g transform="translate(474,470) scale(1.0769230769230769)" fill="none" stroke="#1fae8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-14" y="-13" width="28" height="11" rx="2.5"/><rect x="-14" y="2" width="28" height="11" rx="2.5"/><circle cx="9" cy="-7.5" r="1.6" fill="#1fae8f"/><circle cx="9" cy="7.5" r="1.6" fill="#1fae8f"/><path d="M-9,-7.5 H2 M-9,7.5 H2"/></g>
+<rect x="62" y="508" width="436" height="232" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="62" y="518" width="5" height="212" rx="2" fill="#6fe0cf"/>
+<text x="80" y="539" font-size="19" font-weight="700" fill="#1f2a30">Cloud Run ＋ Firestore</text>
+<text x="80" y="566.65" font-size="16" fill="#55626a">・生徒は自分の端末から入室・解答</text>
+<text x="80" y="589.85" font-size="16" fill="#55626a">・教員は授業前にパッケージを保存</text>
+<text x="80" y="613.0500000000001" font-size="16" fill="#55626a">・結果と記録はクラウドが正</text>
+<text x="80" y="636.2500000000001" font-size="16" fill="#55626a">・LAN の結果はクラウドの正解で採点し直す（教員PC</text>
+<text x="80" y="659.4500000000002" font-size="16" fill="#55626a">　の採点は使わない）</text>
+<rect x="560" y="470" width="480" height="290" fill="none" stroke="#d9534f" stroke-width="4" stroke-dasharray="10 7"/>
+<rect x="582" y="448" width="318.0" height="42" fill="#f3c2c0"/>
+<text x="598" y="477" font-size="22" font-weight="700" fill="#1f2a30">② ネット障害（LANは動く）</text>
+<circle cx="994" cy="470" r="28" fill="#ffffff" stroke="#d9534f" stroke-width="3"/>
+<g transform="translate(994,470) scale(1.0769230769230769)" fill="none" stroke="#d9534f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-12" y="-11" width="24" height="16" rx="2"/><path d="M-16,9 H16"/></g>
+<rect x="582" y="508" width="436" height="232" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="582" y="518" width="5" height="212" rx="2" fill="#d9534f"/>
+<text x="600" y="539" font-size="19" font-weight="700" fill="#1f2a30">教員PCで引き継ぐ</text>
+<text x="600" y="566.65" font-size="16" fill="#55626a">・署名を確かめてから取り込む</text>
+<text x="600" y="589.85" font-size="16" fill="#55626a">・生徒は同じコードで教員PCへ</text>
+<text x="600" y="613.0500000000001" font-size="16" fill="#55626a">・外へは一度も接続しない（試験で保証）</text>
+<text x="600" y="636.2500000000001" font-size="16" fill="#55626a">・教員の操作は教員PCからだけ</text>
+<text x="600" y="659.4500000000002" font-size="16" fill="#55626a">・保存は暗号化したファイル</text>
+<rect x="1080" y="470" width="480" height="290" fill="none" stroke="#f0b44c" stroke-width="4" stroke-dasharray="10 7"/>
+<rect x="1102" y="448" width="164.0" height="42" fill="#f7d48f"/>
+<text x="1118" y="477" font-size="22" font-weight="700" fill="#1f2a30">③ LANも障害</text>
+<circle cx="1514" cy="470" r="28" fill="#ffffff" stroke="#f0b44c" stroke-width="3"/>
+<g transform="translate(1514,470) scale(1.0769230769230769)" fill="none" stroke="#f0b44c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="-8" y="-14" width="16" height="28" rx="3.5"/><path d="M-3,9 H3"/></g>
+<rect x="1102" y="508" width="436" height="232" rx="10" fill="#ffffff" stroke="#cfd6d9"/>
+<rect x="1102" y="518" width="5" height="212" rx="2" fill="#f0b44c"/>
+<text x="1120" y="539" font-size="19" font-weight="700" fill="#1f2a30">生徒の端末にためる</text>
+<text x="1120" y="566.65" font-size="16" fill="#55626a">・画面は Service Worker で開ける</text>
+<text x="1120" y="589.85" font-size="16" fill="#55626a">・解答は端末に保存、つながったら送る</text>
+<text x="1120" y="613.0500000000001" font-size="16" fill="#55626a">・送り直しは何度でも同じ結果（冪等）</text>
+<text x="1120" y="636.2500000000001" font-size="16" fill="#55626a">・持ち時間超過は「オフライン提出」と表示</text>
+<path d="M940,290 L940,466" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<text x="952" y="432" font-size="16" fill="#1f2a30" text-anchor="start">教員PCに保存</text>
+<path d="M560,640 L522,640" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<text x="541" y="622" font-size="15" fill="#1f2a30" text-anchor="middle">結果</text>
+<path d="M1080,700 L1042,700" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<path d="M1300,762 L1300,822 L300,822 L300,764" fill="none" stroke="#44545c" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<text x="800" y="856" font-size="17" fill="#1f2a30" text-anchor="middle">つながったら送る（端末の時計は信用せず、受け付けはサーバーの時刻）</text>
+</svg>

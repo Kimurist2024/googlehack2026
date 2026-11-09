@@ -1,0 +1,23 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文を2こ重ねて組み合わせを作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "かけ算の答えをリストに入れてからまとめて出した",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    }
+  ]
+}

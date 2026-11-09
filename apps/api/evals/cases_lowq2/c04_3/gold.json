@@ -1,0 +1,79 @@
+{
+  "split": "dev",
+  "goal": "探索の終わり方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた c04 のコード（クセを取ったもの）と、型から作った説明（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "find_indexという関数を作った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "['sato', 'suzuki', 'tanaka']から'suzuki'を探すと1が返る",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'tanaka'], 'suzuki']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になると思う",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-1",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki'], 'yamada']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってくる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "find_index",
+        "args": "[['sato', 'suzuki', 'sato'], 'sato']",
+        "stdin": ""
+      }
+    }
+  ]
+}

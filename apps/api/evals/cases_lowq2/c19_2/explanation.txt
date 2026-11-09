@@ -1,0 +1,1 @@
+fizzbuzzって名前の関数にした。fizzbuzz(5)は'Buzz'になると思う。fizzbuzz(15)は'FizzBuzz'になります。30のときは'FizzBuzz'が返る。

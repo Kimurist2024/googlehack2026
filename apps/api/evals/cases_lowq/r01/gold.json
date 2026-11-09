@@ -1,0 +1,50 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しの終わり方を説明できる",
+  "source": "Qwen/Qwen2.5-Coder-1.5B-Instruct が書いた t15-1（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "gcd(a, b)はaとbの最大公約数を計算し、その結果を返します",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "gcd(a, b)は、aが0である場合、bを返します",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          2,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "gcd(18, 45) は 9 になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g4",
+      "text": "負の数字が渡されるとundefinedとなる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

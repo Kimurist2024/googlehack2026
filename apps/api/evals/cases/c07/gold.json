@@ -1,0 +1,42 @@
+{
+  "split": "dev",
+  "goal": "繰り返しと条件分岐で、変数の値がどう変わるかを追える",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "1から15まで順に調べた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "15の倍数を最初に判定した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "3の倍数と5の倍数はその後で判定した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          7
+        ]
+      ]
+    }
+  ]
+}

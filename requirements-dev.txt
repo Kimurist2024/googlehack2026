@@ -1,5 +1,0 @@
--r requirements.txt
-pytest>=8,<10
-httpx>=0.27,<1
-# エミュレータで FirestoreStore を試すのに使う
-google-cloud-firestore==2.34.1

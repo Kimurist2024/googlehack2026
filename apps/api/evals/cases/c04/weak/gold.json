@@ -1,0 +1,35 @@
+{
+  "claims": [
+    {
+      "id": "g1",
+      "text": "全部たして個数でわるやつ",
+      "label": "clumsy",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "それを関数にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "空のリストを入れてもたぶん大丈夫",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": []
+    }
+  ]
+}

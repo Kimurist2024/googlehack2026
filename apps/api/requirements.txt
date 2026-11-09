@@ -1,0 +1,5 @@
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+python-multipart==0.0.26
+# 授業パッケージの署名と暗号化、校内LAN版の保存ファイルの暗号化
+cryptography==46.0.3

@@ -1,0 +1,30 @@
+{
+  "split": "dev",
+  "goal": "探索や整列の手順を、コードの行と結びつけて説明できる",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "辞書を使って単語ごとの回数を数えた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "まだない単語は0から数え始める",
+      "label": "alternative",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    }
+  ]
+}

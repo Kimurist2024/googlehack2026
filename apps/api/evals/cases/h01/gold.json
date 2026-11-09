@@ -1,0 +1,37 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しと条件分岐で、変数の値がどう変わるかを追える",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "10で割った余りで一の位を取り出した",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "10で割って桁を1つずつ減らした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "文字列に変えて1文字ずつ足した",
+      "label": "gap",
+      "kind": "structure",
+      "evidence": []
+    }
+  ]
+}
