@@ -1,0 +1,1 @@
+まず、ifで場合分けしている。次に、while文を使って1つずつ見ている。見つからないとき（['sato', 'suzuki']から'yamada'を探す）は、最後まで見て-1になるはず。空のリストから探すと、まず1つも見ないで-1を返します。find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は、次の'suzuki'で止まって1を返す。'sato'が2回出てくる['sato', 'suzuki', 'sato']だと、最後に0が返ってきた。

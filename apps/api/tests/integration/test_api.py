@@ -595,6 +595,61 @@ def test_students_explain_missed_lines_in_their_own_words(client):
     assert row["explanations"] == {str(missed[0]): "n が 2 より大きいときだけ足す"}
 
 
+def explain_missed_line(client, created, assignment) -> tuple[dict, str, int]:
+    headers, _ = login(client, created)
+    client.post(f"/v1/assignments/{assignment}/attempt:start", headers=headers)
+    result = client.post(f"/v1/assignments/{assignment}/attempt:submit", json={"answers": {}}, headers=headers).json()
+    line = min(item["line"] for item in result["results"] if not item["correct"] and item["line"])
+    return headers, f"/v1/assignments/{assignment}/attempt:explain", line
+
+
+def test_explanation_sentences_are_checked_by_running_the_students_code(client):
+    """説明の文を本人のコードで動かして確かめ、教員の画面に添える。説明どおりかは実行の結果で決める。"""
+    created, assignment = setup_open(client, numbers=("1",))
+    headers, url, line = explain_missed_line(client, created, assignment)
+    # CODE は 16 だけを表示する。何を試すかは、Gemini を使わない既定の規則（PatternProbePlanner）が決める
+    text = "大きい数だけ足している。16も表示される。3も表示される"
+    assert client.post(url, json={"line": line, "text": text}, headers=headers).status_code == 200
+    row = close_and_view(client, assignment)["order"][0]
+    assert row["explanations"] == {str(line): text}
+    checks = row["explanation_checks"][str(line)]
+    assert [(c["sentence"], c["verdict"]) for c in checks] == [("16も表示される。", "holds"), ("3も表示される", "fails")]
+    assert checks[1]["runs"] == [
+        {"tried": "実行", "expected": "「3」の行が表示される", "actual": "「3」の行は表示されなかった", "verdict": "fails"}
+    ]
+
+
+def test_rewritten_explanation_drops_the_old_checks(client):
+    created, assignment = setup_open(client, numbers=("1",))
+    headers, url, line = explain_missed_line(client, created, assignment)
+    client.post(url, json={"line": line, "text": "3も表示される"}, headers=headers)
+    client.post(url, json={"line": line, "text": "合計を出している"}, headers=headers)  # 確かめられる文がない
+    row = close_and_view(client, assignment)["order"][0]
+    assert row["explanations"] == {str(line): "合計を出している"} and row["explanation_checks"] == {}
+
+
+def test_sending_the_same_explanation_again_does_not_plan_again(monkeypatch, store):
+    """同じ文をもう一度送っても、Gemini（ここでは数える偽物）と隔離環境を使い直さない。"""
+    from qgen.probes import PatternProbePlanner
+
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("ALLOW_LOCAL_SANDBOX", "1")
+    monkeypatch.setenv("SESSION_SECRET", "x" * 32)
+    asked = []
+
+    class Counting(PatternProbePlanner):
+        def plan(self, claim, code):
+            asked.append(claim)
+            return super().plan(claim, code)
+
+    app_client = TestClient(create_app(store, LocalDevSandbox, TemplateAI, Counting))
+    created, assignment = setup_open(app_client, numbers=("1",))
+    headers, url, line = explain_missed_line(app_client, created, assignment)
+    for _ in range(2):
+        assert app_client.post(url, json={"line": line, "text": "16も表示される"}, headers=headers).status_code == 200
+    assert asked == ["16も表示される"]
+
+
 def test_demo_seed_brings_past_records(client, monkeypatch):
     monkeypatch.setenv("ALLOW_DEMO_SEED", "1")
     created = client.post("/v1/dev/seed", headers=TEACHER).json()

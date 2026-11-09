@@ -1,0 +1,75 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "hiragana",
+  "source": "ibm-granite/granite-3.1-2b-instruct に習いたて型の癖を指示して書かせた s01 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifでばあいわけしている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "79をいれるとCとでる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "C",
+        "function": "",
+        "args": "[]",
+        "stdin": "79\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "80てんといれたらAとでました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "80\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "59てんといれたらCとでる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "C",
+        "function": "",
+        "args": "[]",
+        "stdin": "59\n"
+      }
+    }
+  ]
+}

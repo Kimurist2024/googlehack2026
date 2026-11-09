@@ -1,0 +1,100 @@
+{
+  "split": "dev",
+  "goal": "条件で値を選ぶ流れを説明できる",
+  "persona": "eigo",
+  "source": "ibm-granite/granite-3.1-2b-instruct に英語まじり型の癖を指示して書かせた c14 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "evensって名前のファンクションにした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "偶数がない[1, 3]だと、[]がreturnされる",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "evens",
+        "args": "[[1, 3]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "0やマイナスがある[0, -2, 5]は、[0, -2]がreturnされる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[0, -2]",
+        "function": "evens",
+        "args": "[[0, -2, 5]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリストなら、returnは[]になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "evens",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "evens([1, 2, 3, 4])は[2, 4]をreturnします",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[2, 4]",
+        "function": "evens",
+        "args": "[[1, 2, 3, 4]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,541 @@
+[
+ {
+  "key": "c01_hiragana",
+  "task_id": "c01",
+  "persona": "hiragana",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef grade(score):\n    if score >= 90:\n        return 'A'\n    elif score >= 80:\n        return 'B'\n    else:\n        return 'C'\nprint(grade(85))\nprint(grade(70))\nprint(grade(95))\n```\n\n文:\n1. if文で条件を分けた\n2. 59点だとCになる（たぶん）\n3. 100点ちょうどのときはAになる"
+ },
+ {
+  "key": "c01_zakkuri",
+  "task_id": "c01",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef grade(score):\n    if score >= 80:\n        return 'A'\n    elif score >= 60:\n        return 'B'\n    else:\n        return 'C'\nprint(grade(75))\nprint(grade(95))\nprint(grade(50))\n```\n\n文:\n1. gradeという関数を作った\n2. if文で条件を分けた\n3. 0点ちょうどのときはCになるはず\n4. 79点ちょうどのときはAになるはず\n5. 100点だとBになる"
+ },
+ {
+  "key": "c02_jishinnashi",
+  "task_id": "c02",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef average(scores):\n    if not scores:\n        return 0\n    total = sum(scores)\n    count = len(scores)\n    return total / count\nprint(average([50, 70, 40, 85]))\n```\n\n文:\n1. averageって名前の関数にした\n2. if文で条件を分けた\n3. average([80, 90])は85.0が返ってきた\n4. average([70])は70.0を返すはず\n5. 点数が1つもないとエラーで止まる\n6. 60と70と80の平均は70.0になった"
+ },
+ {
+  "key": "c02_romaji",
+  "task_id": "c02",
+  "persona": "romaji",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef average(scores):\n    total = sum(scores)\n    count = len(scores)\n    avg = total / count\n    return avg\nscore_list = [78, 85, 90, 95, 88]\nprint(average(score_list))\n```\n\n文:\n1. 関数averageを書きました\n2. 60と70と80の平均は70.0になる（たぶん）\n3. [80, 90]の平均は85.0になるはず\n4. 点数が70の1つだけなら平均は70.0になるはず"
+ },
+ {
+  "key": "c03_hiragana",
+  "task_id": "c03",
+  "persona": "hiragana",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_max(nums):\n    if len(nums) <= 1:\n        return None\n    if nums[0] > nums[-1]:\n        return nums[0]\n    return find_max(nums[1:-1])\nprint(find_max([15, 3, 8, 10, 1, 50]))\n```\n\n文:\n1. find_maxって名前の関数にした\n2. 同じ数ばかりの[1, 1, 1]でも1が返る\n3. [-5, -2, -9]だと一番大きいのは-2になった\n4. [3, 7, 2]を渡すと7が返ってきた"
+ },
+ {
+  "key": "c03_romaji",
+  "task_id": "c03",
+  "persona": "romaji",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_max(nums):\n    goukei = nums[0]\n    kazu = nums[0]\n    for i in range(1, len(nums)):\n        namae = nums[i]\n        if namae > goukei:\n            goukei = namae\n        elif namae > kazu:\n            kazu = namae\n    return kazu\nnumbers = [5, 3, 9, 1, 7]\nprint(find_max(numbers))\n```\n\n文:\n1. くり返しにはforを使った\n2. if文で条件を分けた\n3. find_max([4])は4になるはず\n4. 全部マイナスの[-5, -2, -9]でも-2が返る\n5. [3, 7, 2]を渡すと7を返します"
+ },
+ {
+  "key": "c03_hayatochiri",
+  "task_id": "c03",
+  "persona": "hayatochiri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_max(nums):\n    max_num = nums[0]\n    for num in nums:\n        if num > max_num:\n            max_num = num\n    return max_num\nnumbers = [3, 67, 99, 23, 45]\nprint(find_max(numbers))\n```\n\n文:\n1. ifで場合分けしている\n2. forでくり返している\n3. 同じ数ばかりの[1, 1, 1]でも2を返します\n4. [-5, -2, -9]だと一番大きいのは-3になる（たぶん）\n5. find_max([4])は3になります"
+ },
+ {
+  "key": "c04_eigo",
+  "task_id": "c04",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_index(names, target):\n    return names.index(target)\nprint(find_index(['hello', 'world'], 'world'))\n```\n\n文:\n1. 関数find_indexを書きました\n2. 名前が1つもないリストで'sato'を探しても-1になります\n3. find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返ってきた\n4. 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は0になる\n5. 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと1が返ってきた"
+ },
+ {
+  "key": "c04_jishinnashi",
+  "task_id": "c04",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_index(names, target):\n    if not isinstance(names, list) or not isinstance(target, str):\n        return 'Error: Both names and target must be a list and string respectively.'\n    if not names:\n        return 'Error: The list cannot be empty.'\n    index = -1\n    for i in range(len(names)):\n        if names[i] == target:\n            index = i\n            break\n    return index\nnames = ['apple', 'banana', 'cherry', 'date']\ntarget = 'cherry'\nprint(find_index(names, target))\ntarget = 'fig'\nprint(find_index(names, target))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってきた\n3. 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-2になる（たぶん）\n4. find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返る"
+ },
+ {
+  "key": "c04_jikkyou",
+  "task_id": "c04",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef find_index(names, target):\n    index = 0\n    while index < len(names):\n        if names[index] == target:\n            return index\n        index += 1\n    return -1\nnames = ['Alice', 'Bob', 'Charlie', 'David']\ntarget = 'Bob'\nresult = find_index(names, target)\nprint(result)\n```\n\n文:\n1. ifで場合分けしている\n2. while文を使って1つずつ見ている\n3. 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になるはず\n4. 空のリストから探すと-1を返します\n5. find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1を返す\n6. 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってきた"
+ },
+ {
+  "key": "c05_romaji",
+  "task_id": "c05",
+  "persona": "romaji",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nnomi = 'goukei'\nkazu = 'kazu'\nnamae = 'Nakahiko'\nkekka = 'keka'\nkotae = 'koto'\n\ndef factorial(nomi):\n    return nomi * kazu * namae * kekka * kotae\nprint(factorial(nomi))\nprint(factorial(5))\n```\n\n文:\n1. factorialって名前の関数にした\n2. factorial(0)は1を返します\n3. factorial(5)は120が返ってくる\n4. factorial(1)は1になる（たぶん）\n5. 3の階乗は6になります"
+ },
+ {
+  "key": "c05_jishinnashi",
+  "task_id": "c05",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef factorial(n):\n    if n < 0:\n        return None\n    result = 1\n    if n == 0:\n        return result\n    for i in range(1, n + 1):\n        result += i\n    return result\nprint(factorial(0))\nprint(factorial(5))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. ifで場合分けしている\n3. 1を入れると0が返ってくる\n4. 3の階乗は6になる\n5. 0の階乗は1になった"
+ },
+ {
+  "key": "c05_jikkyou",
+  "task_id": "c05",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef factorial(n):\n    result = 1\n    for _ in range(n):\n        result *= n\n    return result\nprint(factorial(5))\nprint(factorial(0))\n```\n\n文:\n1. くり返しにはforを使った\n2. 0の階乗は1になった\n3. 5の階乗は120になった\n4. 1を入れると1を返します"
+ },
+ {
+  "key": "c06_jishinnashi",
+  "task_id": "c06",
+  "persona": "jishinnashi",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_prime(n):\n    if n < 2:\n        return False\n    if n % 2 == 0:\n        return False\n    if n < 10:\n        return True\n    for current in range(3, int(n ** 0.5) + 1, 2):\n        if n % current == 0:\n            return False\n    return True\nprint(is_prime(1))\nprint(is_prime(2))\nprint(is_prime(3))\nprint(is_prime(4))\nprint(is_prime(5))\nprint(is_prime(6))\nprint(is_prime(7))\nprint(is_prime(8))\nprint(is_prime(9))\nprint(is_prime(10))\n```\n\n文:\n1. is_primeって名前の関数にした\n2. 1は素数ではないと判定される\n3. 2は素数なのでTrueになると思う\n4. is_prime(9)はFalseが返る"
+ },
+ {
+  "key": "c06_hayatochiri",
+  "task_id": "c06",
+  "persona": "hayatochiri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_prime(n):\n    return n > 1\nprint(is_prime(1))\nprint(is_prime(2))\nprint(is_prime(3))\nprint(is_prime(4))\nprint(is_prime(5))\nprint(is_prime(6))\nprint(is_prime(7))\n```\n\n文:\n1. is_primeという関数を作った\n2. 2は素数なのでTrueになります\n3. 1は素数と判定される\n4. 9は素数じゃないからFalseになるはず"
+ },
+ {
+  "key": "c06_eigo",
+  "task_id": "c06",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_prime(n):\n    if n < 2:\n        return False\n    for tmp in range(2, int(n ** 0.5) + 1):\n        if n % tmp == 0:\n            return False\n    return True\nfor i in range(1, 11):\n    print(f'Is {i} a prime number? {is_prime(i)}')\n```\n\n文:\n1. くり返しにはforを使った\n2. 関数is_primeを書きました\n3. is_prime(17)はTrueが返ってくる\n4. 9は素数じゃないからFalseになる\n5. 2は素数と判定される\n6. is_prime(1)はFalseを返します"
+ },
+ {
+  "key": "c07_hiragana",
+  "task_id": "c07",
+  "persona": "hiragana",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef my_sort(nums):\n    for num in nums:\n        if num < float('inf'):\n            yield num\n            if len(nums) > 1:\n                break\ntry:\n    print(my_sort([3, 2, 1, 5, 4, 6, 7, 8, 9]))\nexcept Exception as e:\n    print(f'An error occurred: {e}')\n```\n\n文:\n1. if文で条件を分けた\n2. くり返しにはforを使った\n3. 空のリストでも[]になる\n4. 同じ数がある[2, 2, 1]でも[1, 2, 2]になります\n5. マイナスがまじった[5, -1, 3]は[-1, 3, 5]になった"
+ },
+ {
+  "key": "c07_zakkuri",
+  "task_id": "c07",
+  "persona": "zakkuri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef my_sort(nums):\n    return [num for num in nums if num < float('inf')]\nprint(my_sort([5, 2, 3, 8, 1, 4]))\n```\n\n文:\n1. my_sortって名前の関数にした\n2. my_sort([3, 1, 2])は[3, 2, 1]を返す\n3. マイナスがまじった[5, -1, 3]は[5, 3, -1]になる\n4. 空のリストでも[]になる（たぶん）"
+ },
+ {
+  "key": "c07_kicchiri",
+  "task_id": "c07",
+  "persona": "kicchiri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 丁寧語（です・ます）で、どんな入力のときにどうなるかを、ひとつずつきちんと書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef my_sort(nums):\n    sorted_nums = [nums[0]]\n    for num in nums[1:]:\n        insert_pos = 0\n        while insert_pos < len(sorted_nums) and sorted_nums[insert_pos] < num:\n            insert_pos += 1\n        sorted_nums.insert(insert_pos, num)\n    return sorted_nums\nmy_list = [5, 2, 9, 1, 5, 6]\nsorted_list = my_sort(my_list)\nprint(sorted_list)\n```\n\n文:\n1. forでくり返している\n2. my_sortって名前の関数にした\n3. 同じ数がある[2, 2, 1]でも[1, 2, 2]になると思う\n4. 空のリストでも[]になった\n5. [3, 1, 2]を並べ替えると[3, 2, 1]になる\n6. マイナスがまじった[5, -1, 3]は[-1, 3, 5]になります"
+ },
+ {
+  "key": "c08_zakkuri",
+  "task_id": "c08",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_palindrome(s):\n    reversed_s = s[::-1]\n    if s == reversed_s:\n        return True\n    else:\n        return False\nprint(is_palindrome('racecar'))\nprint(is_palindrome('hello'))\n```\n\n文:\n1. is_palindromeという関数を作った\n2. 'abc'は回文じゃないからFalseになるはず\n3. is_palindrome('noon')はTrueが返ってくる"
+ },
+ {
+  "key": "c09_eigo",
+  "task_id": "c09",
+  "persona": "eigo",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_words(text):\n    word_count = {}\n    words = text.split(' ')\n    for word in words:\n        if word in word_count:\n            word_count[word] += 1\n        else:\n            word_count[word] = 1\n    return word_count\nsample_text = 'hello world hello python world'\nresult = count_words(sample_text)\nprint(result)\n```\n\n文:\n1. count_wordsって名前の関数にした\n2. 何も書いてない文だと{}になった\n3. count_words('apple banana apple')は{'apple': 2, 'banana': 1}が返ってきた\n4. 'a a a'を数えると{'a': 3}になる（たぶん）"
+ },
+ {
+  "key": "c09_hayatochiri",
+  "task_id": "c09",
+  "persona": "hayatochiri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_words(text):\n    words = text.split()\n    word_count = {}\n    for word in words:\n        if word in word_count:\n            word_count[word] += 1\n        else:\n            word_count[word] = 1\n    return word_count\ninput_text = 'this is a test this test is only a test'\nprint(count_words(input_text))\n```\n\n文:\n1. くり返しにはforを使った\n2. if文で条件を分けた\n3. count_words('apple banana apple')は{'apple': 2, 'banana': 1}を返す\n4. 'a a a'を数えると{'a': 3}になる\n5. 空の文字列を渡すと{}が返ってきた"
+ },
+ {
+  "key": "c10_eigo",
+  "task_id": "c10",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef digit_sum(n):\n    tmp = n\n    while tmp > 0:\n        tmp //= 10\n        digit = tmp % 10\n        sum_digits += digit\n    return sum_digits\nprint(digit_sum(123))\nprint(digit_sum(4567))\nprint(digit_sum(98765))\n```\n\n文:\n1. 関数digit_sumを書きました\n2. 0がまじった1005でも6になる（たぶん）\n3. digit_sum(123)は6を返すはず\n4. 1桁の9なら10を返すはず\n5. 0を入れると0が返ってくる"
+ },
+ {
+  "key": "c10_jikkyou",
+  "task_id": "c10",
+  "persona": "jikkyou",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef digit_sum(n):\n    total = 0\n    while n > 0:\n        total += n % 10\n        n = n // 10\n    return total\nprint(digit_sum(123))\nprint(digit_sum(456))\nprint(digit_sum(7890))\n```\n\n文:\n1. 関数digit_sumを書きました\n2. 1005の各桁をたすと6になるはず\n3. 123のときは6になるはず\n4. 1桁の9なら9が返ってくる\n5. 0を入れると0が返ってきた"
+ },
+ {
+  "key": "c11_jishinnashi",
+  "task_id": "c11",
+  "persona": "jishinnashi",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef cumulative(nums):\n    running_totals = []\n    total = 0\n    for num in nums:\n        total += num\n        running_totals.append(total)\n        total = running_totals[-1]\n    for num in nums:\n        total += num\n        running_totals.append(total)\n    total = running_totals[-1]\n    running_totals.append(total)\n    print(running_totals)\nmy_numbers = [1, 2, 3, 4, 5]\ncumulative(my_numbers)\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. [1, 2, 3]は[1, 3, 6]になる\n3. マイナスの日がある[3, -1, 2]は[3, 2, 4]になります\n4. 1日分だけの[5]なら[5]になるはず"
+ },
+ {
+  "key": "c11_romaji",
+  "task_id": "c11",
+  "persona": "romaji",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef cumulative(nums):\n    goukei = []\n    for n in nums:\n        kazu = goukei[-1] + n\n        goukei.append(kazu)\n    return goukei\nnums = [1, 2, 3]\nresult = cumulative(nums)\nprint(result)\n```\n\n文:\n1. 関数cumulativeを書きました\n2. くり返しにはforを使った\n3. 空のリストなら[]を返します\n4. cumulative([1, 2, 3])は[1, 3, 6]が返ってきた\n5. 1日分だけの[5]なら[5]になる\n6. マイナスの日がある[3, -1, 2]は[3, 2, 4]になる（たぶん）"
+ },
+ {
+  "key": "c11_hiragana",
+  "task_id": "c11",
+  "persona": "hiragana",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef cumulative(nums):\n    totals = []\n    for num in nums:\n        totals.append(num)\n    return totals\nprint(cumulative([1, 2, 3]))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. 関数cumulativeを書きました\n3. マイナスの日がある[3, -1, 2]は[4, 2, 3]になった\n4. 売上がない日だけ（空のリスト）だと[]になるはず"
+ },
+ {
+  "key": "c12_eigo",
+  "task_id": "c12",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef binary_search(nums, target):\n    n = len(nums)\n    low, high = (0, n - 1)\n    while low <= high:\n        mid = low + (high - low) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            high = mid - 1\n        else:\n            low = mid + 1\n    return -1\nnums = [1, 2, 3, 4, 5, 6]\ntarget = 3\nprint(binary_search(nums, target))\n```\n\n文:\n1. whileでくり返している\n2. if文で条件を分けた\n3. [1, 3, 5, 7]にない4を探すと-1が返ってくる\n4. 空のリストでも-1になった\n5. binary_search([1, 3, 5, 7], 5)は2になると思う\n6. [1, 3, 5, 7]の先頭の1を探すと0になる"
+ },
+ {
+  "key": "c12_zakkuri",
+  "task_id": "c12",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef binary_search(nums, target):\n    left, right = (0, len(nums) - 1)\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\nsorted_nums = [1, 3, 5, 7, 9, 11]\ntarget_value = 7\nindex = binary_search(sorted_nums, target_value)\nprint(target_value, index)\n```\n\n文:\n1. ifで場合分けしている\n2. binary_search([1, 3, 5, 7], 5)は2になった\n3. [1, 3, 5, 7]の一番うしろの7を探すと3が返ってくる"
+ },
+ {
+  "key": "c13_jishinnashi",
+  "task_id": "c13",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef gcd(a, b):\n    while a != 0:\n        a, b = (b, a % b)\n    return b\nprint(gcd(48, 18))\nprint(gcd(56, 98))\nprint(gcd(101, 103))\n```\n\n文:\n1. whileでくり返している\n2. gcd(0, 5)は5が返ってきた\n3. 9と28みたいに共通の約数がないときは1になる（たぶん）\n4. 片方が0のgcd(7, 0)は8が返ってきた\n5. gcd(12, 18)は6を返します"
+ },
+ {
+  "key": "c13_eigo",
+  "task_id": "c13",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef gcd(a, b):\n    while b:\n        a, b = (b, a % b)\n    return a\nprint(gcd(48, 18))\nprint(gcd(100, 25))\nprint(gcd(35, 15))\n```\n\n文:\n1. gcdという関数を作った\n2. 9と28みたいに共通の約数がないときは1になる（たぶん）\n3. 7と0なら6になります\n4. gcd(12, 18)は6を返すはず\n5. gcd(0, 5)は5を返すはず"
+ },
+ {
+  "key": "c14_eigo",
+  "task_id": "c14",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef evens(nums):\n    new_list = []\n    for num in nums:\n        if num % 2 == 0:\n            new_list.append(num)\n    return new_list\nnumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\neven_numbers = evens(numbers)\nprint(even_numbers)\n```\n\n文:\n1. evensって名前の関数にした\n2. 偶数がない[1, 3]だと[]が返ってくる\n3. 0やマイナスがある[0, -2, 5]は[0, -2]になる（たぶん）\n4. 空のリストなら[]になる（たぶん）\n5. evens([1, 2, 3, 4])は[2, 4]を返します"
+ },
+ {
+  "key": "c15_jishinnashi",
+  "task_id": "c15",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_leap(year):\n    if year % 4 == 0:\n        if year % 100 == 0:\n            if year % 400 == 0:\n                return True\n            else:\n                return False\n        else:\n            return True\n    else:\n        return False\nyears_to_test = [1900, 2000, 2024, 2023]\nfor year in years_to_test:\n    print(f'{year} is a leap year: {is_leap(year)}')\n```\n\n文:\n1. forでくり返している\n2. 1900年はうるう年じゃないからFalseになるはず\n3. is_leap(2024)はFalseが返る\n4. 2000年はうるう年と判定される\n5. 2023年はうるう年じゃないからFalseになる（たぶん）"
+ },
+ {
+  "key": "c16_eigo",
+  "task_id": "c16",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef second_largest(nums):\n    return max(nums, key=len)\nnums = [4, 2, 5, 3, 1]\nprint(second_largest(nums))\n```\n\n文:\n1. second_largestという関数を作った\n2. second_largest([3, 5, 1])は3になるはず\n3. [10, 8, 9]の2番目に大きい数は9になると思う\n4. 2つだけの[1, 2]なら1になるはず"
+ },
+ {
+  "key": "c16_jikkyou",
+  "task_id": "c16",
+  "persona": "jikkyou",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef second_largest(nums):\n    if len(nums) < 2:\n        return None\n    first = -float('inf')\n    second = -float('inf')\n    for num in nums:\n        if num > first:\n            second = first\n            first = num\n        elif num > second and num != first:\n            second = num\n    return second\nprint(second_largest([4, 1, 7, 3, 9]))\n```\n\n文:\n1. if文で条件を分けた\n2. 2つだけの[1, 2]なら0になった\n3. [10, 8, 9]の2番目に大きい数は9になった\n4. second_largest([3, 5, 1])は3になると思う"
+ },
+ {
+  "key": "c17_jishinnashi",
+  "task_id": "c17",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef temp_range(temps):\n    if not temps:\n        return 'The list is empty.'\n    max_temp = temps[0]\n    min_temp = temps[0]\n    for temp in temps:\n        if temp > max_temp:\n            max_temp = temp\n        if temp < min_temp:\n            min_temp = temp\n    return max_temp - min_temp\ntemperature_list = [23, 18, 30, 25, 32, 27]\nresult = temp_range(temperature_list)\nprint(result)\n```\n\n文:\n1. if文で条件を分けた\n2. [20, 25, 18]なら差は7になると思う\n3. 1日分だけの[10]なら1になる\n4. マイナスの気温がある[-3, 5]だと8が返ってきた"
+ },
+ {
+  "key": "c18_romaji",
+  "task_id": "c18",
+  "persona": "romaji",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ngoukei = 'count_vowels'\nkazu = 0\nnamae = 's'\nkekka = ''\n\ndef count_vowels(str):\n    vowels = 'aeiou'\n    for char in str:\n        if char in vowels:\n            kazu += 1\n    return kazu\nprint(count_vowels(namae))\n```\n\n文:\n1. count_vowelsという関数を作った\n2. count_vowels('education')は5が返ってきた\n3. 空の文字列なら0になります\n4. bananaの母音は3個と数えられる"
+ },
+ {
+  "key": "c18_hayatochiri",
+  "task_id": "c18",
+  "persona": "hayatochiri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_vowels(s):\n    return len('aeiou')\nprint(count_vowels('Hello world'))\n```\n\n文:\n1. 関数count_vowelsを書きました\n2. 'banana'だと3が返ってきた\n3. 空の文字列なら0になると思う\n4. count_vowels('education')は5が返ってきた"
+ },
+ {
+  "key": "c18_eigo",
+  "task_id": "c18",
+  "persona": "eigo",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_vowels(s):\n    a, e, i, o, u = (0, 0, 0, 0, 0)\n    for char in s:\n        if char in 'aeiou':\n            tmp = 1\n            tmp += 1\n        else:\n            tmp = 0\n    return a + e + i + o + u\ntest_string = 'Hello, World!'\nprint(count_vowels(test_string))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. count_vowels('education')は5を返すはず\n3. 空の文字列なら0になるはず\n4. bananaの母音は3個と数えられる\n5. 母音がない'sky'は0になる（たぶん）"
+ },
+ {
+  "key": "c19_jikkyou",
+  "task_id": "c19",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef fizzbuzz(n):\n    result = ''\n    for i in range(1, n + 1):\n        if i % 3 == 0 and i % 5 == 0:\n            result += 'FizzBuzz'\n        elif i % 3 == 0:\n            result += 'Fizz'\n        elif i % 5 == 0:\n            result += 'Buzz'\n        else:\n            result += str(i)\n    return result\nprint(fizzbuzz(15))\n```\n\n文:\n1. くり返しにはforを使った\n2. ifで場合分けしている\n3. 5のときは'Buzz'が返ってくる\n4. fizzbuzz(15)は'FizzBuzz'になるはず\n5. fizzbuzz(30)は'FizzBuzz'になる\n6. fizzbuzz(3)は'Fizz'になります"
+ },
+ {
+  "key": "c19_romaji",
+  "task_id": "c19",
+  "persona": "romaji",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef is_divisible_by_three_and_five(num):\n    return num % 3 == 0 and num % 5 == 0\n\ndef fizzbuzz(n):\n    if is_divisible_by_three_and_five(n):\n        return 'FizzBuzz'\n    elif is_divisible_by_three_and_five(n):\n        return 'Fizz'\n    elif is_divisible_by_three_and_five(n):\n        return 'Buzz'\n    else:\n        return str(n)\nfor i in range(1, 101):\n    print(fizzbuzz(i))\n```\n\n文:\n1. if文で条件を分けた\n2. for文を使って1つずつ見ている\n3. 3のときは'Fizz'を返します\n4. 15のときは'FizzBuzz'が返ってきた\n5. fizzbuzz(5)は'Buzz'になる（たぶん）"
+ },
+ {
+  "key": "c19_eigo",
+  "task_id": "c19",
+  "persona": "eigo",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef fizzbuzz(n):\n    if n % 15 == 0:\n        return 'FizzBuzz'\n    elif n % 3 == 0:\n        return 'Fizz'\n    elif n % 5 == 0:\n        return 'Buzz'\n    else:\n        return str(n)\nfor i in range(1, 16):\n    print(fizzbuzz(i))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. if文で条件を分けた\n3. fizzbuzz(30)は'Fizz'になった\n4. fizzbuzz(5)は'Buzz'になる（たぶん）\n5. fizzbuzz(3)は'Fizz'になります"
+ },
+ {
+  "key": "c20_eigo",
+  "task_id": "c20",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef reverse_list(nums):\n    n = len(nums)\n    tmp = nums[0]\n    for i in range(1, n - 1):\n        tmp = nums[i]\n    return [tmp] + nums[-(n - 1)]\nprint(reverse_list([1, 2, 3, 4, 5]))\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. 空のリストなら[]を返します\n3. 1つだけの[4]は[4]になるはず\n4. [1, 2, 3]は[3, 2, 1]になる"
+ },
+ {
+  "key": "c20_jishinnashi",
+  "task_id": "c20",
+  "persona": "jishinnashi",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef reverse_list(nums):\n    if type(nums) != list:\n        return 'Error: Input should be a list'\n    if len(nums) == 0:\n        return 'Error: List cannot be empty'\n    new_list = []\n    for item in nums:\n        new_list.append(item)\n    start = 0\n    end = len(new_list) - 1\n    while start < end:\n        new_list[start], new_list[end] = (new_list[end], new_list[start])\n        start += 1\n        end -= 1\n    return new_list\ntest_list = [1, 2, 3, 4, 5]\nprint(reverse_list(test_list))\n```\n\n文:\n1. reverse_listという関数を作った\n2. ifで場合分けしている\n3. reverse_list([1, 2, 3])は[1, 2, 3]を返す\n4. 空のリストなら[]を返す\n5. 1つだけの[4]は[4]になる"
+ },
+ {
+  "key": "c20_kicchiri",
+  "task_id": "c20",
+  "persona": "kicchiri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 丁寧語（です・ます）で、どんな入力のときにどうなるかを、ひとつずつきちんと書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef reverse_list(nums):\n    reversed_nums = []\n    for num in nums:\n        reversed_nums.append(num)\n    return reversed_nums\nprint(reverse_list([1, 2, 3, 4, 5]))\n```\n\n文:\n1. forでくり返している\n2. 空のリストなら[]を返すはず\n3. reverse_list([1, 2, 3])は[3, 2, 1]を返します\n4. 1つだけの[4]は[4]になる（たぶん）"
+ },
+ {
+  "key": "c21_romaji",
+  "task_id": "c21",
+  "persona": "romaji",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ngoukei = 20\nkazu = 45\nnamae = 70\nkekka = 10\nborder = 30\n\ndef count_pass(scores, border):\n    return scores[border:] + scores[:border]\nprint(count_pass(goukei, kekka))\n```\n\n文:\n1. count_passという関数を作った\n2. [50, 70, 90]で合格点が60なら2人になると思う\n3. ちょうど60点の人も数えるので、[60, 59]で合格点60なら1になる\n4. だれもいない空のリストなら0を返します"
+ },
+ {
+  "key": "c21_zakkuri",
+  "task_id": "c21",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_pass(scores, border):\n    count = 0\n    for score in scores:\n        if score >= border:\n            count += 1\n    return count\nsample_scores = [85, 78, 92, 88, 90]\nborder_value = 85\nresult = count_pass(sample_scores, border_value)\nprint(border_value, result)\n```\n\n文:\n1. くり返しにはforを使った\n2. count_passって名前の関数にした\n3. ちょうど60点の人も数えるので、[60, 59]で合格点60なら1になった\n4. だれもいない空のリストなら0を返す\n5. count_pass([50, 70, 90], 60)は2を返す"
+ },
+ {
+  "key": "c22_romaji",
+  "task_id": "c22",
+  "persona": "romaji",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ngoukei = 0\n\ndef sum_to(namae):\n    for kazu in range(1, namae + 1):\n        goukei += kazu\n    return goukei\nprint(sum_to(5))\nprint(sum_to(10))\nprint(sum_to(3))\n```\n\n文:\n1. sum_toって名前の関数にした\n2. 1のときは1になる（たぶん）\n3. 1から100までだと5051になります\n4. 0を入れると1が返ってくる\n5. sum_to(10)は55が返ってきた"
+ },
+ {
+  "key": "c22_kicchiri",
+  "task_id": "c22",
+  "persona": "kicchiri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 丁寧語（です・ます）で、どんな入力のときにどうなるかを、ひとつずつきちんと書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef sum_to(n):\n    if not isinstance(n, int) or n < 1:\n        return 'Input should be a positive integer.'\n    total_sum = 0\n    i = 1\n    while i <= n:\n        total_sum += i\n        i += 1\n    return total_sum\nprint(sum_to(5))\nprint(sum_to(10))\nprint(sum_to(1))\nprint(sum_to(-2))\nprint(sum_to(3.5))\n```\n\n文:\n1. くり返しにはwhileを使った\n2. ifで場合分けしている\n3. sum_to(10)は55を返すはず\n4. 1のときは1になる（たぶん）\n5. 1から100までだと5050になった\n6. 0を入れると0を返すはず"
+ },
+ {
+  "key": "c22_eigo",
+  "task_id": "c22",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef sum_to(n):\n    sum_value = 0\n    for i in range(1, n + 1):\n        sum_value += i\n    return sum_value\nprint(sum_to(5))\nprint(sum_to(10))\n```\n\n文:\n1. forでくり返している\n2. 1のときは1になる（たぶん）\n3. sum_to(10)は55が返る\n4. 1から100までだと5050になる（たぶん）"
+ },
+ {
+  "key": "c23_zakkuri",
+  "task_id": "c23",
+  "persona": "zakkuri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef power(base, exp):\n    for _ in range(exp):\n        base *= self._original_base\n    return base\nprint(power(2, 3))\n```\n\n文:\n1. 関数powerを書きました\n2. 5の0乗は1を返すはず"
+ },
+ {
+  "key": "c23_romaji",
+  "task_id": "c23",
+  "persona": "romaji",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef power(base, exp):\n    result = 1\n    for _ in range(exp):\n        result *= base\n    return result\nbase = 2\nexp = 3\nprint(base, exp, power(base, exp))\n```\n\n文:\n1. 関数powerを書きました\n2. 3の1乗は3になります\n3. power(10, 2)は100が返る\n4. 5の0乗は0が返る"
+ },
+ {
+  "key": "c24_kicchiri",
+  "task_id": "c24",
+  "persona": "kicchiri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 丁寧語（です・ます）で、どんな入力のときにどうなるかを、ひとつずつきちんと書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef count_char(s, c):\n    return s.count(c)\nprint(count_char('Hello World!', 'o'))\n```\n\n文:\n1. count_charという関数を作った\n2. count_char('banana', 'a')は3になると思う\n3. 空の文字列なら0が返ってくる\n4. 'apple'にない'z'を数えると0になる（たぶん）"
+ },
+ {
+  "key": "s01_hiragana",
+  "task_id": "s01",
+  "persona": "hiragana",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nscore = int(input())\nif score >= 90:\n    print('A')\nelif score >= 80:\n    print('B')\nelse:\n    print('C')\n```\n\n文:\n1. ifで場合分けしている\n2. 79を入力するとCと表示される\n3. 80点と入れたらAと出ました\n4. 59点と入れたらCと表示される"
+ },
+ {
+  "key": "s01_jikkyou",
+  "task_id": "s01",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nscore = int(input())\nif score >= 80:\n    print('A')\nelse:\n    print('B')\n```\n\n文:\n1. if文で条件を分けた\n2. 59点と入れたらCと表示される\n3. 79を入力するとBと出る\n4. 100を入力するとAが表示される\n5. 80を入力するとAが出るはず"
+ },
+ {
+  "key": "s01_zakkuri",
+  "task_id": "s01",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nscore = int(input())\nif score >= 80:\n    grade = 'A'\nelif score >= 60:\n    grade = 'B'\nelse:\n    grade = 'C'\nprint(grade)\n```\n\n文:\n1. ifで場合分けしている\n2. 100を入力するとAと表示されます\n3. 59点と入れたらCと出る\n4. 80を入力するとAと出ました"
+ },
+ {
+  "key": "s02_zakkuri",
+  "task_id": "s02",
+  "persona": "zakkuri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nnumber = int(input())\nif number % 2 == 0:\n    print('偶数')\nelse:\n    print('奇数')\n```\n\n文:\n1. ifで場合分けしている\n2. 0を入力したら偶数と出る\n3. 10を入れると奇数と出る\n4. 7を入力したら奇数と出る"
+ },
+ {
+  "key": "s03_jishinnashi",
+  "task_id": "s03",
+  "persona": "jishinnashi",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nnum1 = int(input())\nnum2 = int(input())\nif num1 >= 0 and num2 >= 0:\n    sum_of_numbers = num1 + num2\n    print('The sum of the two numbers is:', sum_of_numbers)\nelse:\n    print('Please enter non-negative integers.')\nif num1 >= 0 and num2 >= 0:\n    sum_of_numbers = num1 + num2\n    print('The sum of the two numbers is:', sum_of_numbers)\nelse:\n    print('Please enter non-negative integers.')\n```\n\n文:\n1. ifで場合分けしている\n2. 1行目に-5、2行目に5を入力すると1と出る\n3. 3と4を入れると7と表示される\n4. 10と20を入れると30と表示される"
+ },
+ {
+  "key": "s03_eigo",
+  "task_id": "s03",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\na = int(input())\nb = int(input())\nprint(a + b)\n```\n\n文:\n1. 10と20を入れると31が表示される\n2. 1行目に-5、2行目に5を入力すると1が出るはず\n3. 1行目に3、2行目に4を入力すると7が出るはず"
+ },
+ {
+  "key": "s04_hayatochiri",
+  "task_id": "s04",
+  "persona": "hayatochiri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nn = int(input())\nfor i in range(1, 10):\n    print(f'{n} * {i}')\n```\n\n文:\n1. forでくり返している\n2. 7を入れたら63が出る\n3. 1を入れたら9は出ない\n4. 3を入れると最後に27も表示される\n5. 3の段は30までは出ない"
+ },
+ {
+  "key": "s04_jikkyou",
+  "task_id": "s04",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nn = int(input())\ni = 1\nwhile i <= 9:\n    print(n * i)\n    i += 1\n```\n\n文:\n1. くり返しにはwhileを使った\n2. 7を入力すると63も表示される\n3. 1を入れると9も表示される\n4. 3の段なら27まで出る"
+ },
+ {
+  "key": "s05_zakkuri",
+  "task_id": "s05",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nage = int(input())\nif age < 13:\n    category = '子ども'\nelif 13 <= age <= 19:\n    category = '10代'\nelse:\n    category = '大人'\nprint('Your age category is:', category)\n```\n\n文:\n1. if文で条件を分けた\n2. 12歳だと子どもが出るはず\n3. 19を入力すると10代が表示される"
+ },
+ {
+  "key": "s05_romaji",
+  "task_id": "s05",
+  "persona": "romaji",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自分のコードの変数名や関数名を出しながら、それが何をするかと結果を書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nnamae = input()\nage = int(namae)\nif age < 13:\n    print('子ども')\nelif age <= 10:\n    print('10代')\nelse:\n    print('大人')\n```\n\n文:\n1. if文で条件を分けた\n2. 20歳だと大人と出る\n3. 19を入力すると10代が表示される\n4. 13を入力すると10代と出る\n5. 12歳だと子どもと出ました"
+ },
+ {
+  "key": "s05_jishinnashi",
+  "task_id": "s05",
+  "persona": "jishinnashi",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nage = int(input())\nif age < 13:\n    print('子ども')\nelif 13 <= age <= 19:\n    print('10代')\nelse:\n    print('大人')\n```\n\n文:\n1. ifで場合分けしている\n2. 20歳だと大人が出るはず\n3. 12を入力すると子どもと表示される\n4. 13歳だと10代と表示されます\n5. 19を入力すると10代と表示される"
+ },
+ {
+  "key": "s06_hayatochiri",
+  "task_id": "s06",
+  "persona": "hayatochiri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef print_numbers(n):\n    for i in range(n):\n        print(i)\nn = int(input())\nprint_numbers(n)\n```\n\n文:\n1. くり返しにはforを使った\n2. 5を入れても5は出ない\n3. 3を入力したとき0は出ない\n4. 3を入れると最後に発射と表示される\n5. 3を入れると最後の数は1まで表示される"
+ },
+ {
+  "key": "s06_jishinnashi",
+  "task_id": "s06",
+  "persona": "jishinnashi",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef print_numbers(n):\n    if type(n) != int:\n        print('Error: Input should be an integer!')\n        return\n    for i in range(n, 0, -1):\n        print(i)\nn = int(input())\nprint_numbers(n)\n```\n\n文:\n1. ifで場合分けしている\n2. 3を入れても発射は出ない\n3. 3を入力したとき0は出ない\n4. 5を入れると最初に5が表示される\n5. 3を入力したら1も出る"
+ },
+ {
+  "key": "s06_jikkyou",
+  "task_id": "s06",
+  "persona": "jikkyou",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nn = int(input())\ncounter = n\nwhile counter > 0:\n    print(counter)\n    counter -= 1\nprint('発射')\n```\n\n文:\n1. whileでくり返している\n2. 5を入れても5は出ない\n3. 3を入れても0は表示されない\n4. 3を入れると最後に発射と表示される"
+ },
+ {
+  "key": "p01_zakkuri",
+  "task_id": "p01",
+  "persona": "zakkuri",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nwhile 10 <= 0:\n    print(f'Number: {10}, Phrase: 発射')\n    break\n```\n\n文:\n1. while文を使って1つずつ見ている\n2. 最後に発射と表示される\n3. 0も表示される"
+ },
+ {
+  "key": "p01_hiragana",
+  "task_id": "p01",
+  "persona": "hiragana",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 習いたての中学生のように、漢字を少なめにして、ひらがなの多い素朴なことばで書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nfor i in range(10, 0, -1):\n    print(i)\n    if i == 0:\n        print('発射')\n```\n\n文:\n1. if文で条件を分けた\n2. for文を使って1つずつ見ている\n3. 最後に発射と表示される\n4. 0は表示されない\n5. 最初に10が表示される"
+ },
+ {
+  "key": "p01_eigo",
+  "task_id": "p01",
+  "persona": "eigo",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\na = 10\nwhile a > 0:\n    print(a)\n    a -= 1\nprint('発射')\n```\n\n文:\n1. くり返しにはwhileを使った\n2. 最後の数は0まで出る\n3. 最後に発射と表示される\n4. 11からは始まらない"
+ },
+ {
+  "key": "p02_eigo",
+  "task_id": "p02",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nfor n in range(1, 31):\n    if n % 3 == 0 and n % 5 == 0:\n        print(f'FizzBuzz{n}')\n    else:\n        print('Fizz{n}')\n    if n not in [3, 5]:\n        print('Buzz{n}')\n```\n\n文:\n1. forでくり返している\n2. if文で条件を分けた\n3. 30という数字は出ない\n4. 29はそのまま29と表示される\n5. FizzBuzzは一度も表示されない"
+ },
+ {
+  "key": "p02_kicchiri",
+  "task_id": "p02",
+  "persona": "kicchiri",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 丁寧語（です・ます）で、どんな入力のときにどうなるかを、ひとつずつきちんと書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ndef print_fizz_buzz(numbers):\n    for num in numbers:\n        if num % 3 == 0:\n            print(f'Fizz{num}')\n        elif num % 5 == 0:\n            print('Buzz{num}')\n        else:\n            print(num)\nnumbers = list(range(1, 31))\nprint_fizz_buzz(numbers)\n```\n\n文:\n1. くり返しにはforを使った\n2. FizzBuzzもちゃんと表示される\n3. 15という数字は表示されない\n4. 30という数字は出ない\n5. 29はそのまま29と表示される"
+ },
+ {
+  "key": "p02_zakkuri",
+  "task_id": "p02",
+  "persona": "zakkuri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 友だちに話すようなくだけた言い方（〜だよ、〜じゃん、〜って感じ）で、短く書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nfor num in range(1, 31):\n    output = ''\n    if num % 3 == 0:\n        output += 'Fizz'\n    if num % 5 == 0:\n        output += 'Buzz'\n    print(output or num)\n```\n\n文:\n1. ifで場合分けしている\n2. 30は数字のまま表示される\n3. 15という数字は表示されない\n4. 15のところでFizzBuzzが出る"
+ },
+ {
+  "key": "p03_jishinnashi",
+  "task_id": "p03",
+  "persona": "jishinnashi",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信がなさそうに、「たぶん」「〜と思います」「〜かもしれません」を使って書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nif not 1 <= 10:\n    print('Oops! Something went wrong!')\n    exit()\nfor i in range(1, 11):\n    square = i ** 2\n    if square != i * i:\n        print('Oops! The calculation seems incorrect.')\n        exit()\n    print(square, end='')\nprint()\n```\n\n文:\n1. if文で条件を分けた\n2. 11の2乗の121までは出ない\n3. 1は表示されない\n4. 最後に100が表示される\n5. 0は表示されない"
+ },
+ {
+  "key": "p03_jikkyou",
+  "task_id": "p03",
+  "persona": "jikkyou",
+  "model": "SakanaAI/TinySwallow-1.5B-Instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 処理の流れを「まず」「次に」「最後に」でたどりながら、最後にその結果を言う。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\ncount = 0\nfor i in range(1, 11):\n    print(i ** 2)\n```\n\n文:\n1. for文を使って1つずつ見ている\n2. 121は表示されない\n3. 0は表示されない\n4. 最初に1が表示される\n5. 最後に100が表示される"
+ },
+ {
+  "key": "p04_hayatochiri",
+  "task_id": "p04",
+  "persona": "hayatochiri",
+  "model": "sbintuitions/sarashina2.2-3b-instruct-v0.1",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: 自信たっぷりに、「ぜったい」「もちろん」「かんたん」などを使って言い切る。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\nfor number in range(1, 21, 3):\n    print(number)\n```\n\n文:\n1. forでくり返している\n2. 最後は18が出る\n3. 0も表示される\n4. 最初に3が表示される"
+ },
+ {
+  "key": "p04_eigo",
+  "task_id": "p04",
+  "persona": "eigo",
+  "model": "llm-jp/llm-jp-3-3.7b-instruct",
+  "prompt": "あなたはプログラミングを習い始めた高校生です。下のプログラムを自分で書きました。\n先生に出す「プログラムの説明」を、次の口調で書いてください。\n口調: return、print、リスト、ループ、エラーなど、英語やカタカナの用語を多めに混ぜて書く。\n\n下の各文を、意味を変えずにその口調で言い換えてください。\n- 文の数と順番はそのまま。1行に1文で、行の頭に「1.」のように番号をつける。\n- 入力の値（数・文字列・リスト）と、結果（返す値・表示されるもの・エラーになるかどうか）は変えない。省いたり、別の値を足したりしない。\n- 言い換えた文のほかは何も書かない（あいさつ・まとめ・コードは書かない）。\n\nプログラム:\n```python\na = 1\nwhile a <= 20:\n    tmp = a % 3\n    if tmp == 0:\n        print(a)\n    a += 1\n```\n\n文:\n1. ifで場合分けしている\n2. くり返しにはwhileを使った\n3. 3は表示されない\n4. 18は表示されない\n5. 0は表示されない\n6. 20は表示されない"
+ }
+]

@@ -1,0 +1,102 @@
+{
+  "split": "dev",
+  "goal": "並べ替えの手順を説明できる",
+  "persona": "kicchiri",
+  "source": "Qwen/Qwen2.5-Coder-3B-Instruct にきっちり型の癖を指示して書かせた c07 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "forでくり返して、要素を順番に処理しています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "my_sortという名前の関数にしました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "同じ数がある[2, 2, 1]を渡したときも、[1, 2, 2]になると思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 2, 2]",
+        "function": "my_sort",
+        "args": "[[2, 2, 1]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリスト[]を渡したときも、[]になりました",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "my_sort",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "[3, 1, 2]を渡して並べ替えると、[3, 2, 1]になります",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[3, 2, 1]",
+        "function": "my_sort",
+        "args": "[[3, 1, 2]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "マイナスがまじった[5, -1, 3]を渡したときは、[-1, 3, 5]になります",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[-1, 3, 5]",
+        "function": "my_sort",
+        "args": "[[5, -1, 3]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

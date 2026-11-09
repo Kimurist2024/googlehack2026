@@ -1,0 +1,75 @@
+{
+  "split": "heldout",
+  "goal": "辞書の使い方を説明できる",
+  "persona": "eigo",
+  "source": "microsoft/Phi-3.5-mini-instruct に英語まじり型の癖を指示して書かせた c09 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "count_wordsって名前のファンクションにした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "何も書いてない空の文だと、returnは{}になった",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{}",
+        "function": "count_words",
+        "args": "['']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "count_words('apple banana apple')は{'apple': 2, 'banana': 1}がreturnされた",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{'apple': 2, 'banana': 1}",
+        "function": "count_words",
+        "args": "['apple banana apple']",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "'a a a'をカウントすると{'a': 3}になる（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "{'a': 3}",
+        "function": "count_words",
+        "args": "['a a a']",
+        "stdin": ""
+      }
+    }
+  ]
+}

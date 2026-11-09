@@ -1,0 +1,1 @@
+is_palindromeって関数を作ったよ。'abc'は回文じゃないからFalseになるはずじゃん。is_palindrome('noon')はTrueが返ってくるよ。

@@ -1,0 +1,82 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を更新する流れを説明できる",
+  "persona": "jishinnashi",
+  "source": "ibm-granite/granite-3.1-2b-instruct に自信なし型の癖を指示して書かせた c20 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "reverse_listという関数を作ったと思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          15
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "ifで場合分けしています、たぶん",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "reverse_list([1, 2, 3])は[1, 2, 3]を返す、と思います",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[1, 2, 3]",
+        "function": "reverse_list",
+        "args": "[[1, 2, 3]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "空のリストなら[]を返すかもしれません",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "reverse_list",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "1つだけの[4]は[4]になると思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          15
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[4]",
+        "function": "reverse_list",
+        "args": "[[4]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

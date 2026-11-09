@@ -1,0 +1,80 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "zakkuri",
+  "source": "ibm-granite/granite-3.1-2b-instruct にざっくり型の癖を指示して書かせた s01 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "ifで場合分けしてるよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "100を入力するとAって表示されるよ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "100\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "59点って入れたらCって出るじゃん",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "C",
+        "function": "",
+        "args": "[]",
+        "stdin": "59\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "80を入力したらAって出たよ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "A",
+        "function": "",
+        "args": "[]",
+        "stdin": "80\n"
+      }
+    }
+  ]
+}

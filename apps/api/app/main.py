@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 from qgen.ai import QuizAI, default_ai
+from qgen.probes import ProbePlanner, default_probe_planner
 from qgen.sandbox import Sandbox, default_sandbox
 
 from . import audit, auth, classpack, demo, guest, offline_api, security, service
@@ -175,6 +176,7 @@ def create_app(
     store: Store | None = None,
     sandbox_factory: Callable[[], Sandbox] = default_sandbox,
     ai_factory: Callable[[], QuizAI] = default_ai,
+    planner_factory: Callable[[], ProbePlanner] = default_probe_planner,
 ) -> FastAPI:
     local = auth.is_local()
     # API の一覧（/docs、/openapi.json）は攻撃の手がかりになるので、手元の開発のときだけ出す
@@ -198,6 +200,21 @@ def create_app(
             if not shared:
                 shared.append(ai_factory())
             return shared[0]
+
+    planners: list[ProbePlanner] = []
+
+    def shared_planner() -> ProbePlanner:
+        with shared_lock:
+            if not planners:
+                planners.append(planner_factory())
+            return planners[0]
+
+    def check_explanation(assignment_id: str, student_id: str, line: int, text: str) -> None:
+        # 応答を返したあとに裏で動かす。失敗しても説明はもう保存してあるので、教員には説明だけが見える
+        try:
+            service.check_explanation(store, sandbox_factory(), shared_planner(), assignment_id, student_id, line, text)
+        except Exception:
+            logger.exception("説明を確かめる処理に失敗しました")
 
     # ネットが落ちても授業を止めないための入口（授業パッケージ、校内LAN版、オフライン提出）。ここより後の経路より優先される
     offline_api.install(app, store, shared_ai)
@@ -485,13 +502,21 @@ def create_app(
         return {**reply, "remaining": remaining}
 
     @app.post("/v1/assignments/{assignment_id}/attempt:explain")
-    def explain(assignment_id: AssignmentId, body: ExplainIn, claims: dict = Depends(auth.current_student)) -> dict:
-        """説明できなかった行を、生徒が自分の言葉で書く。AIは使わず、そのまま教員に見せる。"""
+    def explain(
+        assignment_id: AssignmentId, body: ExplainIn, background: BackgroundTasks, claims: dict = Depends(auth.current_student)
+    ) -> dict:
+        """説明できなかった行を、生徒が自分の言葉で書く。文はそのまま教員に見せる。
+
+        保存したあと、説明のうち動きについての文を本人のコードで動かして確かめ、結果を教員の画面に添える。
+        AI（Gemini）は何を試すかだけを決め、説明どおりかどうかは実行の結果から機械的に決める。
+        """
         student_id, attempt = submitted_attempt(assignment_id, claims)
         if body.line not in service.explainable_lines(attempt, store.get_answer_key(assignment_id, student_id)):
             raise HTTPException(status_code=400, detail="この行は説明の対象ではありません")
-        if not store.save_explanation(assignment_id, student_id, body.line, body.text.strip()):
+        text = body.text.strip()
+        if not store.save_explanation(assignment_id, student_id, body.line, text):
             raise HTTPException(status_code=409, detail=NOT_SUBMITTED)
+        background.add_task(check_explanation, assignment_id, student_id, body.line, text)
         return {"saved": True}
 
     @app.get("/v1/assignments/{assignment_id}/followups")

@@ -1,0 +1,1 @@
+count_vowelsという関数を作りました。count_vowels('education')は5が返ってきました。count_vowelsに空の文字列を渡すと0になります。count_vowelsで'banana'の母音を数えると3個になります。

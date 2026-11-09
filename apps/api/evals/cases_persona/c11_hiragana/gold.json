@@ -1,0 +1,67 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "persona": "hiragana",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に習いたて型の癖を指示して書かせた c11 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "for文をつかって1つずつみている",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "cumulativeっていう関数をかいた",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "マイナスの日がある[3, -1, 2]は[4, 2, 3]になった",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[4, 2, 3]",
+        "function": "cumulative",
+        "args": "[[3, -1, 2]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "うりあげがない日だけ（からっぽのリスト）だと[]になるはず",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "[]",
+        "function": "cumulative",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

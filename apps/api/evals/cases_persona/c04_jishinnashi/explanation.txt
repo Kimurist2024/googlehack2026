@@ -1,0 +1,1 @@
+for文を使って1つずつ見ていると思います。'sato'が2回出てくる['sato', 'suzuki', 'sato']だと、0が返ってきたと思います。見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-2になる（たぶん）。find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返る、と思います。

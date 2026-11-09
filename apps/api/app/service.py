@@ -1,4 +1,5 @@
 """問いの生成、採点、声をかける順の処理。"""
+import ast
 import io
 import json
 import logging
@@ -7,9 +8,10 @@ import time
 import zipfile
 import zlib
 
+from qgen import probes
 from qgen.ai import QuizAI
 from qgen.questions import IMPACT, OUTPUT, TRACE, build_candidates, seeded_random
-from qgen.sandbox import Sandbox
+from qgen.sandbox import Sandbox, SandboxError
 
 from . import insight
 from .ordering import Candidate, Ranked, rank, tau_from, within_budget
@@ -204,6 +206,83 @@ def explainable_lines(attempt: dict, key: dict) -> list[int]:
     return sorted({item["line"] for item in lined_items(attempt, key) if not item["correct"] and item["line"]})
 
 
+# 生徒の説明のうち、コードを動かして確かめる文の数。1文ごとに Gemini と隔離環境を1回ずつ使う
+MAX_CHECKED_SENTENCES = 4
+SHOWN_CHARS = 80
+
+
+def sentences(text: str) -> list[str]:
+    """説明を文に分ける。句点・感嘆符・疑問符・改行で切る。"""
+    return [part.strip() for part in re.split(r"(?<=[。！？!?])|\n", text) if part and part.strip()]
+
+
+def _short(text: object) -> str:
+    text = str(text)
+    return text if len(text) <= SHOWN_CHARS else text[: SHOWN_CHARS - 1] + "…"
+
+
+def describe_run(probe: probes.Probe, outcome: dict) -> dict:
+    """試したこと・説明から読み取った結果・実際の結果を、教員が読める文にする。"""
+    if probe.kind == "call":
+        try:
+            values = ast.literal_eval(probe.args)
+            shown_args = ", ".join(repr(value) for value in values)
+        except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+            shown_args = probe.args
+        tried = f"{probe.function}({shown_args})"
+        if probe.expect_kind == "raises":
+            expected = "エラーになる" if probe.expect_value == "true" else "エラーにならない"
+        else:
+            expected = f"{probe.expect_value} を返す"
+        actual = f"{outcome.get('raised')} のエラー" if outcome.get("raised") else f"{outcome.get('returned')} を返した"
+    else:
+        stdin = probe.stdin.strip().replace("\n", " / ")
+        tried = f"入力 {stdin} で実行" if stdin else "実行"
+        shown = probe.expect_value.strip() in [line.strip() for line in str(outcome.get("stdout", "")).splitlines()]
+        expected = f"「{probe.expect_value}」の行が表示{'される' if probe.expect_kind == 'stdout_line' else 'されない'}"
+        actual = f"「{probe.expect_value}」の行は表示{'された' if shown else 'されなかった'}"
+    return {"tried": _short(tried), "expected": _short(expected), "actual": _short(actual)}
+
+
+def check_explanation(
+    store: Store, sandbox: Sandbox, planner: probes.ProbePlanner, assignment_id: str, student_id: str, line: int, text: str
+) -> list[dict]:
+    """生徒が書いた説明のうち、動きについての文を、本人のコードを動かして確かめる。
+
+    何を試すかは planner（規則か Gemini）が決め、説明どおりかは probes.verdict が機械的に決める。
+    確かめられなかった文は残さない。結果は、生徒がその後に書き直していなければ保存する。
+    """
+    quiz = store.get_quiz(assignment_id, student_id)
+    attempt = store.get_attempt(assignment_id, student_id) or {}
+    if quiz is None:
+        return []
+    done = (attempt.get("explanation_checks") or {}).get(str(line))
+    if done and done.get("text") == text:  # 同じ文をもう一度送っただけなら、Gemini と隔離環境を使い直さない
+        return done["checks"]
+    code = quiz["code"]
+    checks = []
+    for sentence in sentences(text)[:MAX_CHECKED_SENTENCES]:
+        planned = planner.plan(sentence, code)
+        if not planned:
+            continue
+        try:
+            result = sandbox.probe(code, [probe.request() for probe in planned])
+        except SandboxError:
+            logger.warning("説明を確かめる実行に失敗しました")
+            continue
+        outcomes = result.get("probes", []) if result.get("status") == "ok" else []
+        if len(outcomes) != len(planned):
+            continue
+        verdicts = [probes.verdict(probe, outcome) for probe, outcome in zip(planned, outcomes)]
+        overall = probes.combine(verdicts)
+        if overall == probes.UNKNOWN:
+            continue
+        runs = [describe_run(probe, outcome) | {"verdict": v} for probe, outcome, v in zip(planned, outcomes, verdicts) if v != probes.UNKNOWN]
+        checks.append({"sentence": _short(sentence), "verdict": overall, "runs": runs})
+    store.save_explanation_checks(assignment_id, student_id, line, text, checks)
+    return checks
+
+
 def create_followups(store: Store, assignment: AssignmentRecord, ai: QuizAI) -> None:
     """締切のあと、生徒ごとに記録を足し、本人の説明を聞きたい行と、教員がたずねる質問案を作る。
 
@@ -300,6 +379,15 @@ def chat_context(store: Store, assignment_id: str, student_id: str, attempt: dic
     return {"code": quiz["code"], "stdin": quiz["stdin"], "results": results, "trace": key["trace"][:80]}
 
 
+def current_checks(attempt: dict) -> dict[str, list[dict]]:
+    explanations = attempt.get("explanations") or {}
+    return {
+        line: saved["checks"]
+        for line, saved in (attempt.get("explanation_checks") or {}).items()
+        if saved.get("checks") and explanations.get(line) == saved.get("text")
+    }
+
+
 def _followup_row(item: Ranked, number: str, attempt: dict, record: dict, in_budget: bool) -> dict:
     """採点結果と声かけの記録を、生徒1人分の表示にまとめる。"""
     return {
@@ -314,6 +402,8 @@ def _followup_row(item: Ranked, number: str, attempt: dict, record: dict, in_bud
         "memo": record.get("memo"),  # 以前の形の声かけメモ。新しい締切では作らない
         # 生徒が自分の言葉で書いた説明。行番号（文字列）-> 本文
         "explanations": attempt.get("explanations") or {},
+        # 説明の文を本人のコードで動かして確かめた結果。生徒がその後に書き直した行のものは出さない
+        "explanation_checks": current_checks(attempt),
         # 根拠は AI ではなく採点結果からそのまま出す
         "evidence": [{"stem": g["stem"], "given": g["given"], "answer": g["answer"]} for g in attempt["graded"] if not g["correct"]],
         "action": record.get("action"),

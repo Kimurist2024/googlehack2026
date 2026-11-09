@@ -1,0 +1,107 @@
+{
+  "split": "dev",
+  "goal": "関数の入力と出力を、具体的な値で確かめられる",
+  "persona": "jishinnashi",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に自信なし型の癖を指示して書かせた c02 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "averageっていう名前の関数にしたと思います",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "if文で条件を分けました、たぶん",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "average([80, 90])は85.0が返ってきたと思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "85.0",
+        "function": "average",
+        "args": "[[80, 90]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "average([70])は70.0を返すはずです、たぶん",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "70.0",
+        "function": "average",
+        "args": "[[70]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "点数が1つもないとエラーで止まるかもしれません",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "raises",
+        "expect_value": "true",
+        "function": "average",
+        "args": "[[]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "60と70と80の平均は70.0になったと思います",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "70.0",
+        "function": "average",
+        "args": "[[60, 70, 80]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "split": "dev",
+  "goal": "条件の組み合わせを説明できる",
+  "persona": "romaji",
+  "source": "allenai/OLMo-2-0425-1B-Instruct にローマ字命名型の癖を指示して書かせた s05 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "年齢によってif文で条件を分けました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "20歳だと大人と出ます",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "大人",
+        "function": "",
+        "args": "[]",
+        "stdin": "20\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "19を入力すると10代が表示されます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "19\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "13を入力すると10代と出ます",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "13\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "12歳だと子どもと出ました",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          8
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "子ども",
+        "function": "",
+        "args": "[]",
+        "stdin": "12\n"
+      }
+    }
+  ]
+}

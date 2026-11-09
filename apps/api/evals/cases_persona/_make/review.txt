@@ -1,0 +1,1124 @@
+## c01_hiragana [hiragana] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: このプログラムでは、if文を使って点数によってどの文字の成績を返すかを決めています。
+2. [correct] returns 'C' args=[59] stdin=''
+   型: 59点だとCになる（たぶん）
+   声: 実際には、もし点数が59点だった場合、このプログラムでは「C」を返すようには書かれていませんが、説明のためにそう言いました（ただし、今のプログラムでは59点は条件に含まれていません）。
+3. [correct] returns 'A' args=[100] stdin=''
+   型: 100点ちょうどのときはAになる
+   声: 100点を取ったとき、このプログラムは「A」を返します。ちょうど100点のときだけ「A」になるようにif文が設定されています。
+## c01_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: gradeという関数を作った
+   声: grade関数を作ったよ！
+2. [correct] structure
+   型: if文で条件を分けた
+   声: if文で条件を分けたんだ！
+3. [correct] returns 'C' args=[0] stdin=''
+   型: 0点ちょうどのときはCになるはず
+   声: 0点だったらCになるはずだよ。
+4. [gap] returns 'A' args=[79] stdin=''
+   型: 79点ちょうどのときはAになるはず
+   声: 79点だったらAになるはずだよ。
+5. [gap] returns 'B' args=[100] stdin=''
+   型: 100点だとBになる
+   声: 100点だったらBになるはずだよ。
+## c02_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: averageって名前の関数にした
+   声: "average"っていう名前をつけました。
+2. [correct] structure
+   型: if文で条件を分けた
+   声: もし点数がなければ0を返すようにしました。
+3. [correct] returns 85.0 args=[[80, 90]] stdin=''
+   型: average([80, 90])は85.0が返ってきた
+   声: [80, 90]という点数の配列の平均を計算してみましたが、85.0が出力されましたね。
+4. [correct] returns 70.0 args=[[70]] stdin=''
+   型: average([70])は70.0を返すはず
+   声: [70]という点数の配列の平均は70.0であるはずです。
+5. [gap] raises true args=[[]] stdin=''
+   型: 点数が1つもないとエラーで止まる
+   声: 配列の中に点数がない場合はエラーが出るみたいです。
+6. [correct] returns 70.0 args=[[60, 70, 80]] stdin=''
+   型: 60と70と80の平均は70.0になった
+   声: 60と70と80の平均は70.0になります。
+## c02_romaji [romaji] dev 
+1. [correct] structure
+   型: 関数averageを書きました
+   声: 関数`average`を書きました。この関数は、リストとして渡された`scores`の平均値を計算するために設計されています。
+2. [correct] returns 70.0 args=[[60, 70, 80]] stdin='' !消えた値 ['80', '60', '70.0', '70']
+   型: 60と70と80の平均は70.0になる（たぶん）
+   声: 例えば、点数のリスト`[78, 85, 90, 95, 88]`を入力とした場合、この関数は合計点を計算し、その数をリストの要素数で割ることで平均値を求めます。この場合、平均値は約85.0になるはずです。
+3. [correct] returns 85.0 args=[[80, 90]] stdin=''
+   型: [80, 90]の平均は85.0になるはず
+   声: 具体的には、`[80, 90]`というリストを入力とすると、この関数は80と90の合計を2で割った値、つまり85.0を返します。
+4. [correct] returns 70.0 args=[[70]] stdin=''
+   型: 点数が70の1つだけなら平均は70.0になるはず
+   声: また、点数が`[70]`のような1つだけの場合、平均値はその点数そのもの、すなわち70.0となります。
+## c03_hiragana [hiragana] heldout 
+1. [correct] structure
+   型: find_maxって名前の関数にした
+   声: find_maxっていう名前の関数にした。
+2. [gap] returns 1 args=[[1, 1, 1]] stdin=''
+   型: 同じ数ばかりの[1, 1, 1]でも1が返る
+   声: 同じ数ばかりの[1, 1, 1]を渡すと、1が返ってきた。
+3. [gap] returns -2 args=[[-5, -2, -9]] stdin=''
+   型: [-5, -2, -9]だと一番大きいのは-2になった
+   声: [-5, -2, -9]を渡すと、一番大きいのは-2になった。
+4. [gap] returns 7 args=[[3, 7, 2]] stdin=''
+   型: [3, 7, 2]を渡すと7が返ってきた
+   声: [3, 7, 2]を渡すと、7が返ってきた。
+## c03_romaji [romaji] heldout 
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: **forループを使って処理を行っています**。
+2. [correct] structure
+   型: if文で条件を分けた
+   声: **if文を使って条件を判断しています**。
+3. [correct] returns 4 args=[[4]] stdin='' !消えた値 ['4']
+   型: find_max([4])は4になるはず
+   声: **find_max()関数では、最初の要素を最大値として設定しています**。
+4. [gap] returns -2 args=[[-5, -2, -9]] stdin='' !消えた値 ['5', '9', '2']
+   型: 全部マイナスの[-5, -2, -9]でも-2が返る
+   声: **全リストに対して同じ処理を行うと、最小値が出力されてしまいます**。（負のリストの場合）
+5. [gap] returns 7 args=[[3, 7, 2]] stdin=''
+   型: [3, 7, 2]を渡すと7を返します
+   声: **特定の数字を基準にする場合、関数内でそれを指定することができます**。(例：find_max([3, 7, 2]) を呼び出す)
+## c03_hayatochiri [hayatochiri] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: このプログラムでは、`if`文を使ってリスト内の最大値を見つけるために条件をチェックしています。ぜったいに、最初の要素を初期値として使い、その後リストの各要素と比較して最大値を更新します。
+2. [correct] structure
+   型: forでくり返している
+   声: `for`ループを使用してリスト内の各要素を順番に調べています。これにより、リストのすべての要素について最大値を見つけることができます。もちろん、この処理は非常に効率的です。
+3. [gap] returns 2 args=[[1, 1, 1]] stdin=''
+   型: 同じ数ばかりの[1, 1, 1]でも2を返します
+   声: 入力が例えば[1, 1, 1]のような同じ数ばかりのリストであっても、この関数は2を返すことはありません。正しくはリストの最初の要素である1を返します。ただし、問題文の意図が不明なので、実際の挙動としては同じ数のリストでも最大値を正しく返すように修正が必要ですが、現状のコードではそのままでは正しく動作しません。
+4. [gap] returns -3 args=[[-5, -2, -9]] stdin='' !消えた値 ['3']
+   型: [-5, -2, -9]だと一番大きいのは-3になる（たぶん）
+   声: リストが[-5, -2, -9]の場合、一番大きい値は-2になります。したがって、`find_max`関数は-2を返します。これは正しい結果です。
+5. [gap] returns 3 args=[[4]] stdin=''
+   型: find_max([4])は3になります
+   声: `find_max`関数に単一の数値、例えば[4]を入力した場合、結果は4になります。なぜなら、リスト内の唯一の要素が最大値であるためです。したがって、この場合、関数は問題なく3を返さず、4を返します。
+## c04_eigo [eigo] dev 
+1. [correct] structure
+   型: 関数find_indexを書きました
+   声: 関数find_indexを書きました
+2. [gap] returns -1 args=[[], 'sato'] stdin=''
+   型: 名前が1つもないリストで'sato'を探しても-1になります
+   声: 名前が1つもないリストで'sato'を探しても-1になります
+3. [correct] returns 1 args=[['sato', 'suzuki', 'tanaka'], 'suzuki'] stdin=''
+   型: find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返ってきた
+   声: find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返ってきた
+4. [gap] returns 0 args=[['sato', 'suzuki'], 'yamada'] stdin=''
+   型: 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は0になる
+   声: 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は0になる
+5. [gap] returns 1 args=[['sato', 'suzuki', 'sato'], 'sato'] stdin=''
+   型: 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと1が返ってきた
+   声: 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと1が返ってきた
+## c04_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: プログラムではまずforループを使って、名前のリストの中身を見ていきます。「names」という変数には「[‘apple’, ‘banana’, ‘cherry’, ‘date’]」というデータが入っています。このリストの中に、ターゲットとなる文字列を探していくということですね。
+2. [correct] returns 0 args=[['sato', 'suzuki', 'sato'], 'sato'] stdin=''
+   型: 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってきた
+   声: 「names」のリストの中に「sato」という文字列が2回出てきますよね？でも、「[‘sato’, ‘suzuki’, ‘sato’]」というリストを見てみると、最初の「sato」を見つけたときにインデックス0を返しています。
+3. [gap] returns -2 args=[['sato', 'suzuki'], 'yamada'] stdin='' !消えた値 ['sato', 'suzuki', 'yamada']
+   型: 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-2になる（たぶん）
+   声: もし「names」の中に見つけられなかった場合、例えば「names」が空だったりするとどうなるかを考えると、「find_index」関数の中で、-1や-2といった値を返すようになっているはずです。
+4. [correct] returns 1 args=[['sato', 'suzuki', 'tanaka'], 'suzuki'] stdin='' !消えた値 ['sato', '1', 'suzuki', 'tanaka']
+   型: find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1が返る
+   声: 「find_index」関数を使う時に、最初に「names」が空であることをチェックして、エラーが出ないようにしているんだと思います。
+## c04_jikkyou [jikkyou] dev (書き直しなし)
+1. [correct] structure
+   型: ifで場合分けしている
+   声: ifで場合分けしている
+2. [correct] structure
+   型: while文を使って1つずつ見ている
+   声: while文を使って1つずつ見ている
+3. [correct] returns -1 args=[['sato', 'suzuki'], 'yamada'] stdin=''
+   型: 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になるはず
+   声: 見つからないとき（['sato', 'suzuki']から'yamada'を探す）は-1になるはず
+4. [correct] returns -1 args=[[], 'sato'] stdin=''
+   型: 空のリストから探すと-1を返します
+   声: 空のリストから探すと-1を返します
+5. [correct] returns 1 args=[['sato', 'suzuki', 'tanaka'], 'suzuki'] stdin=''
+   型: find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1を返す
+   声: find_index(['sato', 'suzuki', 'tanaka'], 'suzuki')は1を返す
+6. [correct] returns 0 args=[['sato', 'suzuki', 'sato'], 'sato'] stdin=''
+   型: 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってきた
+   声: 'sato'が2回出てくる['sato', 'suzuki', 'sato']だと0が返ってきた
+## c05_romaji [romaji] dev 
+1. [correct] structure
+   型: factorialって名前の関数にした
+   声: factorialって名前の関数を作りました。
+2. [gap] returns 1 args=[0] stdin=''
+   型: factorial(0)は1を返します
+   声: factorial(0)は1を返します。
+3. [gap] returns 120 args=[5] stdin=''
+   型: factorial(5)は120が返ってくる
+   声: factorial(5)は120を返します。
+4. [gap] returns 1 args=[1] stdin=''
+   型: factorial(1)は1になる（たぶん）
+   声: factorial(1)は1を返します。
+5. [gap] returns 6 args=[3] stdin=''
+   型: 3の階乗は6になります
+   声: 3の階乗は6を返します。
+## c05_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: `n` が 5 より大きいので、ループに入ります。
+2. [correct] structure
+   型: ifで場合分けしている
+   声: `i` が 1 なので、`result` に `1` を加算し、`result` は `2` になります。
+3. [gap] returns 0 args=[1] stdin='' !消えた値 ['0', '1']
+   型: 1を入れると0が返ってくる
+   声: 次のループでは、`i` は 2 となりますが、まだ条件を満たしていないため、ここでも `result` に `2` を加算します。
+4. [gap] returns 6 args=[3] stdin='' !消えた値 ['6']
+   型: 3の階乗は6になる
+   声: このように繰り返していくことで、最終的に `result` は `1 + 2 + 3 + 4 + 5 = 15` となります。
+5. [correct] returns 1 args=[0] stdin='' !消えた値 ['0']
+   型: 0の階乗は1になった
+   声: 最後に、`return` 文によって `15` が返されます。
+## c05_jikkyou [jikkyou] dev (書き直しなし)
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: くり返しにはforを使った
+2. [correct] returns 1 args=[0] stdin=''
+   型: 0の階乗は1になった
+   声: 0の階乗は1になった
+3. [gap] returns 120 args=[5] stdin=''
+   型: 5の階乗は120になった
+   声: 5の階乗は120になった
+4. [correct] returns 1 args=[1] stdin=''
+   型: 1を入れると1を返します
+   声: 1を入れると1を返します
+## c06_jishinnashi [jishinnashi] heldout 
+1. [correct] structure
+   型: is_primeって名前の関数にした
+   声: is_primeって名前の関数にした。
+2. [correct] returns False args=[1] stdin=''
+   型: 1は素数ではないと判定される
+   声: 1は素数ではないと判定される。
+3. [gap] returns True args=[2] stdin=''
+   型: 2は素数なのでTrueになると思う
+   声: 2は素数なのでTrueになると思う。
+4. [gap] returns False args=[9] stdin=''
+   型: is_prime(9)はFalseが返る
+   声: is_prime(9)はFalseが返る。
+## c06_hayatochiri [hayatochiri] heldout (書き直しなし)
+1. [correct] structure
+   型: is_primeという関数を作った
+   声: is_primeという関数を作った
+2. [correct] returns True args=[2] stdin=''
+   型: 2は素数なのでTrueになります
+   声: 2は素数なのでTrueになります
+3. [gap] returns True args=[1] stdin=''
+   型: 1は素数と判定される
+   声: 1は素数と判定される
+4. [gap] returns False args=[9] stdin=''
+   型: 9は素数じゃないからFalseになるはず
+   声: 9は素数じゃないからFalseになるはず
+## c06_eigo [eigo] heldout 
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: くり返し処理のためにforループを使用。このループは1から10までの数値を順に処理する。
+2. [correct] structure
+   型: 関数is_primeを書きました
+   声: 関数`is_prime`を定義しました。この関数は引数`n`を受け取り、それが素数かどうかを判定する。
+3. [correct] returns True args=[17] stdin=''
+   型: is_prime(17)はTrueが返ってくる
+   声: `is_prime(17)`を呼び出すと、関数はTrueを返す。これは17が素数であるため。
+4. [correct] returns False args=[9] stdin=''
+   型: 9は素数じゃないからFalseになる
+   声: `is_prime(9)`を呼び出すと、関数はFalseを返す。9は素数ではないため。
+5. [correct] returns True args=[2] stdin=''
+   型: 2は素数と判定される
+   声: `is_prime(2)`を呼び出すと、関数はTrueを返す。2は素数と判定される。
+6. [correct] returns False args=[1] stdin=''
+   型: is_prime(1)はFalseを返します
+   声: `is_prime(1)`を呼び出すと、関数はFalseを返す。1は素数ではない。
+## c07_hiragana [hiragana] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: if文で数が大きいかどうかを分けた
+2. [correct] structure
+   型: くり返しにはforを使った
+   声: 繰り返しにはforを使った
+3. [gap] returns [] args=[[]] stdin=''
+   型: 空のリストでも[]になる
+   声: 空のリストでも[ ]になる
+4. [gap] returns [1, 2, 2] args=[[2, 2, 1]] stdin=''
+   型: 同じ数がある[2, 2, 1]でも[1, 2, 2]になります
+   声: 同じ数がある[2, 2, 1]でも[1, 2, 2]になった
+5. [gap] returns [-1, 3, 5] args=[[5, -1, 3]] stdin=''
+   型: マイナスがまじった[5, -1, 3]は[-1, 3, 5]になった
+   声: マイナスがまじった[5, -1, 3]は[-1, 3, 5]になった
+## c07_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: my_sortって名前の関数にした
+   声: `my_sort`って名前をつけましたよ！
+2. [gap] returns [3, 2, 1] args=[[3, 1, 2]] stdin=''
+   型: my_sort([3, 1, 2])は[3, 2, 1]を返す
+   声: `my_sort([3, 1, 2])` をやってみると、[3, 2, 1]が出ますね！
+3. [gap] returns [5, 3, -1] args=[[5, -1, 3]] stdin=''
+   型: マイナスがまじった[5, -1, 3]は[5, 3, -1]になる
+   声: `-10` を含む `[5, -1, 3]` を見ると、[5, 3, -1]になりますね！
+4. [correct] returns [] args=[[]] stdin=''
+   型: 空のリストでも[]になる（たぶん）
+   声: なんか空っぽのリストを作ることもあるみたいですよ！
+## c07_kicchiri [kicchiri] dev 
+1. [correct] structure
+   型: forでくり返している
+   声: このプログラムでは、`for`ループを使用してリスト内の要素を順番に処理しています。具体的には、`nums[1:]`によってリストの二番目の要素から最後の要素までを抽出し、それぞれの要素を一つずつ取り出しています。
+2. [correct] structure
+   型: my_sortって名前の関数にした
+   声: `my_sort`という名前の関数を定義し、この関数がリストを並べ替えるために使用されます。
+3. [correct] returns [1, 2, 2] args=[[2, 2, 1]] stdin=''
+   型: 同じ数がある[2, 2, 1]でも[1, 2, 2]になると思う
+   声: このプログラムは、同じ数値が複数回出現する場合でも適切に並べ替えを行うことができます。例えば、リストが`[2, 2, 1]`の場合、結果は`[1, 2, 2]`となります。これは、挿入ソートアルゴリズムを用いており、リストの各要素を適切な位置に挿入するためです。
+4. [gap] returns [] args=[[]] stdin=''
+   型: 空のリストでも[]になった
+   声: 入力リストが空である場合、つまり`[]`の場合、関数は空のリスト`[]`を返します。これにより、空のリストに対しても適切に動作します。
+5. [gap] returns [3, 2, 1] args=[[3, 1, 2]] stdin=''
+   型: [3, 1, 2]を並べ替えると[3, 2, 1]になる
+   声: 例として、リスト`[3, 1, 2]`を並べ替えると、結果は`[1, 2, 3]`になります。このアルゴリズムは各要素を一つずつ比較しながら適切な位置に挿入するため、リスト全体を正しく並べ替えます。
+6. [correct] returns [-1, 3, 5] args=[[5, -1, 3]] stdin=''
+   型: マイナスがまじった[5, -1, 3]は[-1, 3, 5]になります
+   声: マイナスの数値が混じったリスト、例えば`[5, -1, 3]`の場合、並べ替えた結果は`[-1, 3, 5]`となります。このアルゴリズムは数値の大小関係に基づいて要素を並べ替えるため、マイナスの数値も適切に処理されます。
+## c08_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: is_palindromeという関数を作った
+   声: is_palindromeという関数を作った
+2. [correct] returns False args=['abc'] stdin=''
+   型: 'abc'は回文じゃないからFalseになるはず
+   声: 'abc'は回文じゃないからFalseになるはず
+3. [correct] returns True args=['noon'] stdin=''
+   型: is_palindrome('noon')はTrueが返ってくる
+   声: is_palindrome('noon')はTrueが返ってくる
+## c09_eigo [eigo] heldout 
+1. [correct] structure
+   型: count_wordsって名前の関数にした
+   声: The function name is `count_words`.
+2. [gap] returns {} args=[''] stdin=''
+   型: 何も書いてない文だと{}になった
+   声: A dictionary `{}` was created when no explanation was provided.
+3. [correct] returns {'apple': 2, 'banana': 1} args=['apple banana apple'] stdin=''
+   型: count_words('apple banana apple')は{'apple': 2, 'banana': 1}が返ってきた
+   声: When `count_words('apple banana apple')` is called, the result returned is `{‘apple’: 2, ‘banana’: 1}` (I think).
+4. [correct] returns {'a': 3} args=['a a a'] stdin='' !消えた値 ['a a a']
+   型: 'a a a'を数えると{'a': 3}になる（たぶん）
+   声: If we count 'a', 'a', and 'a' together, it returns `{‘a’: 3}` (probably).
+## c09_hayatochiri [hayatochiri] heldout 
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: このプログラムでは、くり返し処理のためにforループを使用し、テキスト中の単語を効率的に分割して処理しています。
+2. [correct] structure
+   型: if文で条件を分けた
+   声: if文を用いて、単語がすでに辞書に存在するかどうかをチェックし、存在すればそのカウントを増やし、存在しない場合は新たにエントリを作成しています。
+3. [correct] returns {'apple': 2, 'banana': 1} args=['apple banana apple'] stdin=''
+   型: count_words('apple banana apple')は{'apple': 2, 'banana': 1}を返す
+   声: `count_words('apple banana apple')`を呼び出すと、{'apple': 2, 'banana': 1}という辞書が返されます。これにより、各単語の出現回数を正確に把握することができます。
+4. [correct] returns {'a': 3} args=['a a a'] stdin=''
+   型: 'a a a'を数えると{'a': 3}になる
+   声: 例えば、'a a a'という入力を与えると、{'a': 3}という結果が得られます。このようにして、特定の文字が何回出現するかを数えることができます。
+5. [correct] returns {} args=[''] stdin=''
+   型: 空の文字列を渡すと{}が返ってきた
+   声: 空の文字列を渡すと、辞書は空のままである`{}`が返されます。これは、入力が空の場合にも適切に処理されるように設計されています。
+## c10_eigo [eigo] dev 
+1. [correct] structure
+   型: 関数digit_sumを書きました
+   声: 関数digit_sumを書きました。
+2. [gap] returns 6 args=[1005] stdin=''
+   型: 0がまじった1005でも6になる（たぶん）
+   声: 0がまじった1005でも6になる（たぶん）
+3. [gap] returns 6 args=[123] stdin=''
+   型: digit_sum(123)は6を返すはず
+   声: digit_sum(123)は6を返すはずです。
+4. [gap] returns 10 args=[9] stdin=''
+   型: 1桁の9なら10を返すはず
+   声: 1桁の9なら10を返すはずです。
+5. [gap] returns 0 args=[0] stdin=''
+   型: 0を入れると0が返ってくる
+   声: 0を入れると0が返ってくる
+## c10_jikkyou [jikkyou] dev 
+1. [correct] structure
+   型: 関数digit_sumを書きました
+   声: **関数`digit_sum`を作成しました。** この関数には整数`n`が入力として渡されます。
+2. [correct] returns 6 args=[1005] stdin='' !消えた値 ['1005', '6']
+   型: 1005の各桁をたすと6になるはず
+   声: **変数`total`を初期化し、0に設定します。** `total`は数字の合計を計算するためのものです。
+3. [correct] returns 6 args=[123] stdin='' !消えた値 ['123', '6']
+   型: 123のときは6になるはず
+   声: **`while`ループを使用して`n`が0より大きい間繰り返します。**
+4. [correct] returns 9 args=[9] stdin='' !消えた値 ['9']
+   型: 1桁の9なら9が返ってくる
+   声: **ループが終了したら、`total`を返します。**
+5. [correct] returns 0 args=[0] stdin=''
+   型: 0を入れると0が返ってきた
+   声: **最後に、`digit_sum`関数を使って123, 456, 7890という数字についてそれぞれ出力を確認します。
+## c11_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: このプログラムでは、for文を使用して入力されたリスト`nums`の各要素に対して処理を行っています。おそらく、各ステップで累積和を計算し、その結果をリスト`running_totals`に追加していく過程を見ているのではないかと思います。
+2. [gap] returns [1, 3, 6] args=[[1, 2, 3]] stdin=''
+   型: [1, 2, 3]は[1, 3, 6]になる
+   声: `my_numbers`として与えられたリスト`[1, 2, 3, 4, 5]`に対しては、最初のforループで各要素を順次加算し、累積和を計算してリスト`running_totals`に追加すると思われます。そのため、おそらく`running_totals`は最終的に[1, 3, 6, 10, 15]というリストになると思いますが、完全に正しい結果は実行してみないと確定できません。
+3. [gap] returns [3, 2, 4] args=[[3, -1, 2]] stdin=''
+   型: マイナスの日がある[3, -1, 2]は[3, 2, 4]になります
+   声: 入力リストが例えば`[1, 2, 3, -1, 2]`のような場合には、最初の累積和の計算（1から3まで）は正しく行われるかもしれませんが、その後で負の数が含まれるため、最終的な累積和が期待通りにならない可能性があります。この場合、プログラムがどのように動作するかはまだ試していないので、正確にどの値になるかは「おそらく」[3, 4, 5, 4, 6]のような形になるかもしれません。
+4. [gap] returns [5] args=[[5]] stdin=''
+   型: 1日分だけの[5]なら[5]になるはず
+   声: リストが`[5]`のような1日分だけの場合でも、累積和の計算自体は簡単で、結果として[5]になるはずだと思います。ただし、他の部分（例えば、二重のforループや追加の処理）がある場合、その影響で出力が変わる可能性もあります。
+## c11_romaji [romaji] dev 
+1. [correct] structure
+   型: 関数cumulativeを書きました
+   声: 関数cumulativeを書きました。
+2. [correct] structure
+   型: くり返しにはforを使った
+   声: 繰り返しにはforを使った。
+3. [correct] returns [] args=[[]] stdin=''
+   型: 空のリストなら[]を返します
+   声: 空のリストなら[]を返します。
+4. [gap] returns [1, 3, 6] args=[[1, 2, 3]] stdin=''
+   型: cumulative([1, 2, 3])は[1, 3, 6]が返ってきた
+   声: cumulative([1, 2, 3])は[1, 3, 6]が返ってきました。
+5. [gap] returns [5] args=[[5]] stdin=''
+   型: 1日分だけの[5]なら[5]になる
+   声: 1日分だけの[5]なら[5]になります。
+6. [gap] returns [3, 2, 4] args=[[3, -1, 2]] stdin=''
+   型: マイナスの日がある[3, -1, 2]は[3, 2, 4]になる（たぶん）
+   声: マイナスの日がある[3, -1, 2]は[3, 2, 4]になります。（たぶん）
+## c11_hiragana [hiragana] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: カウントアップする数字が入ったリストを作りました
+2. [correct] structure
+   型: 関数cumulativeを書きました
+   声: 各数字を合計して新しいリストに入れるようにしました
+3. [gap] returns [4, 2, 3] args=[[3, -1, 2]] stdin=''
+   型: マイナスの日がある[3, -1, 2]は[4, 2, 3]になった
+   声: [3, -1, 2]という数字を入れたとき、全部足し合わせると4になり、それから2を引いて3になりました
+4. [correct] returns [] args=[[]] stdin=''
+   型: 売上がない日だけ（空のリスト）だと[]になるはず
+   声: お金を貯めるときに売上がない日に使うために、何も入れていない空のリストもあります
+## c12_eigo [eigo] heldout 
+1. [correct] structure
+   型: whileでくり返している
+   声: Whileループを利用して、`nums`リスト内で`target`を探索するための反復処理を行っている。
+2. [correct] structure
+   型: if文で条件を分けた
+   声: If文を使用して、`nums`の中央要素と`target`を比較し、条件に基づいて探索の範囲を狭めている。
+3. [correct] returns -1 args=[[1, 3, 5, 7], 4] stdin=''
+   型: [1, 3, 5, 7]にない4を探すと-1が返ってくる
+   声: `nums`が`[1, 2, 3, 4, 5, 6]`で`target`が`3`の場合、中央の要素`3`が見つかり、そのインデックスである`2`が返される。しかし、`[1, 3, 5, 7]`に`4`を探すと`-1`が返される。
+4. [correct] returns -1 args=[[], 1] stdin=''
+   型: 空のリストでも-1になった
+   声: 空のリストに対して関数を呼び出すと、`-1`が返される。
+5. [gap] returns 2 args=[[1, 3, 5, 7], 5] stdin=''
+   型: binary_search([1, 3, 5, 7], 5)は2になると思う
+   声: `binary_search([1, 3, 5, 7], 5)`を実行すると、中央の要素`5`が見つかるため、そのインデックスである`2`が返されるべきである。
+6. [gap] returns 0 args=[[1, 3, 5, 7], 1] stdin=''
+   型: [1, 3, 5, 7]の先頭の1を探すと0になる
+   声: `[1, 3, 5, 7]`の先頭の`1`を探す場合、最初に探索する範囲の中央が`0`となり、これはリストの範囲外になるため、`-1`が返される。
+## c12_zakkuri [zakkuri] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: if文で場合分けしてる
+2. [correct] returns 2 args=[[1, 3, 5, 7], 5] stdin=''
+   型: binary_search([1, 3, 5, 7], 5)は2になった
+   声: 数字が5の時にbinary_search([1, 3, 5, 7], 5)ってすると、2になった
+3. [correct] returns 3 args=[[1, 3, 5, 7], 7] stdin='' !消えた値 ['5', '1']
+   型: [1, 3, 5, 7]の一番うしろの7を探すと3が返ってくる
+   声: 数字の7を探したら3が返ってきた
+## c13_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: whileでくり返している
+   声: `while`文で何度も計算していますね。
+2. [correct] returns 5 args=[0, 5] stdin='' !消えた値 ['5']
+   型: gcd(0, 5)は5が返ってきた
+   声: 最初は `a` が 0 にならない限りループを繰り返しているようです。
+3. [gap] returns 1 args=[9, 28] stdin='' !消えた値 ['28', '9', '1']
+   型: 9と28みたいに共通の約数がないときは1になる（たぶん）
+   声: `gcd(0, 5)` のとき、`a` が 0 になったので、`b` を返して終了するはずです。
+4. [gap] returns 8 args=[7, 0] stdin='' !消えた値 ['8']
+   型: 片方が0のgcd(7, 0)は8が返ってきた
+   声: でも、`gcd(7, 0)` のとき、`a` が 0 なので、もう一方の数字である 7 を返しています。
+5. [gap] returns 6 args=[12, 18] stdin=''
+   型: gcd(12, 18)は6を返します
+   声: もう一つ、`gcd(12, 18)` の場合、計算結果から最終的に 6 を得ているのです。
+## c13_eigo [eigo] dev 
+1. [correct] structure
+   型: gcdという関数を作った
+   声: 「gcdという名称の関数を新規作成した」
+2. [correct] returns 1 args=[9, 28] stdin=''
+   型: 9と28みたいに共通の約数がないときは1になる（たぶん）
+   声: 「この関数は引数として渡された2つの数値について、最大公約数を計算するように設計されている。具体的には、共通の約数が存在せず互いに素な場合、1を返すことが期待される。例えば、9と28のような組み合わせでは、共通の約数がないため1が返される。」
+3. [gap] returns 6 args=[7, 0] stdin=''
+   型: 7と0なら6になります
+   声: 「bが0になるまでの間、ループを実行し、aとbを更新することで最大公約数を求める。具体的には、bが0になるまで、aにはbを、bにはaをbで割った余りを設定することで更新が行われる。例えば、7と0の場合、ループ内でaが更新され、最終的に6が返される。」
+4. [correct] returns 6 args=[12, 18] stdin=''
+   型: gcd(12, 18)は6を返すはず
+   声: 「gcd(12, 18)という呼び出しでは、この関数は6を返すことが期待されている。12と18の最大公約数は6だからだ。」
+5. [correct] returns 5 args=[0, 5] stdin=''
+   型: gcd(0, 5)は5を返すはず
+   声: 「gcd(0, 5)という呼び出しでは、bが0になるのでループが停止し、aの値が返される。この場合、aは5なので、5が返されることが期待される。」
+## c14_eigo [eigo] dev 
+1. [correct] structure
+   型: evensって名前の関数にした
+   声: この関数evensは、入力として与えられたリストnumsの要素を一つずつ処理し、要素が偶数である場合に新しいリストに追加します。新しいリストが空でない限り、偶数のみを含むリストを返します。
+2. [correct] returns [] args=[[1, 3]] stdin=''
+   型: 偶数がない[1, 3]だと[]が返ってくる
+   声: 入力リスト`numbers`に1, 3が含まれている場合、`evens(numbers)`は空のリスト`[]`を返します。
+3. [correct] returns [0, -2] args=[[0, -2, 5]] stdin=''
+   型: 0やマイナスがある[0, -2, 5]は[0, -2]になる（たぶん）
+   声: 入力リスト`numbers`に0や-2、5が含まれている場合、`evens(numbers)`はそれぞれ`[0, -2, 5]`を返します。
+4. [correct] returns [] args=[[]] stdin=''
+   型: 空のリストなら[]になる（たぶん）
+   声: 入力リストが空の場合、`evens([1, 2, 3, 4])`は`[2, 4]`を返します。
+5. [correct] returns [2, 4] args=[[1, 2, 3, 4]] stdin=''
+   型: evens([1, 2, 3, 4])は[2, 4]を返します
+   声: 例えば`evens([1, 2, 3, 4])`は`[2, 4]`を返します。
+## c15_jishinnashi [jishinnashi] heldout 
+1. [correct] structure
+   型: forでくり返している
+   声: forでくり返しているのは確認するためですね。「たぶん」「〜だと思います」「〜かもしれません」という言葉を使っていますね。
+2. [correct] returns False args=[1900] stdin=''
+   型: 1900年はうるう年じゃないからFalseになるはず
+   声: 1900年はうるう年ではないのでFalseになるはずです。「たぶん」「〜だと思います」「〜かもしれません」という言葉を使っていますね。
+3. [gap] returns False args=[2024] stdin=''
+   型: is_leap(2024)はFalseが返る
+   声: is_leap(2024)という関数があり、それを呼び出しています。「たぶん」「〜だと思います」「〜かもしれません」という言葉を使っていますね。
+4. [correct] returns True args=[2000] stdin=''
+   型: 2000年はうるう年と判定される
+   声: 2000年はうるう年であるためTrueが返ってきます。「たぶん」「〜だと思います」「〜かもしれません」という言葉を使っていますね。
+5. [correct] returns False args=[2023] stdin=''
+   型: 2023年はうるう年じゃないからFalseになる（たぶん）
+   声: 2023年はうるう年ではないためFalseになります。「たぶん」「〜だと思います」「〜かもしれません」という言葉を使っていますね。
+## c16_eigo [eigo] dev 
+1. [correct] structure
+   型: second_largestという関数を作った
+   声: second_largestという関数を定義した。この関数は「第二に大きい数」を返すことを目的としている。
+2. [gap] returns 3 args=[[3, 5, 1]] stdin=''
+   型: second_largest([3, 5, 1])は3になるはず
+   声: 引数としてリスト`[3, 5, 1]`を渡すと、second_largest関数は最大の長さを持つ要素を返すはずだが、この場合実際には長さが同じ要素が複数あるため、特定の挙動が問題となる可能性がある。しかし、一般的な想定では3が返されるべきである。
+3. [gap] returns 9 args=[[10, 8, 9]] stdin=''
+   型: [10, 8, 9]の2番目に大きい数は9になると思う
+   声: リスト`[10, 8, 9]`に対してsecond_largest関数を適用すると、最大の数である10ではなく、次に大きい数である9が返されるはずだ。
+4. [gap] returns 1 args=[[1, 2]] stdin=''
+   型: 2つだけの[1, 2]なら1になるはず
+   声: リストに2つの要素`[1, 2]`しかない場合、second_largest関数は最小の要素である1を返すと予想される。ただし、このリストには一つだけ最大の数が存在するため、第二に大きい数という概念は適用されない点に注意が必要である。
+## c16_jikkyou [jikkyou] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: if文で条件を分けた
+2. [gap] returns 0 args=[[1, 2]] stdin=''
+   型: 2つだけの[1, 2]なら0になった
+   声: 2つだけの[1, 2]なら0になった
+3. [correct] returns 9 args=[[10, 8, 9]] stdin=''
+   型: [10, 8, 9]の2番目に大きい数は9になった
+   声: [10, 8, 9]の2番目に大きい数は9になった
+4. [correct] returns 3 args=[[3, 5, 1]] stdin=''
+   型: second_largest([3, 5, 1])は3になると思う
+   声: second_largest([3, 5, 1])は3になると思う
+## c17_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: 条件判断のためにif文を使いましたけど、これだけで完璧とは限らないかも知れませんね。
+2. [correct] returns 7 args=[[20, 25, 18]] stdin=''
+   型: [20, 25, 18]なら差は7になると思う
+   声: [20, 25, 18]というリストであれば、最大値と最小値を取り出してから計算すると、7が得られるでしょう。でも他のパターンもあるので、確実ではありませんよ。
+3. [gap] returns 1 args=[[10]] stdin='' !消えた値 ['10']
+   型: 1日分だけの[10]なら1になる
+   声: もし1日のデータが1つしか入ってこなかったら、その場合は1を出力すればいいのかなと思っています。
+4. [correct] returns 8 args=[[-3, 5]] stdin=''
+   型: マイナスの気温がある[-3, 5]だと8が返ってきた
+   声: 温度がマイナスになっている場合もありますよね。例えば[-3, 5]というリストがあったら、それが最大値と最小値の差として8が出力されます。
+## c18_romaji [romaji] heldout 
+1. [correct] structure
+   型: count_vowelsという関数を作った
+   声: count_vowelsという関数を作った目的は、与えられた文字列内の母音の数を数えることです。
+2. [gap] returns 5 args=['education'] stdin=''
+   型: count_vowels('education')は5が返ってきた
+   声: count_vowels('education')を実行したとき、この関数は5を返します。なぜなら、'education'には'e', 'a', 'u', 'o'の四つの母音が含まれているからです。
+3. [gap] returns 0 args=[''] stdin=''
+   型: 空の文字列なら0になります
+   声: もし入力された文字列が空の場合、kazuは初期値の0のままなので、count_vowels('')を実行すると0が返されます。
+4. [gap] returns 3 args=['banana'] stdin=''
+   型: bananaの母音は3個と数えられる
+   声: bananaという文字列に対しては、count_vowels('banana')を実行すると、'a', 'a', 'a'の三個の母音が数えられ、結果として3が返されます。
+## c18_hayatochiri [hayatochiri] heldout 
+1. [correct] structure
+   型: 関数count_vowelsを書きました
+   声: 関数count_vowelsを作成しました。
+2. [gap] returns 3 args=['banana'] stdin=''
+   型: 'banana'だと3が返ってきた
+   声: 'banana'と入力すると、3が返ってきました。
+3. [gap] returns 0 args=[''] stdin=''
+   型: 空の文字列なら0になると思う
+   声: 空の文字列を入力すると、0が返ってくると思います。
+4. [correct] returns 5 args=['education'] stdin=''
+   型: count_vowels('education')は5が返ってきた
+   声: 'education'と入力すると、5が返ってきました。
+## c18_eigo [eigo] heldout 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: このプログラムでは、与えられた文字列の中で含まれる母音の数を数える処理を行っています。
+2. [gap] returns 5 args=['education'] stdin='' !消えた値 ['5', 'education']
+   型: count_vowels('education')は5を返すはず
+   声: `count_vowels`関数というものが定義されており、この関数には入力として文字列`s`が渡されます。しかし、どのようにして母音の総数を計算しているのか具体的な過程は不明です。
+3. [correct] returns 0 args=[''] stdin=''
+   型: 空の文字列なら0になるはず
+   声: テストケースとして空の文字列" ""に対して呼び出すことで、関数が正しく動作することを確認しています。つまり、`count_vowels("")`は0を返すはずです。
+4. [gap] returns 3 args=['banana'] stdin='' !消えた値 ['3']
+   型: bananaの母音は3個と数えられる
+   声: 例えば、単語"banana"は'a', 'e', 'i'の母音を含んでいますので、これらの数値を合計することで、母音の総数を求めることができます。
+5. [correct] returns 0 args=['sky'] stdin='' !消えた値 ['sky']
+   型: 母音がない'sky'は0になる（たぶん）
+   声: 逆に、"aun"のような単語は母音を含まないので、関数`count_vowels("aun")`は0を返すべきでしょう。
+## c19_jikkyou [jikkyou] dev (書き直しなし)
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: くり返しにはforを使った
+2. [correct] structure
+   型: ifで場合分けしている
+   声: ifで場合分けしている
+3. [gap] returns 'Buzz' args=[5] stdin=''
+   型: 5のときは'Buzz'が返ってくる
+   声: 5のときは'Buzz'が返ってくる
+4. [gap] returns 'FizzBuzz' args=[15] stdin=''
+   型: fizzbuzz(15)は'FizzBuzz'になるはず
+   声: fizzbuzz(15)は'FizzBuzz'になるはず
+5. [gap] returns 'FizzBuzz' args=[30] stdin=''
+   型: fizzbuzz(30)は'FizzBuzz'になる
+   声: fizzbuzz(30)は'FizzBuzz'になる
+6. [gap] returns 'Fizz' args=[3] stdin=''
+   型: fizzbuzz(3)は'Fizz'になります
+   声: fizzbuzz(3)は'Fizz'になります
+## c19_romaji [romaji] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: if文で条件を分けた
+2. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: for文を使って1つずつ見ている
+3. [gap] returns 'Fizz' args=[3] stdin=''
+   型: 3のときは'Fizz'を返します
+   声: 3のときは'Fizz'を返します
+4. [correct] returns 'FizzBuzz' args=[15] stdin=''
+   型: 15のときは'FizzBuzz'が返ってきた
+   声: 15のときは'FizzBuzz'が返ってきた
+5. [gap] returns 'Buzz' args=[5] stdin=''
+   型: fizzbuzz(5)は'Buzz'になる（たぶん）
+   声: fizzbuzz(5)は'Buzz'になる（たぶん）
+## c19_eigo [eigo] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: The program iterates one element at a time using the `for` loop.
+2. [correct] structure
+   型: if文で条件を分けた
+   声: It divides the input by 15, then 3, and finally 5 to check conditions.
+3. [gap] returns 'Fizz' args=[30] stdin=''
+   型: fizzbuzz(30)は'Fizz'になった
+   声: For example, `fizzbuzz(30)` results in `'FizzBuzz'`.
+4. [correct] returns 'Buzz' args=[5] stdin=''
+   型: fizzbuzz(5)は'Buzz'になる（たぶん）
+   声: Similarly, `fizzbuzz(5)` returns `'Buzz'`, but this is likely the case for multiples of 5.
+5. [correct] returns 'Fizz' args=[3] stdin=''
+   型: fizzbuzz(3)は'Fizz'になります
+   声: When `fizzbuzz(3)` is called, it generates `'Fizz'`.
+## c20_eigo [eigo] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: このプログラムでは、「forループ」を利用してリスト内の各要素を順番にチェックしている。具体的には、最初の要素から始めてリストの最後の要素の一つ前までを繰り返すことで、要素の交換を行っている。
+2. [gap] returns [] args=[[]] stdin=''
+   型: 空のリストなら[]を返します
+   声: もし入力されたリストが空の場合、関数は空の配列 `[]` を返すように設計されている。これにより、空の引数が与えられた場合にも適切に対処できる。
+3. [gap] returns [4] args=[[4]] stdin=''
+   型: 1つだけの[4]は[4]になるはず
+   声: リストが1つの要素しか含まない場合、例えば `[4]` であれば、この関数は `[4]` を返す。これは、最後の要素を反転させる必要がないためだ。
+4. [gap] returns [3, 2, 1] args=[[1, 2, 3]] stdin=''
+   型: [1, 2, 3]は[3, 2, 1]になる
+   声: 複数の要素を持つリスト、例えば `[1, 2, 3, 4, 5]` の場合、このプログラムはリストの後半部分を反転させてから、反転前の最初の要素を先頭に追加する。具体的には、`[3, 2, 1]` を結果として得ることができ、その後 `[1]` が付加されて `[1, 3, 2, 1]` となる。しかし、この説明では少し誤解を招く可能性があり、実際にはリスト全体を反転させるのではなく、先頭の要素を残して後半部分だけを反転させている点に注意が必要だ。正しい動作としては、リスト全体を反転させると `[5, 4, 3, 2, 1]` となるべきで、現状のコードでは半分だけ反転させた後に要素を追加しているため、説明の修正が必要である。正確な説明では、まずリスト全体を反転させて `[5, 4, 3, 2, 1]` とし、その後に先頭の要素 `[1]` を追加して `[5, 4, 3, 2, 1, 1]` とするが、本来の意図としてはリスト全体を完全に反転させるためには修正が必要であることを理解する必要がある。
+## c20_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: reverse_listという関数を作った
+   声: reverse_listという関数を作った
+2. [correct] structure
+   型: ifで場合分けしている
+   声: ifで場合分けしている
+3. [gap] returns [1, 2, 3] args=[[1, 2, 3]] stdin=''
+   型: reverse_list([1, 2, 3])は[1, 2, 3]を返す
+   声: reverse_list([1, 2, 3])は[1, 2, 3]を返す
+4. [gap] returns [] args=[[]] stdin=''
+   型: 空のリストなら[]を返す
+   声: 空のリストなら[]を返す
+5. [correct] returns [4] args=[[4]] stdin=''
+   型: 1つだけの[4]は[4]になる
+   声: 1つだけの[4]は[4]になる
+## c20_kicchiri [kicchiri] dev 
+1. [correct] structure
+   型: forでくり返している
+   声: この関数 `reverse_list` は、引数として与えられた数字のリストを逆順にして新しいリストを作成し、それを返します。
+2. [correct] returns [] args=[[]] stdin=''
+   型: 空のリストなら[]を返すはず
+   声: リスト内包表記を使って、元のリストの要素を反転させています。
+3. [gap] returns [3, 2, 1] args=[[1, 2, 3]] stdin=''
+   型: reverse_list([1, 2, 3])は[3, 2, 1]を返します
+   声: 関数 `reverse_list` を呼び出した場合、例えば `[1, 2, 3]` の場合は、 `[3, 2, 1]` という新たなリストが返されます。
+4. [correct] returns [4] args=[[4]] stdin=''
+   型: 1つだけの[4]は[4]になる（たぶん）
+   声: また、単一の要素 `[4]` のようなリストでも、同様に `[4]` となります（これはおそらく正しい動作です）。
+## c21_romaji [romaji] heldout 
+1. [correct] structure
+   型: count_passという関数を作った
+   声: count_passという関数を作ったのは、特定の境界に基づいてスコアのリストを分類するためです。この関数は、与えられたスコアリストから指定された境界を超えるスコアとそれ以下のスコアを結合して返します。
+2. [gap] returns 2 args=[[50, 70, 90], 60] stdin='' !消えた値 ['2']
+   型: [50, 70, 90]で合格点が60なら2人になると思う
+   声: `count_pass`関数は、例えばスコアリストが`[50, 70, 90]`で合格点が`60`の場合、関数は`[70, 90]`と`[50]`を結合して`[70, 90, 50]`を返します。しかし、実際には合格点を超えた部分だけを返すので、この場合は`[70, 90]`だけを返します。
+3. [gap] returns 1 args=[[60, 59], 60] stdin='' !消えた値 ['1']
+   型: ちょうど60点の人も数えるので、[60, 59]で合格点60なら1になる
+   声: もしスコアリストが`[60, 59]`で合格点が`60`であれば、関数は`[60]`と`[]`（空のリスト）を結合して`[60]`を返します。ちょうど合格点である`60`点も数えられます。
+4. [gap] returns 0 args=[[], 60] stdin='' !消えた値 ['0']
+   型: だれもいない空のリストなら0を返します
+   声: もしスコアリストが空のリスト、例えば`[]`であれば、関数は単に`[]`を返します。この場合、境界を考慮するスコアが存在しないため、結果も空のリストになります。
+## c21_zakkuri [zakkuri] heldout 
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: 関数名はcount_passにしたよ。
+2. [correct] structure
+   型: count_passって名前の関数にした
+   声: その関数を使って、点数が80点以上の人の数を数えようとしたんだ。
+3. [correct] returns 1 args=[[60, 59], 60] stdin=''
+   型: ちょうど60点の人も数えるので、[60, 59]で合格点60なら1になった
+   声: でも途中で、点数が60点の人も数えるようにしたから、[60, 59]で合格点60なら1にしたよ。
+4. [correct] returns 0 args=[[], 60] stdin=''
+   型: だれもいない空のリストなら0を返す
+   声: 誰もいない空のリストなら0を返すようにしたよ。
+5. [correct] returns 2 args=[[50, 70, 90], 60] stdin=''
+   型: count_pass([50, 70, 90], 60)は2を返す
+   声: count_pass([50, 70, 90], 60)は2を返すようにしたよ。
+## c22_romaji [romaji] dev 
+1. [correct] structure
+   型: sum_toって名前の関数にした
+   声: `sum_to`という名前の関数を作成しました。
+2. [gap] returns 1 args=[1] stdin=''
+   型: 1のときは1になる（たぶん）
+   声: この関数は整数nを受け取ります。（この場合、nは5または10または3です）
+3. [gap] returns 5051 args=[100] stdin='' !消えた値 ['100', '5051']
+   型: 1から100までだと5051になります
+   声: 関数内でループ処理を行い、1からnまでの数字を合計します。
+4. [gap] returns 1 args=[0] stdin='' !消えた値 ['0', '1']
+   型: 0を入れると1が返ってくる
+   声: 合計された値をグローバル変数`goukei`に代入し、それを返します。
+5. [gap] returns 55 args=[10] stdin='' !消えた値 ['55']
+   型: sum_to(10)は55が返ってきた
+   声: 最後に、`sum_to()`関数を使用して、5, 10, 3を引数として渡し、それぞれの呼び出し結果を表示しています。
+## c22_kicchiri [kicchiri] dev 
+1. [correct] structure
+   型: くり返しにはwhileを使った
+   声: このプログラムでは、くり返し処理としてwhileを使用しています。具体的には、変数`i`が`n`以下である間ループを繰り返します。
+2. [correct] structure
+   型: ifで場合分けしている
+   声: `if`文を使って入力値が適切かどうかをチェックしています。入力が正の整数であるかを確認し、そうでなければエラーメッセージを返しています。
+3. [correct] returns 55 args=[10] stdin='' !消えた値 ['10']
+   型: sum_to(10)は55を返すはず
+   声: `sum_to(5)`を実行した場合、関数は55を返します。これは1から5までの整数の合計が55であるためです。
+4. [correct] returns 1 args=[1] stdin=''
+   型: 1のときは1になる（たぶん）
+   声: `sum_to(1)`を実行した場合、関数は1を返します。これは1が正の整数であり、1自体が合計に含まれるためです。
+5. [correct] returns 5050 args=[100] stdin=''
+   型: 1から100までだと5050になった
+   声: `sum_to(100)`を実行すると、理論上1から100までの整数の合計である5050を返すはずですが、ここでは具体的に`sum_to(100)`の実行結果は示されていません。ただし、この関数の動作から考えると、1から100までの合計は確かに5050になります。
+6. [gap] returns 0 args=[0] stdin=''
+   型: 0を入れると0を返すはず
+   声: もし入力に0を与えた場合、関数は0を返します。これはループが一度も実行されないため、合計が0になるからです。
+## c22_eigo [eigo] dev (書き直しなし)
+1. [correct] structure
+   型: forでくり返している
+   声: forでくり返している
+2. [correct] returns 1 args=[1] stdin=''
+   型: 1のときは1になる（たぶん）
+   声: 1のときは1になる（たぶん）
+3. [correct] returns 55 args=[10] stdin=''
+   型: sum_to(10)は55が返る
+   声: sum_to(10)は55が返る
+4. [correct] returns 5050 args=[100] stdin=''
+   型: 1から100までだと5050になる（たぶん）
+   声: 1から100までだと5050になる（たぶん）
+## c23_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: 関数powerを書きました
+   声: このプログラムは、数字をべき乗する関数を作りました。
+2. [gap] returns 1 args=[5, 0] stdin='' !消えた値 ['5']
+   型: 5の0乗は1を返すはず
+   声: 数字を0回かけたら1を返します。
+## c23_romaji [romaji] dev (書き直しなし)
+1. [correct] structure
+   型: 関数powerを書きました
+   声: 関数powerを書きました
+2. [correct] returns 3 args=[3, 1] stdin=''
+   型: 3の1乗は3になります
+   声: 3の1乗は3になります
+3. [correct] returns 100 args=[10, 2] stdin=''
+   型: power(10, 2)は100が返る
+   声: power(10, 2)は100が返る
+4. [gap] returns 0 args=[5, 0] stdin=''
+   型: 5の0乗は0が返る
+   声: 5の0乗は0が返る
+## c24_kicchiri [kicchiri] heldout 
+1. [correct] structure
+   型: count_charという関数を作った
+   声: count_charという関数を作りました。
+2. [correct] returns 3 args=['banana', 'a'] stdin=''
+   型: count_char('banana', 'a')は3になると思う
+   声: count_char('banana', 'a')とすると、結果は3になるはずです。
+3. [correct] returns 0 args=['', 'a'] stdin=''
+   型: 空の文字列なら0が返ってくる
+   声: 空の文字列の場合、count_char('', 'a')とすると、結果は0になるでしょう。
+4. [correct] returns 0 args=['apple', 'z'] stdin=''
+   型: 'apple'にない'z'を数えると0になる（たぶん）
+   声: 'apple'にない'z'を数えると0になると思います。
+## s01_hiragana [hiragana] dev 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: `score`という変数に入力された数字を見て、それが90以上なら「A」という言葉を出しますね。
+2. [correct] stdout_line C args=[] stdin='79\n' !消えた値 ['79']
+   型: 79を入力するとCと表示される
+   声: もし入力された数字が90以下なら、「C」という言葉を出しますよ。
+3. [gap] stdout_line A args=[] stdin='80\n'
+   型: 80点と入れたらAと出ました
+   声: でももし入力された数字が80より小さかったら、それはもう「B」という言葉を出す時だよ！
+4. [correct] stdout_line C args=[] stdin='59\n'
+   型: 59点と入れたらCと表示される
+   声: そして、ちょっと注意が必要だけど、もし59以下の数字だったら、「C」という言葉を出すんだ。
+## s01_jikkyou [jikkyou] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: まず、このプログラムはユーザーから入力された点数を受け取ります。
+2. [gap] stdout_line C args=[] stdin='59\n' !消えた値 ['59']
+   型: 59点と入れたらCと表示される
+   声: 次に、その点数を入力としてif文に渡し、条件がチェックされます。具体的には、点数が80以上かどうかを調べます。
+3. [correct] stdout_line B args=[] stdin='79\n' !消えた値 ['79']
+   型: 79を入力するとBと出る
+   声: もし点数が80以上であれば、'A'が表示されます。
+4. [correct] stdout_line A args=[] stdin='100\n' !消えた値 ['100']
+   型: 100を入力するとAが表示される
+   声: 逆に、点数が80未満であれば、'B'が表示されます。
+5. [correct] stdout_line A args=[] stdin='80\n'
+   型: 80を入力するとAが出るはず
+   声: 例えば、59点と入れると条件に合致しないため、'C'ではなく'B'が表示されます。同様に、79点を入れると'B'が表示され、100点を入れると'A'が表示されます。そして、80点を入れると期待通り'A'が表示されるはずです。
+## s01_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: このプログラムは入力した点数が80点以上なら「A」、60点以上なら「B」、それ以下なら「C」と表示するんだって！
+2. [correct] stdout_line A args=[] stdin='100\n'
+   型: 100を入力するとAと表示されます
+   声: たとえば、100点なら「A」、59点なら「C」、80点なら「A」になるんだよ！
+3. [correct] stdout_line C args=[] stdin='59\n'
+   型: 59点と入れたらCと出る
+   声: 100点を入力すると「A」と出て、59点を入れると「C」って出るんだって！
+4. [correct] stdout_line A args=[] stdin='80\n'
+   型: 80を入力するとAと出ました
+   声: 80点を入れると「A」と出るんだって！
+## s02_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: もしもし！このプログラムでは、入力された数字を２で割った余りを見てみるんだ。「〇か？△か？」みたいなね。
+2. [correct] stdout_line 偶数 args=[] stdin='0\n' !消えた値 ['0']
+   型: 0を入力したら偶数と出る
+   声: 素晴らしい！０なら、「おーい、これは偶数さん！」って出るよ。
+3. [gap] stdout_line 奇数 args=[] stdin='10\n' !消えた値 ['10']
+   型: 10を入れると奇数と出る
+   声: バケツ一杯の人たちを二つに分けて、ちょうど半分になったら「オッケー、みんな揃ってるぞ！」ってなるよね？
+4. [correct] stdout_line 奇数 args=[] stdin='7\n' !消えた値 ['7']
+   型: 7を入力したら奇数と出る
+   声: そうそう！１桁の数字だったら「あれ、奇数さん！」って出るよ。
+## s03_jishinnashi [jishinnashi] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: このプログラムでは、`if`文を使用してユーザーの入力値に基づいて場合分けを行っています。具体的には、両方の入力値が非負であることを確認し、それに基づいて計算とメッセージの出力を行います。
+2. [gap] stdout_line 1 args=[] stdin='-5\n5\n'
+   型: 1行目に-5、2行目に5を入力すると1と出る
+   声: おそらく、1行目に-5を入力し、2行目に5を入力した場合、最初の`if`条件が満たされないため、エラーメッセージ「Please enter non-negative integers.」が表示される可能性があります。しかし、厳密にプログラムを実行すると、最初の`if`ブロックが実行されず、再度同じ条件がチェックされるため、最終的に同じエラーメッセージが表示されるかもしれません。
+3. [gap] stdout_line 7 args=[] stdin='3\n4\n'
+   型: 3と4を入れると7と表示される
+   声: もし3と4を入力した場合、両方の値が非負であるため、最初の`if`ブロック内で計算が行われ、「The sum of the two numbers is: 7」と表示される可能性が高いです。ただし、念のため、プログラムが二重のチェックを行う部分でも再度正しい結果が表示されることを確認すべきです。
+4. [gap] stdout_line 30 args=[] stdin='10\n20\n'
+   型: 10と20を入れると30と表示される
+   声: 10と20を入力した場合、両方の値が非負であるため、最初の`if`ブロック内で計算が行われ、「The sum of the two numbers is: 30」と表示されるはずです。この結果は期待通りであり、プログラムが正しく動作していると考えられます。
+## s03_eigo [eigo] heldout 
+1. [gap] stdout_line 31 args=[] stdin='10\n20\n'
+   型: 10と20を入れると31が表示される
+   声: 10と20を入れると31が表示される
+2. [gap] stdout_line 1 args=[] stdin='-5\n5\n'
+   型: 1行目に-5、2行目に5を入力すると1が出るはず
+   声: 1行目に-5、2行目に5を入力すると1が出るはず
+3. [correct] stdout_line 7 args=[] stdin='3\n4\n'
+   型: 1行目に3、2行目に4を入力すると7が出るはず
+   声: 1行目に3、2行目に4を入力すると7が出るはず
+## s04_hayatochiri [hayatochiri] dev 
+1. [correct] structure
+   型: forでくり返している
+   声: このプログラムは、1から9までの数字をそれぞれ`n`倍して表示するループを作っています。
+2. [gap] stdout_line 63 args=[] stdin='7\n'
+   型: 7を入れたら63が出る
+   声: `n=7`と入力すると、計算結果として`63`という数字が出力されます。
+3. [correct] no_stdout_line 9 args=[] stdin='1\n'
+   型: 1を入れたら9は出ない
+   声: `n=1`と入力しても`9`は出力されません。
+4. [gap] stdout_line 27 args=[] stdin='3\n'
+   型: 3を入れると最後に27も表示される
+   声: `n=3`と入力すると、最終的に`27`という数字が表示されます。
+5. [correct] no_stdout_line 30 args=[] stdin='3\n'
+   型: 3の段は30までは出ない
+   声: 一方で、3番目の段階からは`n=3`でも`30`より小さい数字は表示されません。
+## s04_jikkyou [jikkyou] dev 
+1. [correct] structure
+   型: くり返しにはwhileを使った
+   声: まず、ユーザーから整数を入力するために`int(input())`を使用しています。この入力値は変数`n`に格納されます。
+2. [correct] stdout_line 63 args=[] stdin='7\n' !消えた値 ['7', '63']
+   型: 7を入力すると63も表示される
+   声: 次に、くり返し処理を開始するために`while`文を使用しています。条件は`i <= 9`であり、これは変数`i`が9以下である限りループが続くことを意味します。
+3. [correct] stdout_line 9 args=[] stdin='1\n' !消えた値 ['9', '1']
+   型: 1を入れると9も表示される
+   声: ループの中で、現在の`n`と`i`の積を計算し、その結果を`print`関数で表示します。具体的には、`print(n * i)`によって出力が行われます。
+4. [correct] stdout_line 27 args=[] stdin='3\n' !消えた値 ['27', '3']
+   型: 3の段なら27まで出る
+   声: 最後に、`i`を1増やすために`i += 1`を実行しています。これにより、次のイテレーションで`i`が1ずつ増加します。
+## s05_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: 入力が13より小さい場合、年齢は10代になる
+2. [gap] stdout_line 子ども args=[] stdin='12\n' !消えた値 ['12']
+   型: 12歳だと子どもが出るはず
+   声: 入力が19を超える場合、年齢は大人になる
+3. [gap] stdout_line 10代 args=[] stdin='19\n' !消えた値 ['10代', '19']
+   型: 19を入力すると10代が表示される
+   声: それ以外の場合、子どもになる
+## s05_romaji [romaji] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: **このプログラムでは、ユーザーから名前を取得し、それを整数に変換して年齢として扱います。**
+2. [correct] stdout_line 大人 args=[] stdin='20\n' !消えた値 ['20']
+   型: 20歳だと大人と出る
+   声: **`if`文を使って、年齢が13未満の場合には「子ども」と表示します。**
+3. [gap] stdout_line 10代 args=[] stdin='19\n' !消えた値 ['19']
+   型: 19を入力すると10代が表示される
+   声: **年齢が13以上であれば、`elif`文を使って「大人」または「10代」と表示します。**
+4. [gap] stdout_line 10代 args=[] stdin='13\n' !消えた値 ['13', '10代']
+   型: 13を入力すると10代と出る
+   声: **もしユーザーが12歳を入力した場合、「子ども」と表示されます。**
+5. [correct] stdout_line 子ども args=[] stdin='12\n' !消えた値 ['12']
+   型: 12歳だと子どもと出ました
+   声: **逆に、ユーザーが19歳を入力した場合は、「10代」と表示されます。**
+## s05_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: このプログラムでは、`if`文を使って条件に応じて異なるメッセージを表示するために場合分けをしています。
+2. [correct] stdout_line 大人 args=[] stdin='20\n'
+   型: 20歳だと大人が出るはず
+   声: もしユーザーが20歳を入力した場合、プログラムは「大人」と表示するはずなのですが、実際には正しく動作しないかもしれません。なぜなら、現在の条件では20歳を直接チェックしていないからです。
+3. [correct] stdout_line 子ども args=[] stdin='12\n'
+   型: 12を入力すると子どもと表示される
+   声: 例えば、12歳を入力すると「子ども」と表示されるはずです。これは年齢が13歳未満であるためです。
+4. [correct] stdout_line 10代 args=[] stdin='13\n'
+   型: 13歳だと10代と表示されます
+   声: 13歳を入力した場合、プログラムは「10代」と表示すると思います。これは13歳から19歳までの範囲に含まれるためです。
+5. [correct] stdout_line 10代 args=[] stdin='19\n'
+   型: 19を入力すると10代と表示される
+   声: さらに、19歳を入力した場合も「10代」と表示されるはずです。これも13歳から19歳までの範囲に含まれているためです。
+## s06_hayatochiri [hayatochiri] heldout 
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: 入力された値を順番に表示するためには、forループを使用した。
+2. [correct] no_stdout_line 5 args=[] stdin='5\n'
+   型: 5を入れても5は出ない
+   声: 数字の5を入れたが、5は表示されず、代わりに0が表示された。
+3. [gap] no_stdout_line 0 args=[] stdin='3\n'
+   型: 3を入力したとき0は出ない
+   声: 数字の3を入力したが、0は表示されず、代わりに最後の数値が1まで表示された。
+4. [gap] stdout_line 発射 args=[] stdin='3\n'
+   型: 3を入れると最後に発射と表示される
+   声: プログラムを実行すると、3を入力した場合、3を入力した後の画面には3が表示されたが、それ以降の画面には1が表示されることがわかる。
+5. [correct] stdout_line 1 args=[] stdin='3\n'
+   型: 3を入れると最後の数は1まで表示される
+   声: プログラムを実行すると、3を入力した場合、3を入力した後の画面には3が表示されたが、それ以降の画面には1が表示されることがわかる。
+## s06_jishinnashi [jishinnashi] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: もし input の値が整数じゃなければ、エラーメッセージが出ます。
+2. [correct] no_stdout_line 発射 args=[] stdin='3\n' !消えた値 ['3']
+   型: 3を入れても発射は出ない
+   声: もしくは、整数じゃないものを入れようとするとエラーになります。
+3. [correct] no_stdout_line 0 args=[] stdin='3\n' !消えた値 ['0', '3']
+   型: 3を入力したとき0は出ない
+   声: 整数以外の値を入力してもエラーにならないみたいですね。
+4. [correct] stdout_line 5 args=[] stdin='5\n' !消えた値 ['5']
+   型: 5を入れると最初に5が表示される
+   声: そして、数字を指定するときに、一番最後に入れた数字から順に出してくるんですね。
+5. [correct] stdout_line 1 args=[] stdin='3\n' !消えた値 ['1', '3']
+   型: 3を入力したら1も出る
+   声: でも、一番最初には何も出せませんね。
+## s06_jikkyou [jikkyou] heldout (書き直しなし)
+1. [correct] structure
+   型: whileでくり返している
+   声: whileでくり返している
+2. [gap] no_stdout_line 5 args=[] stdin='5\n'
+   型: 5を入れても5は出ない
+   声: 5を入れても5は出ない
+3. [correct] no_stdout_line 0 args=[] stdin='3\n'
+   型: 3を入れても0は表示されない
+   声: 3を入れても0は表示されない
+4. [correct] stdout_line 発射 args=[] stdin='3\n'
+   型: 3を入れると最後に発射と表示される
+   声: 3を入れると最後に発射と表示される
+## p01_zakkuri [zakkuri] dev 
+1. [correct] structure
+   型: while文を使って1つずつ見ている
+   声: while文を使って10以上から1ずつ見て、最後に発射と表示するよ。0も表示される。
+2. [gap] stdout_line 発射 args=[] stdin=''
+   型: 最後に発射と表示される
+   声: 発射と表示される
+3. [gap] stdout_line 0 args=[] stdin=''
+   型: 0も表示される
+   声: 0も表示される
+## p01_hiragana [hiragana] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: **if文で条件を分けた**
+2. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: **for文を使って1つずつ見ている**
+3. [gap] stdout_line 発射 args=[] stdin=''
+   型: 最後に発射と表示される
+   声: **最後に発射と表示される**
+4. [correct] no_stdout_line 0 args=[] stdin=''
+   型: 0は表示されない
+   声: **0は表示されない**
+5. [correct] stdout_line 10 args=[] stdin=''
+   型: 最初に10が表示される
+   声: **最初に10が表示される**
+## p01_eigo [eigo] dev 
+1. [correct] structure
+   型: くり返しにはwhileを使った
+   声: くり返し処理にwhileループを使用し、変数aが0より大きい限り実行を続ける。
+2. [gap] stdout_line 0 args=[] stdin=''
+   型: 最後の数は0まで出る
+   声: ループ内で現在のaの値を出力し、その後aを1減らすことで、0になるまでの数が順に印刷される。
+3. [correct] stdout_line 発射 args=[] stdin=''
+   型: 最後に発射と表示される
+   声: ループが終了した後、'発射'という文字列が出力される。
+4. [correct] no_stdout_line 11 args=[] stdin=''
+   型: 11からは始まらない
+   声: このプログラムは10から始まり、0までの数が順に印刷され、最後に'発射'と表示されるが、11からは始められないため、そのような値は処理に含まれない。
+## p02_eigo [eigo] heldout 
+1. [correct] structure
+   型: forでくり返している
+   声: Forループを用いて、1から30までの数を順にチェックし、3の倍数でかつ5の倍数である場合に「FizzBuzz」を表示している。
+2. [correct] structure
+   型: if文で条件を分けた
+   声: If文で条件を分け、それぞれのケースに応じて「Fizz」、「Buzz」、または「Not Fizz」を表示している。
+3. [correct] no_stdout_line 30 args=[] stdin=''
+   型: 30という数字は出ない
+   声: 30という数字は出ないため、「Buzz」を表示している。
+4. [gap] stdout_line 29 args=[] stdin=''
+   型: 29はそのまま29と表示される
+   声: 29はそのまま29と表示されるため、「Not Fizz」を表示している。
+5. [correct] no_stdout_line FizzBuzz args=[] stdin=''
+   型: FizzBuzzは一度も表示されない
+   声: FizzBuzzは一度も表示されないため、「Not Fizz」を表示している。
+## p02_kicchiri [kicchiri] heldout (書き直しなし)
+1. [correct] structure
+   型: くり返しにはforを使った
+   声: くり返しにはforを使った
+2. [gap] stdout_line FizzBuzz args=[] stdin=''
+   型: FizzBuzzもちゃんと表示される
+   声: FizzBuzzもちゃんと表示される
+3. [correct] no_stdout_line 15 args=[] stdin=''
+   型: 15という数字は表示されない
+   声: 15という数字は表示されない
+4. [correct] no_stdout_line 30 args=[] stdin=''
+   型: 30という数字は出ない
+   声: 30という数字は出ない
+5. [correct] stdout_line 29 args=[] stdin=''
+   型: 29はそのまま29と表示される
+   声: 29はそのまま29と表示される
+## p02_zakkuri [zakkuri] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: このプログラムでは、「for」ループを使って1から30までの数字を順番に処理してるんだ。もしだよ、「if」文を使って数字が3で割り切れるか、5で割り切れるかをチェックしているんだよ。
+2. [gap] stdout_line 30 args=[] stdin=''
+   型: 30は数字のまま表示される
+   声: 数字の30はそのまま表示されるんだ。出力は「num」の値をそのままプリントするからね。
+3. [correct] no_stdout_line 15 args=[] stdin=''
+   型: 15という数字は表示されない
+   声: 15の場合、3でも5でも割り切れるから、「if」文の両方の条件が真になるんだ。だから、「FizzBuzz」って表示されることになるよ。でも、このプログラムでは「or」を使ってるから、結果的に「FizzBuzz」が出力されるんだ。
+4. [correct] stdout_line FizzBuzz args=[] stdin=''
+   型: 15のところでFizzBuzzが出る
+   声: それ以外の数字—たとえば1や7—はそのままの数字が出力される。だから、15だけ「FizzBuzz」が出て、それ以外の数はそのまま表示されるんだ。この仕組みで、FizzBuzzゲームのルールに従ってるんだって。
+## p03_jishinnashi [jishinnashi] dev 
+1. [correct] structure
+   型: if文で条件を分けた
+   声: if文で条件を分けた
+2. [correct] no_stdout_line 121 args=[] stdin=''
+   型: 11の2乗の121までは出ない
+   声: 11の2乗の121までは出ない
+3. [correct] no_stdout_line 1 args=[] stdin=''
+   型: 1は表示されない
+   声: 1は表示されない
+4. [gap] stdout_line 100 args=[] stdin=''
+   型: 最後に100が表示される
+   声: 最後に100が表示される
+5. [correct] no_stdout_line 0 args=[] stdin=''
+   型: 0は表示されない
+   声: 0は表示されない
+## p03_jikkyou [jikkyou] dev 
+1. [correct] structure
+   型: for文を使って1つずつ見ている
+   声: プログラムは `for`ループを使って数字を一つずつ処理しています。
+2. [correct] no_stdout_line 121 args=[] stdin='' !消えた値 ['121']
+   型: 121は表示されない
+   声: 繰り返し回数は1から10までなので、合計9つの数字が出力されます。
+3. [correct] no_stdout_line 0 args=[] stdin='' !消えた値 ['0']
+   型: 0は表示されない
+   声: 各数字の平方が計算されています。
+4. [correct] stdout_line 1 args=[] stdin='' !消えた値 ['1']
+   型: 最初に1が表示される
+   声: 最初に0が表示されます。
+5. [correct] stdout_line 100 args=[] stdin='' !消えた値 ['100']
+   型: 最後に100が表示される
+   声: その後、1から10までの数字が順に表示されます。
+## p04_hayatochiri [hayatochiri] heldout 
+1. [correct] structure
+   型: forでくり返している
+   声: このプログラムでは、「for」ループを使って、指定した範囲内の数値をくり返し処理する。特に、「range(1, 21, 3)」という引数により、1から20までの数値のうち3ごとの数値が選ばれる。
+2. [gap] stdout_line 18 args=[] stdin=''
+   型: 最後は18が出る
+   声: 結果として、くり返し処理の最後では18が表示されるが、正確には18自体は選ばれないので、18の一つ手前の数値である15が最後の出力となる。しかし、説明をわかりやすくするために、範囲内の最大数である20までを考慮し、誤解を避けるために「20に近い数値まで」という表現を使うと良いかもしれない。
+3. [gap] stdout_line 0 args=[] stdin=''
+   型: 0も表示される
+   声: ループは1から始まり、3ずつ増加するため、0は選ばれない。そのため、0は表示されない。
+4. [gap] stdout_line 3 args=[] stdin=''
+   型: 最初に3が表示される
+   声: 最初に表示される数値は3である。これは範囲の開始値が1で、ステップが3であるため、最初の数値は1 + 2 × 1 (ステップ1回分) となるからだ。
+## p04_eigo [eigo] heldout 
+1. [correct] structure
+   型: ifで場合分けしている
+   声: This program checks if the number is divisible by 3 and prints it if so. The number is repeatedly divided by 3 until it reaches 20 and then stops.
+2. [correct] structure
+   型: くり返しにはwhileを使った
+   声: This program is designed to repeat the process of dividing by 3 as long as the number is less than 20. It starts with the value of 1 and keeps dividing by 3 until the number is less than 20.
+3. [gap] no_stdout_line 3 args=[] stdin=''
+   型: 3は表示されない
+   声: This program does not display the number itself, but prints the remainder of the division process. In this case, it divides the input number by 3 and keeps doing so until the number is less than 20.
+4. [gap] no_stdout_line 18 args=[] stdin=''
+   型: 18は表示されない
+   声: This program will not divide by 3 and print the number itself when the input number is 18.
+5. [correct] no_stdout_line 0 args=[] stdin=''
+   型: 0は表示されない
+   声: This program will not divide by 3 and print the number itself when the input number is 0.
+6. [correct] no_stdout_line 20 args=[] stdin=''
+   型: 20は表示されない
+   声: This program will not divide by 3 and print the number itself when the input number is 20.

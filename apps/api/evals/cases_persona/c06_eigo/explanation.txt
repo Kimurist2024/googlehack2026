@@ -1,0 +1,1 @@
+くり返しにはforループを使った。関数is_primeを書きました。is_prime(17)はTrueがreturnされる。9は素数じゃないから、returnはFalseになる。2は素数と判定されて、Trueがreturnされる。is_prime(1)はFalseをreturnします。

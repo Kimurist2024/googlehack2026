@@ -1,0 +1,35 @@
+{
+  "split": "dev",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "zakkuri",
+  "source": "allenai/OLMo-2-0425-1B-Instruct にざっくり型の癖を指示して書かせた c23 のコード（クセを取ったもの）と、型から作った説明を SakanaAI/TinySwallow-1.5B-Instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "power関数を書いたよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "5の0乗は1を返すはずじゃん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "power",
+        "args": "[5, 0]",
+        "stdin": ""
+      }
+    }
+  ]
+}

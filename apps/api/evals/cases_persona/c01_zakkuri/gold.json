@@ -1,0 +1,82 @@
+{
+  "split": "dev",
+  "goal": "境界の値での動きを説明できる",
+  "persona": "zakkuri",
+  "source": "ibm-granite/granite-3.1-2b-instruct にざっくり型の癖を指示して書かせた c01 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "grade関数を作ったよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "if文で条件を分けたって感じ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "0点ちょうどだったらCになるはずだよ",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          7
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'C'",
+        "function": "grade",
+        "args": "[0]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "79点ちょうどだったらAになるはずじゃん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'A'",
+        "function": "grade",
+        "args": "[79]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "100点だとBになるよ",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "'B'",
+        "function": "grade",
+        "args": "[100]",
+        "stdin": ""
+      }
+    }
+  ]
+}

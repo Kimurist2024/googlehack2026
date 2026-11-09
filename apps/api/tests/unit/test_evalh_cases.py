@@ -94,3 +94,21 @@ def test_low_quality_v2_set_has_execution_checks_for_every_behavior_claim():
     for case in dev + held:
         raw = json.loads((folder / case.id / "gold.json").read_text(encoding="utf-8"))["claims"]
         assert all("check" in c for c in raw if c["kind"] == "behavior"), case.id
+
+
+def test_persona_set_spreads_personas_and_keeps_task_splits():
+    """evals/cases_persona：生徒の癖（ペルソナ）ごとに書かせたコードと、その口調の説明。正解は実行で決めてある。"""
+    import json
+
+    from evalh.cases import DEFAULT_DIR, load_cases
+
+    folder = DEFAULT_DIR.parent / "cases_persona"
+    dev, held = load_cases(folder, split="dev"), load_cases(folder, split="heldout")
+    assert len(dev) >= 40 and len(held) >= 15
+    assert not {c.id.split("_")[0] for c in dev} & {c.id.split("_")[0] for c in held}
+    personas = set()
+    for case in dev + held:
+        gold = json.loads((folder / case.id / "gold.json").read_text(encoding="utf-8"))
+        personas.add(gold["persona"])
+        assert all("check" in c for c in gold["claims"] if c["kind"] == "behavior"), case.id
+    assert len(personas) == 8

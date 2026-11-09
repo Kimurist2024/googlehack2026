@@ -1,0 +1,50 @@
+{
+  "split": "dev",
+  "goal": "条件の組み合わせを説明できる",
+  "persona": "zakkuri",
+  "source": "ibm-granite/granite-3.1-2b-instruct にざっくり型の癖を指示して書かせた s05 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "if文で条件を分けたよ",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "12歳だと子どもが出るはずじゃん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "子ども",
+        "function": "",
+        "args": "[]",
+        "stdin": "12\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "19を入力すると10代って表示されるよ",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "10代",
+        "function": "",
+        "args": "[]",
+        "stdin": "19\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "split": "dev",
+  "goal": "繰り返しで値を積み上げる流れを説明できる",
+  "persona": "kicchiri",
+  "source": "ibm-granite/granite-3.1-2b-instruct にきっちり型の癖を指示して書かせた c22 のコード（クセを取ったもの）と、型から作った説明を sbintuitions/sarashina2.2-3b-instruct-v0.1 が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはwhileを使いました",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "ifで場合分けしています",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "g3",
+      "text": "sum_to(10)を呼んだときは、55を返すはずです",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "55",
+        "function": "sum_to",
+        "args": "[10]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "1を渡したときは、1になります（たぶん）",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "sum_to",
+        "args": "[1]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g5",
+      "text": "100を渡して1から100までたしたときは、5050になりました",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          9
+        ]
+      ],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "5050",
+        "function": "sum_to",
+        "args": "[100]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g6",
+      "text": "0を渡したときは、0を返すはずです",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "0",
+        "function": "sum_to",
+        "args": "[0]",
+        "stdin": ""
+      }
+    }
+  ]
+}

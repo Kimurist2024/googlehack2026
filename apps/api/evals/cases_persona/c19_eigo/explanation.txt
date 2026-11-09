@@ -1,0 +1,1 @@
+forループで1つずつ見ている。if文でコンディションを分けた。fizzbuzz(30)のreturnは'Fizz'になった。fizzbuzz(5)は'Buzz'がreturnされる（たぶん）。fizzbuzz(3)は'Fizz'をreturnします。

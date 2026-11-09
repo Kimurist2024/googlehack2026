@@ -329,7 +329,7 @@ function memoBlock(row) {
 }
 
 // 本人の説明を聞きたい箇所。どの行を挙げるかと根拠は機械的に決め、AI は質問の言い回しだけを書く
-function spotBlock(spot, explanations) {
+function spotBlock(spot, explanations, checks) {
   const item = make("div", undefined, "spot");
   const where = make("p", undefined, "spot-where");
   where.append(make("strong", spot.line ? `${spot.line}行目` : "プログラム全体の流れ"));
@@ -344,24 +344,41 @@ function spotBlock(spot, explanations) {
   item.append(chips);
   item.append(richText("p", `聞いてみる：${spot.question}`, "ask"));
   const own = spot.line && explanations[String(spot.line)];
-  if (own) item.append(ownWords(spot.line, own));
+  if (own) item.append(ownWords(spot.line, own, checks[String(spot.line)]));
   return item;
 }
 
 // 生徒が自分の言葉で書いた説明。HTML としては解釈させない
-function ownWords(line, text) {
-  const box = make("p", undefined, "own-words");
+function ownWords(line, text, checks) {
+  const box = make("div", undefined, "own-words");
   box.append(make("span", `${line}行目の本人の説明`, "chat-who"), document.createTextNode(text));
+  if (checks && checks.length) box.append(checkedRuns(checks));
   return box;
+}
+
+// 説明の文を本人のコードで動かして確かめた結果。何を試すかは AI か規則が決め、説明どおりかは実行の結果で決める
+function checkedRuns(checks) {
+  const list = make("ul", undefined, "checked-runs");
+  for (const check of checks) {
+    const item = make("li", undefined, check.verdict === "fails" ? "checked-fails" : "checked-holds");
+    item.append(make("span", check.verdict === "fails" ? "動かした結果が説明と違う" : "動かした結果は説明どおり", "chip"));
+    item.append(make("span", `「${check.sentence}」`, "checked-sentence"));
+    const runs = make("ul");
+    for (const run of check.runs) runs.append(make("li", `${run.tried}：説明では${run.expected}／実際は${run.actual}`));
+    item.append(runs);
+    list.append(item);
+  }
+  return list;
 }
 
 function reviewBlock(row) {
   const box = make("div", undefined, "memo");
   box.append(badgeHead("本人の説明を聞きたい箇所", row.review.by === "gemini", "質問案とまとめはAI"));
   box.append(make("p", "書いた本人なら説明できるはずの箇所です。説明を聞いて確かめてください。AIを使ったかどうかの判定ではありません。", "hint"));
-  for (const spot of row.review.spots) box.append(spotBlock(spot, row.explanations));
+  const checks = row.explanation_checks || {};
+  for (const spot of row.review.spots) box.append(spotBlock(spot, row.explanations, checks));
   const shown = new Set(row.review.spots.map((spot) => String(spot.line)));
-  for (const [line, text] of Object.entries(row.explanations)) if (!shown.has(line)) box.append(ownWords(line, text));
+  for (const [line, text] of Object.entries(row.explanations)) if (!shown.has(line)) box.append(ownWords(line, text, checks[line]));
   box.append(make("p", "これまでの様子", "memo-label"), richText("p", row.review.overview));
   return box;
 }

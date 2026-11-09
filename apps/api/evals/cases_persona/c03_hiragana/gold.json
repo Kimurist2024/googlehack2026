@@ -1,0 +1,65 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しで値を更新する流れを説明できる",
+  "persona": "hiragana",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に習いたて型の癖を指示して書かせた c03 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "find_maxっていうなまえの関数にした",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          1,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "おなじ数ばかりの[1, 1, 1]でも1がかえってくる",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "1",
+        "function": "find_max",
+        "args": "[[1, 1, 1]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g3",
+      "text": "[-5, -2, -9]だと、いちばん大きいのは-2になった",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "-2",
+        "function": "find_max",
+        "args": "[[-5, -2, -9]]",
+        "stdin": ""
+      }
+    },
+    {
+      "id": "g4",
+      "text": "[3, 7, 2]をわたすと7がかえってきた",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "call",
+        "expect_kind": "returns",
+        "expect_value": "7",
+        "function": "find_max",
+        "args": "[[3, 7, 2]]",
+        "stdin": ""
+      }
+    }
+  ]
+}

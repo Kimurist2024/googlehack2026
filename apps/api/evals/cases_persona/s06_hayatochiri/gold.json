@@ -1,0 +1,90 @@
+{
+  "split": "heldout",
+  "goal": "繰り返しの終わり方を説明できる",
+  "persona": "hayatochiri",
+  "source": "allenai/OLMo-2-0425-1B-Instruct に早とちり型の癖を指示して書かせた s06 のコード（クセを取ったもの）と、型から作った説明を llm-jp/llm-jp-3-3.7b-instruct が口調を書き直し、人が校正したもの（合成データ）",
+  "claims": [
+    {
+      "id": "g1",
+      "text": "くり返しにはもちろんforを使った",
+      "label": "correct",
+      "kind": "structure",
+      "evidence": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "g2",
+      "text": "5を入れても5はぜったい出ない",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "5",
+        "function": "",
+        "args": "[]",
+        "stdin": "5\n"
+      }
+    },
+    {
+      "id": "g3",
+      "text": "3を入力したとき0は出ない",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "no_stdout_line",
+        "expect_value": "0",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g4",
+      "text": "3を入れると最後に発射と表示される。かんたん",
+      "label": "gap",
+      "kind": "behavior",
+      "evidence": [],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "発射",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    },
+    {
+      "id": "g5",
+      "text": "3を入れると、最後の数は1まで表示される",
+      "label": "correct",
+      "kind": "behavior",
+      "evidence": [
+        [
+          1,
+          5
+        ]
+      ],
+      "check": {
+        "kind": "run",
+        "expect_kind": "stdout_line",
+        "expect_value": "1",
+        "function": "",
+        "args": "[]",
+        "stdin": "3\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+second_largestっていうファンクションを作った。second_largest([3, 5, 1])は3がreturnされるはず。[10, 8, 9]の2番目に大きい数は9がreturnされると思う。2つだけの[1, 2]なら、returnは1になるはず。

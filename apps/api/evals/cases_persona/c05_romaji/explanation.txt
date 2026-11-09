@@ -1,0 +1,1 @@
+factorialって名前の関数にしました。factorial(0)は1を返します。factorial(5)は120が返ってきます。factorial(1)は1になる（たぶん）。factorialで3の階乗を出すと6になります。
