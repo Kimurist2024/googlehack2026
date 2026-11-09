@@ -57,8 +57,9 @@ Kickoff スライドの「開発ルール」「実行基盤の必須条件」「
 
 | 項目 | 状態 | やること |
 | --- | --- | --- |
-| デプロイ URL を Regional Day（11/14）まで動かし続ける | ⚠️ | Cloud Credit の残額・有効期限、予算アラート。Firestore の TTL で古いデータは消えるが、デモクラスは 11/14 まで残る設定か（`RETENTION_DAYS`）を確かめる |
-| API キーに利用制限をかける | ⚠️ | Firebase の Web API キーに HTTP リファラ制限（`mushitori-hackathon.web.app`、`firebaseapp.com`）。Gemini は Vertex AI 経由（サービスアカウント）なので API キーなし |
+| デプロイ URL を Regional Day（11/14）まで動かし続ける | ⚠️ | 請求先アカウントにクレジットはない（11/9 確認）。Firestore の TTL で古いデータは消えるが、デモクラスは 11/14 まで残る設定か（`RETENTION_DAYS`）を確かめる。上限に達したサービスは月末まで止まるので、下の上限の通知メールに気を付ける |
+| 費用の上限（運営の案内） | ✅ | 11/9 設定。利用額上限（月ごと、割引前の定価で数える）を Vertex AI（`mushitori-vertex-ai-cap`）と Cloud Run（`mushitori-cloud-run-cap`）に各¥3,000。通知は 50%・80%・100%。Firestore と Model Armor は上限の対象外なので、プロジェクト全体の通知のみの予算（`mushitori-hackathon`、月¥3,000、50%・90%・100%）で見る。11/1〜11/9 の割引前の利用額は Cloud Run ¥125、Vertex AI ¥7。上限に達したら「予算と上限」から手動で解除できる（戻るまで最大1時間） |
+| API キーに利用制限をかける | ✅ | 11/9 設定。プロジェクトの API キーは Firebase の Browser key の1本だけ。もとの API の制限（25個）に加え、HTTP リファラ制限（`https://mushitori-hackathon.web.app/*`、`https://mushitori-hackathon.firebaseapp.com/*`）。ほかのサイトと Referer なしは 403 `API_KEY_HTTP_REFERRER_BLOCKED`、本番の2つは 200、本番の「ログインせずに試す」も通ることを確かめた。Gemini と Code Execution は Vertex AI 経由（サービスアカウント）なので API キーなし。両リポジトリの全履歴にキーの形の文字列がないことも確かめた |
 | 提出後に提出用リポジトリを触らない | ⚠️ | 締切後は読み取り専用。追加開発は開発用リポジトリで続け、決勝進出なら Demo Day までに反映 |
 
 ## 確認に使ったコマンド
