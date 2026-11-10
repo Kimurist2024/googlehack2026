@@ -54,7 +54,7 @@
 
 **公開 URL**: https://mushitori-hackathon.web.app
 
-**デモ動画**（1分16秒、字幕あり・音声なし）: https://drive.google.com/file/d/1VIv2iphSnFAVtJvx_SuOasLJSPFSAjsU/view?usp=sharing
+**デモ動画**（1分16秒、字幕あり・音声なし）: [このリポジトリの `docs/demo.mp4`](./docs/demo.mp4)（同じ動画を [Google ドライブ](https://drive.google.com/file/d/1VIv2iphSnFAVtJvx_SuOasLJSPFSAjsU/view?usp=sharing)でも見られます）
 
 教員の画面での問いの作成、受付、生徒の解答と説明、締切、声をかける順と Gemini の質問案までを通しで見られます。公開 URL の本番（Gemini・Code Execution）で収録しました。データはすべて合成で、待ち時間は一部を省いています。
 
