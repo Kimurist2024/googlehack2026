@@ -24,7 +24,7 @@ Kickoff スライドの「開発ルール」「実行基盤の必須条件」「
 | Google Cloud の実行基盤を使う（App Engine / Compute Engine / GKE / Cloud Run / Firebase App Hosting / Firebase Hosting のいずれか） | ✅ | API は Cloud Run、画面は Firebase Hosting（`firebase.json` の rewrites で `/v1/**` を Cloud Run へ）。11/6 に公開 URL で確認済み（`docs/verification-2026-11-06.md`） |
 | テーマ・カテゴリ（教育）に入っている | ✅ | README に「教育部門」と明記。高校情報科のプログラミング課題の確認が対象 |
 | 他社 AI ツールが前面に出ていない | ⚠️→✅ | README の「GPT で作った」の記載を「生成AI」に直した（出典は著作物利用シートへ）。プロダクトが呼ぶ AI は Gemini だけ。評価用の合成データ（`evals/cases_lowq2`）は公開モデルの出力を元にしているが、プロダクトは呼ばない。**デモ動画・ピッチ・提出ドキュメントでも他社 AI 製品名を出さない** |
-| デモ動画を偽装しない | ✅ | 提出する動画は公開 URL の本番（Gemini・Code Execution）で収録した（`apps/api/scripts/record_demo.py` の `DEMO_URL`）。冒頭のカードに「データはすべて合成／待ち時間は一部省略」と出す |
+| デモ動画を偽装しない | ✅ | 提出する動画は公開 URL の本番（Gemini・Code Execution）で収録した（`apps/api/scripts/record_demo.py` の `DEMO_URL`）。動画には注記を入れず、「データはすべて合成、待ち時間は一部を省いた」ことは README の Live Demo に書いた |
 | 必須項目の不足がない | ❌ | 提出用リポジトリ `Devfest-Hackathon-2026/df-2026-t032` は **11/8 時点で運営の雛形（README・LICENSE・.gitignore）だけ**。コードも資料も入っていない。`scripts/export_submission.sh` で最終版を置く |
 | ルール違反がない（開始前のコード、秘密情報のコミット、PoC の流用） | ✅ | 最初のコミットは 11/5 09:56 の README 1行（リポジトリ作成）だけで、コードは 11/5 20:37 から。全履歴に API キー・秘密鍵・サービスアカウントの形式はなし。`.env` 類は追跡していない |
 
